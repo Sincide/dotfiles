@@ -1,0 +1,25 @@
+#!/bin/bash
+
+setxkbmap se
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+signal-desktop --start-in-tray &
+nitrogen --restore &
+#variety &
+flameshot &
+#pamac-tray &
+picom -C &
+#dunst &
+numlockx &
+#dwmblocks &
+slstatus &
+nm-applet &
+
+exec dwm 
+#session=$session
+
+#case $session in
+#    dwm               ) exec dwm;;
+#    bspwm	          ) exec bspwm;;
+#    # No known session, try to run it as command
+#    *                 ) exec $1;;
+#esac

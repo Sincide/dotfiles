@@ -1,0 +1,23 @@
+# Ignore backup files
+*.bak
+*~
+
+# Ignore logs
+*.log
+
+# Ignore compiled Python files
+*.pyc
+__pycache__/
+
+# Ignore fish generated files
+config/fish/fish_variables
+config/fish/fishd.*
+config/fish/conf.d/*
+
+# Ignore local history
+.*history
+.directory
+
+# Ignore cache directories
+.cache/
+cache/ 

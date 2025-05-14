@@ -1,0 +1,71 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 43,
+    "spacing": 4,
+    "modules-left": ["hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock"],
+    "modules-right": ["pulseaudio", "network", "cpu", "memory", "tray"],
+    
+    "hyprland/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "format": "{icon}",
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10"
+        }
+    },
+
+    "hyprland/window": {
+        "format": "{}",
+        "max-length": 50
+    },
+
+    "tray": {
+        "spacing": 10
+    },
+
+    "clock": {
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "format": "{:%Y-%m-%d %H:%M}",
+        "format-alt": "{:%A, %B %d, %Y (%R)}"
+    },
+
+    "cpu": {
+        "format": "CPU: {usage}% ",
+        "tooltip": true,
+        "interval": 1
+    },
+
+    "memory": {
+        "format": "RAM: {}% ",
+        "tooltip": true,
+        "interval": 1
+    },
+
+    "network": {
+        "format": "󰜷 {bandwidthUpBits} 󰜮 {bandwidthDownBits}",
+        "format-disconnected": "󰜺",
+        "tooltip-format": "󱘖 {ipaddr}\n{bandwidthUpBits} 󰜷\n{bandwidthDownBits} 󰜮",
+        "interval": 1
+    },
+
+
+    "pulseaudio": {
+        "format": "VOL: {volume}% {icon}",
+        "format-muted": "VOL: MUTED ",
+        "format-icons": {
+            "default": ["", "", ""]
+        },
+        "on-click": "pavucontrol"
+    }
+} 

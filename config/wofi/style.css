@@ -1,0 +1,55 @@
+window {
+    margin: 0px;
+    padding: 10px;
+    border: 2px solid #89b4fa;
+    border-radius: 8px;
+    background-color: #1e1e2e;
+    font-family: "Noto Sans";
+    font-size: 13px;
+}
+
+#input {
+    margin: 5px;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    color: #cdd6f4;
+    background-color: #313244;
+}
+
+#inner-box {
+    margin: 5px;
+    border: none;
+    background-color: transparent;
+}
+
+#outer-box {
+    margin: 5px;
+    border: none;
+    background-color: transparent;
+}
+
+#scroll {
+    margin: 0px;
+    border: none;
+}
+
+#text {
+    margin: 5px;
+    border: none;
+    color: #cdd6f4;
+}
+
+#entry {
+    padding: 5px;
+    border-radius: 6px;
+}
+
+#entry:selected {
+    background-color: #313244;
+    border: none;
+}
+
+#text:selected {
+    color: #89b4fa;
+} 

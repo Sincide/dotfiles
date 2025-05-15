@@ -20,4 +20,8 @@ config/fish/conf.d/*
 
 # Ignore cache directories
 .cache/
-cache/ 
+cache/
+
+# Allow encrypted private files
+!private/
+!private/*.gpg 

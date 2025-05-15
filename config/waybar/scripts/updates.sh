@@ -1,62 +1,53 @@
 #!/bin/bash
 
-# Cache file for updates
-CACHE_FILE="/tmp/waybar-updates-cache"
-CACHE_TIMEOUT=3600  # 1 hour in seconds
-
-# Icons
-ICON_UPDATES=""
-ICON_ERROR=""
-ICON_CHECKING=""
-
-# Colors
-COLOR_UPDATES="#f5c211"
-COLOR_ERROR="#cc241d"
-COLOR_CHECKING="#458588"
-
-# Function to output JSON format
-output_json() {
-    local text="$1"
-    local tooltip="$2"
-    local class="$3"
-    local color="$4"
-    echo "{\"text\": \"$text\", \"tooltip\": \"$tooltip\", \"class\": \"$class\", \"color\": \"$color\"}"
-}
-
-# Check if we should use cache
-if [ -f "$CACHE_FILE" ]; then
-    CACHE_TIME=$(stat -c %Y "$CACHE_FILE")
-    CURRENT_TIME=$(date +%s)
-    if [ $((CURRENT_TIME - CACHE_TIME)) -lt "$CACHE_TIMEOUT" ]; then
-        cat "$CACHE_FILE"
-        exit 0
-    fi
-fi
-
-# Show checking status while updating
-output_json "$ICON_CHECKING" "Checking for updates..." "checking" "$COLOR_CHECKING"
-
-# Update package databases with timeout
-if ! timeout 10s sudo pacman -Sy >/dev/null 2>&1; then
-    output_json "$ICON_ERROR" "Failed to check for updates" "error" "$COLOR_ERROR" | tee "$CACHE_FILE"
+# Make sure checkupdates is available
+if ! command -v checkupdates >/dev/null 2>&1; then
+    echo "{\"text\": \" ?\", \"class\": \"error\", \"tooltip\": \"checkupdates not found\"}"
     exit 1
 fi
 
-# Count updates with timeout
-UPDATES=$(timeout 10s pacman -Qu | grep -v "\[ignored\]" | wc -l)
-AUR_UPDATES=$(timeout 10s yay -Qua | wc -l)
+# Make sure yay is available
+if ! command -v yay >/dev/null 2>&1; then
+    echo "{\"text\": \" ?\", \"class\": \"error\", \"tooltip\": \"yay not found\"}"
+    exit 1
+fi
 
-# Check if commands succeeded
+# Get official repo updates count
+PACMAN_COUNT=$(checkupdates 2>/dev/null | wc -l)
 if [ $? -ne 0 ]; then
-    output_json "$ICON_ERROR" "Failed to check for updates" "error" "$COLOR_ERROR" | tee "$CACHE_FILE"
-    exit 1
+    PACMAN_COUNT=0
 fi
 
-TOTAL_UPDATES=$((UPDATES + AUR_UPDATES))
+# Get AUR updates count
+YAY_COUNT=$(yay -Qua 2>/dev/null | wc -l)
+if [ $? -ne 0 ]; then
+    YAY_COUNT=0
+fi
 
-if [ "$TOTAL_UPDATES" -eq 0 ]; then
-    output_json "" "System is up to date" "updated" "" | tee "$CACHE_FILE"
+# Total number of updates
+TOTAL=$((PACMAN_COUNT + YAY_COUNT))
+
+# Initialize variables
+CLASS="up-to-date"
+TOOLTIP="System is up to date"
+
+if [ "$TOTAL" -gt 0 ]; then
+    CLASS="has-updates"
+    if [ "$YAY_COUNT" -gt 0 ]; then
+        if [ "$PACMAN_COUNT" -gt 0 ]; then
+            TOOLTIP="Updates available:\n$PACMAN_COUNT official\n$YAY_COUNT AUR"
+            TEXT=" $PACMAN_COUNT  $YAY_COUNT"
+        else
+            TOOLTIP="Updates available:\n$YAY_COUNT AUR"
+            TEXT="  $YAY_COUNT"
+        fi
+    else
+        TOOLTIP="Updates available:\n$PACMAN_COUNT official"
+        TEXT=" $PACMAN_COUNT"
+    fi
 else
-    TOOLTIP="$UPDATES system update(s)\n$AUR_UPDATES AUR update(s)"
-    output_json "$ICON_UPDATES $TOTAL_UPDATES" "$TOOLTIP" "updates" "$COLOR_UPDATES" | tee "$CACHE_FILE"
-fi 
+    TEXT=" 0"
+fi
+
+# Output JSON for Waybar
+echo "{\"text\": \"$TEXT\", \"class\": \"$CLASS\", \"tooltip\": \"$TOOLTIP\"}" 

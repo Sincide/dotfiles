@@ -83,7 +83,7 @@ The repository includes a smart dotfiles management script (`scripts/dotfiles.sh
 - Quick diff viewing
 - Automated syncing with remote repository
 
-Usage:
+### Command Line Usage
 ```bash
 ./scripts/dotfiles.sh <command>
 
@@ -92,6 +92,16 @@ Commands:
   sync, s       Sync dotfiles (add, commit, pull, push)
   diff, d       Show diff of changes
 ```
+
+### Fish Shell Aliases
+The following aliases are available for Fish shell users:
+
+- `dot` - Show available commands and usage
+- `dots` - Sync dotfiles (add, commit, pull, push)
+- `dotst` - Show colored status of dotfiles
+- `dotd` - Show diff of changes
+
+These aliases are automatically configured in `~/.config/fish/config.fish` during installation.
 
 ## Monitor Configuration
 

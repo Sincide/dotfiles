@@ -59,32 +59,39 @@ generate_commit_message() {
 
 # Function to show status with colors
 show_status() {
+    # Change to the git repository root directory
+    cd $(git rev-parse --show-toplevel)
+    
     print_status "Current dotfiles status:"
     echo
-    git status -s | while read -r line; do
-        local status=${line:0:2}
-        local file=${line:3}
-        case $status in
-            "M "*)
-                echo -e "${YELLOW}Modified:${NC}  $file"
+    
+    # Use git status --porcelain to get machine-readable output and store it
+    while IFS= read -r line; do
+        # Extract status and filename
+        local status="${line:0:2}"
+        local filename="${line:3}"
+        
+        case "$status" in
+            " M"|"M "|"MM")
+                echo -e "${YELLOW}Modified:${NC}  $filename"
                 ;;
-            "A "*)
-                echo -e "${GREEN}Added:${NC}     $file"
+            "A "|"AM")
+                echo -e "${GREEN}Added:${NC}     $filename"
                 ;;
-            "D "*)
-                echo -e "${RED}Deleted:${NC}   $file"
+            "D "|" D")
+                echo -e "${RED}Deleted:${NC}   $filename"
                 ;;
-            "R "*)
-                echo -e "${BLUE}Renamed:${NC}   $file"
+            "R ")
+                echo -e "${BLUE}Renamed:${NC}   $filename"
                 ;;
-            "??"*)
-                echo -e "${BLUE}Untracked:${NC} $file"
+            "??")
+                echo -e "${BLUE}Untracked:${NC} $filename"
                 ;;
             *)
-                echo -e "$line"
+                echo -e "Unknown:    $filename"
                 ;;
         esac
-    done
+    done < <(git status --porcelain)
     echo
 }
 

@@ -21,11 +21,26 @@ print_success() {
     echo -e "${GREEN}Success:${NC} $1"
 }
 
+# Detect if running in a VM
+detect_environment() {
+    if systemd-detect-virt --vm > /dev/null 2>&1; then
+        echo "vm"
+    elif systemd-detect-virt --container > /dev/null 2>&1; then
+        echo "container"
+    else
+        echo "physical"
+    fi
+}
+
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
     print_error "Please do not run as root"
     exit 1
 fi
+
+# Detect environment
+ENV_TYPE=$(detect_environment)
+print_message "Detected environment: $ENV_TYPE"
 
 # Install yay if not present
 if ! command -v yay &> /dev/null; then
@@ -37,31 +52,15 @@ fi
 
 # Install required packages
 print_message "Installing required packages..."
-yay -S --needed --noconfirm \
-    hyprland \
-    waybar \
-    kitty \
-    fish \
-    wofi \
-    dunst \
-    polkit-kde-agent \
-    xdg-desktop-portal-hyprland \
-    qt5-wayland \
-    qt6-wayland \
-    pipewire \
-    wireplumber \
-    pavucontrol \
-    pamixer \
-    playerctl \
-    brightnessctl \
-    grim \
-    slurp \
-    wl-clipboard \
-    catppuccin-gtk-theme-mocha \
-    ttf-jetbrains-mono-nerd \
-    noto-fonts \
-    noto-fonts-cjk \
-    noto-fonts-emoji
+COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish wofi dunst polkit-kde-agent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs"
+
+if [ "$ENV_TYPE" = "vm" ]; then
+    # VM-specific packages (minimal set, no brightness control, etc.)
+    yay -S --needed --noconfirm $COMMON_PACKAGES
+else
+    # Physical machine packages (full set with all utilities)
+    yay -S --needed --noconfirm $COMMON_PACKAGES brightnessctl
+fi
 
 # Backup existing configs
 print_message "Backing up existing configurations..."
@@ -81,13 +80,80 @@ fi
 print_message "Creating symlinks..."
 dotfiles_dir="$(pwd)"
 
+# Symlink config files
 for dir in config/*; do
     if [ -d "$dir" ]; then
-        target_dir="$HOME/.${dir}"
-        mkdir -p "$(dirname "$target_dir")"
-        ln -sf "$dotfiles_dir/$dir" "$target_dir"
+        base_name=$(basename "$dir")
+        case "$base_name" in
+            "applications")
+                # Handle .local/share/applications directory
+                mkdir -p "$HOME/.local/share/applications"
+                for file in "$dir"/*; do
+                    if [ -f "$file" ]; then
+                        ln -sf "$dotfiles_dir/$file" "$HOME/.local/share/applications/$(basename "$file")"
+                    fi
+                done
+                ;;
+            *)
+                # Handle .config directories
+                target_dir="$HOME/.config/$base_name"
+                mkdir -p "$(dirname "$target_dir")"
+                ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                ;;
+        esac
     fi
 done
+
+# Create necessary directories
+mkdir -p "$HOME/Pictures/Screenshots"
+
+# Configure environment-specific settings
+print_message "Configuring environment-specific settings..."
+if [ "$ENV_TYPE" = "vm" ]; then
+    # Link VM-specific monitor config
+    ln -sf "$dotfiles_dir/config/hypr/monitors-vm.conf" "$HOME/.config/hypr/monitors.conf"
+    
+    # Update hyprpaper config for VM
+    cat > "$HOME/.config/hypr/hyprpaper.conf" << EOF
+preload = $HOME/dotfiles/assets/wallpapers/evilpuccin.png
+wallpaper = Virtual-1,$HOME/dotfiles/assets/wallpapers/evilpuccin.png
+splash = false
+EOF
+else
+    # Link physical machine monitor config
+    ln -sf "$dotfiles_dir/config/hypr/monitors-physical.conf" "$HOME/.config/hypr/monitors.conf"
+    
+    # Update hyprpaper config for physical setup
+    cat > "$HOME/.config/hypr/hyprpaper.conf" << EOF
+preload = $HOME/dotfiles/assets/wallpapers/evilpuccin.png
+wallpaper = DP-3,$HOME/dotfiles/assets/wallpapers/evilpuccin.png
+wallpaper = DP-1,$HOME/dotfiles/assets/wallpapers/evilpuccin.png
+wallpaper = HDMI-A-1,$HOME/dotfiles/assets/wallpapers/evilpuccin.png
+splash = false
+EOF
+fi
+
+# Ensure proper permissions for scripts
+chmod +x "$HOME/.config/hypr/scripts/"*.sh
+
+# Set up terminal emulator configuration
+print_message "Setting up terminal emulator configuration..."
+mkdir -p "$HOME/.local/share/applications"
+ln -sf "$dotfiles_dir/config/xfce4/terminal/kitty.desktop" "$HOME/.local/share/applications/kitty.desktop"
+
+# Configure Thunar custom actions
+print_message "Configuring Thunar custom actions..."
+mkdir -p "$HOME/.config/Thunar"
+ln -sf "$dotfiles_dir/config/xfce4/terminal/uca.xml" "$HOME/.config/Thunar/uca.xml"
+
+# Configure default terminal emulator
+print_message "Configuring default terminal emulator..."
+xdg-mime default kitty.desktop x-scheme-handler/terminal
+xdg-mime default kitty.desktop application/x-terminal-emulator
+
+# Update XDG user directories
+print_message "Updating XDG user directories..."
+xdg-user-dirs-update
 
 # Set fish as default shell
 if [ "$SHELL" != "$(which fish)" ]; then
@@ -118,9 +184,6 @@ gtk-xft-hintstyle=hintslight
 gtk-xft-rgba=rgb
 EOF
 fi
-
-# Create necessary directories
-mkdir -p "$HOME/Pictures/Screenshots"
 
 print_success "Installation completed! Please log out and log back in to start Hyprland."
 print_message "Note: Some changes might require a system restart to take effect." 

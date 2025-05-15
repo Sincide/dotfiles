@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Function to set monitor state
+set_monitor() {
+    local monitor=$1
+    local state=$2
+    hyprctl dispatch dpms $state $monitor
+}
+
+# Function to toggle monitor
+toggle_monitor() {
+    local monitor=$1
+    local current_state=$(hyprctl monitors -j | jq -r ".[] | select(.name == \"$monitor\") | .dpmsStatus")
+    
+    if [ "$current_state" = "true" ]; then
+        hyprctl dispatch dpms off $monitor
+    else
+        hyprctl dispatch dpms on $monitor
+    fi
+}
+
+# Handle different commands
+case "$1" in
+    "all-off")
+        set_monitor "DP-3" "off"
+        set_monitor "DP-1" "off"
+        set_monitor "HDMI-A-1" "off"
+        ;;
+    "all-on")
+        set_monitor "DP-3" "on"
+        set_monitor "DP-1" "on"
+        set_monitor "HDMI-A-1" "on"
+        ;;
+    "all")
+        toggle_monitor "DP-3"
+        toggle_monitor "DP-1"
+        toggle_monitor "HDMI-A-1"
+        ;;
+    *)
+        toggle_monitor "$1"
+        ;;
+esac 

@@ -1,15 +1,45 @@
 # Dotfiles
 
-My personal dotfiles for Arch Linux with Hyprland desktop environment.
+My personal dotfiles for Arch Linux with Hyprland.
+
+## Directory Structure
+
+```
+.
+├── assets/               # Static assets
+│   └── wallpapers/      # Wallpaper images
+├── config/              # All configuration files
+│   ├── applications/    # Desktop entries
+│   ├── dunst/          # Notification daemon
+│   ├── fish/           # Fish shell
+│   ├── gtk-3.0/        # GTK3 theming
+│   ├── gtk-4.0/        # GTK4 theming
+│   ├── hypr/           # Hyprland compositor
+│   │   ├── monitors-physical.conf  # Physical machine monitor config
+│   │   ├── monitors-vm.conf       # VM monitor config
+│   │   └── hyprland.conf         # Main config
+│   ├── kitty/          # Terminal emulator
+│   ├── qt5ct/          # Qt5 configuration
+│   ├── qt6ct/          # Qt6 configuration
+│   ├── swappy/         # Screenshot editor
+│   ├── waybar/         # Status bar
+│   ├── wofi/           # Application launcher
+│   └── xfce4/          # XFCE4 components (Thunar)
+├── install.sh          # Installation script
+└── README.md           # This file
+```
 
 ## Features
 
-- Hyprland window manager configuration
-- Waybar with custom styling
-- Kitty terminal with Catppuccin theme
-- Fish shell with custom prompt
-- GTK theme configuration
-- Custom keybindings
+- **Window Manager**: Hyprland
+- **Status Bar**: Waybar
+- **Terminal**: Kitty
+- **Shell**: Fish
+- **Theme**: Catppuccin Mocha
+- **File Manager**: Thunar
+- **Notifications**: Dunst
+- **Application Launcher**: Wofi
+- **Environment Detection**: Automatic VM/Physical setup
 
 ## Prerequisites
 
@@ -19,18 +49,18 @@ My personal dotfiles for Arch Linux with Hyprland desktop environment.
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone https://gitlab.com/YOUR_USERNAME/dotfiles.git
-cd dotfiles
-```
+1. Clone this repository:
+   ```bash
+   git clone https://gitlab.com/YOUR_USERNAME/dotfiles.git ~/dotfiles
+   cd ~/dotfiles
+   ```
 
 2. Run the installation script:
-```bash
-./install.sh
-```
+   ```bash
+   ./install.sh
+   ```
 
-3. Log out and log back in to start Hyprland
+3. Log out and log back in to start Hyprland.
 
 ## What's Included
 
@@ -108,4 +138,24 @@ Available accent colors can be found in `/usr/share/themes/` (all Catppuccin-Moc
 
 - Existing configurations will be backed up with a .bak extension
 - The install script can be run multiple times safely
-- To update, just pull the latest changes and run the install script again 
+- To update, just pull the latest changes and run the install script again
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Environment Detection
+
+The install script automatically detects whether it's running in a VM or on physical hardware and configures the system accordingly:
+
+### VM Environment
+- Configures single Virtual-1 monitor
+- Enables software cursor and renderer
+- Disables hardware-specific features
+- Simplified wallpaper configuration
+
+### Physical Hardware
+- Configures multi-monitor setup
+- Uses hardware acceleration
+- Enables all features including brightness control
+- Full monitor-specific wallpaper setup 

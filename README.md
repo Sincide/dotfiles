@@ -23,8 +23,13 @@ My personal dotfiles for Arch Linux with Hyprland.
 │   ├── qt6ct/          # Qt6 configuration
 │   ├── swappy/         # Screenshot editor
 │   ├── waybar/         # Status bar
+│   │   ├── config      # Waybar configuration
+│   │   ├── style.css   # Waybar styling
+│   │   └── scripts/    # Status bar scripts
 │   ├── wofi/           # Application launcher
 │   └── xfce4/          # XFCE4 components (Thunar)
+├── scripts/            # Utility scripts
+│   └── dotfiles.sh     # Dotfiles management script
 ├── install.sh          # Installation script
 └── README.md           # This file
 ```
@@ -32,7 +37,14 @@ My personal dotfiles for Arch Linux with Hyprland.
 ## Features
 
 - **Window Manager**: Hyprland
-- **Status Bar**: Waybar
+- **Status Bar**: Waybar with:
+  - Animated launcher
+  - Workspace indicators with underline effects
+  - System monitoring (CPU, memory, network)
+  - Audio controls
+  - Clock with calendar
+  - Notification toggle
+  - Modern, cohesive design with Catppuccin theme
 - **Terminal**: Kitty
 - **Shell**: Fish
 - **Theme**: Catppuccin Mocha
@@ -62,22 +74,38 @@ My personal dotfiles for Arch Linux with Hyprland.
 
 3. Log out and log back in to start Hyprland.
 
-## What's Included
+## Dotfiles Management
 
-- **Window Manager**: Hyprland
-- **Status Bar**: Waybar
-- **Terminal**: Kitty
-- **Shell**: Fish with custom prompt
-- **Theme**: Catppuccin Mocha
-- **Icons**: Custom icon configuration
-- **Fonts**: JetBrains Mono Nerd Font
+The repository includes a smart dotfiles management script (`scripts/dotfiles.sh`) that provides:
 
-## Post-Installation
+- Automatic commit message generation based on changed files
+- Easy status checking with colored output
+- Quick diff viewing
+- Automated syncing with remote repository
 
-After installation, you might want to:
-1. Configure git with your credentials
-2. Customize any personal preferences in the config files
-3. Check Waybar modules are working correctly
+Usage:
+```bash
+./scripts/dotfiles.sh <command>
+
+Commands:
+  status, st    Show status of dotfiles
+  sync, s       Sync dotfiles (add, commit, pull, push)
+  diff, d       Show diff of changes
+```
+
+## Monitor Configuration
+
+The setup includes smart monitor detection and configuration:
+
+### Physical Setup
+- Supports multi-monitor setup with different resolutions and refresh rates
+- Automatically configures workspace assignments
+- Handles high refresh rate displays (up to 165Hz)
+
+### VM Setup
+- Automatically detects VM environment
+- Configures appropriate display settings
+- Enables necessary VM-specific variables
 
 ## Keybindings
 
@@ -127,12 +155,16 @@ After installation, you might want to:
 
 ## Customization
 
-The GTK theme is set to Catppuccin Mocha Blue by default. To change the accent color, modify the following files:
+The GTK theme is set to Catppuccin Mocha Blue by default. To change the accent color, modify:
 - `~/.config/gtk-3.0/settings.ini`
 - `~/.config/gtk-4.0/settings.ini`
 - `~/.config/hypr/env.conf`
 
 Available accent colors can be found in `/usr/share/themes/` (all Catppuccin-Mocha variants).
+
+## Contributing
+
+Feel free to submit issues and pull requests for improvements or bug fixes.
 
 ## Notes
 

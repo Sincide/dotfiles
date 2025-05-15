@@ -25,11 +25,9 @@
         "custom/separator",
         "custom/dotfiles",
         "custom/separator",
-        "custom/notification",
-        "custom/separator",
         "network",
         "custom/separator",
-        "pulseaudio",
+        "wireplumber",
         "custom/separator",
         "cpu",
         "memory",
@@ -43,15 +41,6 @@
         "on-click": "wofi --show drun",
         "tooltip": true,
         "tooltip-format": "Application Launcher"
-    },
-
-    "custom/notification": {
-        "format": " Not: {}",
-        "exec": "~/.config/waybar/scripts/notification.sh",
-        "on-click": "dunstctl set-paused toggle",
-        "restart-interval": 1,
-        "tooltip": true,
-        "tooltip-format": "Toggle Notifications"
     },
 
     "custom/separator": {
@@ -151,10 +140,10 @@
         "min-length": 14
     },
 
-    "pulseaudio": {
+    "wireplumber": {
         "format": "{icon} Vol: {volume}%",
-        "format-bluetooth": "{icon} BT: {volume}%",
         "format-muted": " Muted",
+        "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
         "format-icons": {
             "headphone": "",
             "hands-free": "",
@@ -165,10 +154,8 @@
             "default": ["", "", ""]
         },
         "scroll-step": 1,
-        "on-click": "pavucontrol",
         "tooltip": true,
-        "tooltip-format": "Volume Control\nDevice: {desc}",
-        "ignored-sinks": ["Easy Effects Sink"]
+        "tooltip-format": "Volume Control\nDevice: {node_name}"
     },
 
     "custom/dotfiles": {

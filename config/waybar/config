@@ -46,7 +46,7 @@
     },
 
     "custom/notification": {
-        "format": "{}",
+        "format": " Not: {}",
         "exec": "~/.config/waybar/scripts/notification.sh",
         "on-click": "dunstctl set-paused toggle",
         "restart-interval": 1,
@@ -172,7 +172,7 @@
     },
 
     "custom/dotfiles": {
-        "format": " {}",
+        "format": " Git: {}",
         "exec": "~/.config/waybar/scripts/dotfiles-status.sh",
         "on-click": "kitty --class floating -e fish -c 'cd ~/dotfiles && dotst'",
         "return-type": "json",
@@ -181,7 +181,7 @@
     },
 
     "custom/updates": {
-        "format": "{}",
+        "format": "Updates: {}",
         "exec": "~/.config/waybar/scripts/updates.sh",
         "on-click": "kitty --class floating -e fish -c 'yay -Syu'",
         "return-type": "json",

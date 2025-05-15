@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if dunstctl is-paused | grep -q "false"; then
-    echo "󰂚"  # Bell icon from Nerd Fonts
+    echo "On"
 else
-    echo "󰂛"  # Bell-off icon from Nerd Fonts
+    echo "Off"
 fi 

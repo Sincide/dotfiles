@@ -18,6 +18,8 @@
     ],
     
     "modules-right": [
+        "custom/dotfiles",
+        "custom/separator",
         "custom/notification",
         "custom/separator",
         "network",
@@ -162,5 +164,14 @@
         "tooltip": true,
         "tooltip-format": "Volume Control\nDevice: {desc}",
         "ignored-sinks": ["Easy Effects Sink"]
+    },
+
+    "custom/dotfiles": {
+        "format": " {}",
+        "exec": "~/.config/waybar/scripts/dotfiles-status.sh",
+        "on-click": "kitty --class floating -e fish -c 'cd ~/dotfiles && dotst'",
+        "return-type": "json",
+        "restart-interval": 5,
+        "tooltip": true
     }
 } 

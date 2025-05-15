@@ -124,14 +124,14 @@
     },
 
     "cpu": {
-        "format": " {usage}%",
+        "format": " CPU: {usage}%",
         "tooltip": true,
         "tooltip-format": "CPU Usage\nCores: {avg_frequency:0.1f}GHz",
         "interval": 1
     },
 
     "memory": {
-        "format": " {percentage}%",
+        "format": " RAM: {percentage}%",
         "tooltip": true,
         "tooltip-format": "Memory Usage\nUsed: {used:0.1f}GB\nTotal: {total:0.1f}GB",
         "interval": 1
@@ -139,9 +139,9 @@
 
     "network": {
         "format": "{ifname}",
-        "format-wifi": " {signalStrength:>3}%",
-        "format-ethernet": " {bandwidthUpBits:>6}  {bandwidthDownBits:>6}",
-        "format-disconnected": "󰜺 --",
+        "format-wifi": " WiFi: {signalStrength:>3}%",
+        "format-ethernet": " Up: {bandwidthUpBits:>6} Down: {bandwidthDownBits:>6}",
+        "format-disconnected": "󰜺 No Network",
         "tooltip-format": "Network Interface: {ifname}\nIP: {ipaddr}\nGateway: {gwaddr}",
         "tooltip-format-wifi": "WiFi Network: {essid}\nSignal Strength: {signalStrength}%\nIP: {ipaddr}",
         "tooltip-format-ethernet": "Ethernet Connection\nUp: {bandwidthUpBits}\nDown: {bandwidthDownBits}\nIP: {ipaddr}",
@@ -152,9 +152,9 @@
     },
 
     "pulseaudio": {
-        "format": "{icon} {volume}%",
-        "format-bluetooth": "{icon} {volume}%",
-        "format-muted": "",
+        "format": "{icon} Vol: {volume}%",
+        "format-bluetooth": "{icon} BT: {volume}%",
+        "format-muted": " Muted",
         "format-icons": {
             "headphone": "",
             "hands-free": "",

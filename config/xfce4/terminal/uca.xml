@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <actions>
-<action>
-    <icon>utilities-terminal</icon>
-    <name>Open Terminal Here</name>
-    <command>kitty --working-directory %f</command>
-    <description>Open Terminal in Current Location</description>
-    <patterns>*</patterns>
-    <directories/>
-</action>
+    <action>
+        <icon>utilities-terminal</icon>
+        <name>Open Terminal Here</name>
+        <command>kitty --working-directory %f</command>
+        <description>Open terminal in current directory</description>
+        <patterns>*</patterns>
+        <directories/>
+    </action>
 </actions> 

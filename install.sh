@@ -52,7 +52,7 @@ fi
 
 # Install required packages
 print_message "Installing required packages..."
-COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish wofi dunst polkit-kde-agent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs"
+COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish wofi dunst polkit-kde-agent xdg-desktop-portal-hyprland qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman"
 
 if [ "$ENV_TYPE" = "vm" ]; then
     # VM-specific packages (minimal set, no brightness control, etc.)

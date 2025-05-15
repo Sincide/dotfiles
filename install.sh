@@ -134,7 +134,9 @@ EOF
 fi
 
 # Ensure proper permissions for scripts
+print_message "Setting script permissions..."
 chmod +x "$HOME/.config/hypr/scripts/"*.sh
+chmod +x "$HOME/.config/waybar/scripts/"*.sh
 
 # Set up terminal emulator configuration
 print_message "Setting up terminal emulator configuration..."

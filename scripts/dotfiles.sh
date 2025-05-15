@@ -131,6 +131,15 @@ sync_dotfiles() {
     fi
 }
 
+# Function to show colored diff
+show_diff() {
+    print_status "Showing changes:"
+    echo
+    # Simple diff without pager
+    git --no-pager diff
+    echo
+}
+
 # Main script
 case "$1" in
     "status"|"st")
@@ -140,7 +149,7 @@ case "$1" in
         sync_dotfiles
         ;;
     "diff"|"d")
-        git diff
+        show_diff
         ;;
     *)
         echo "Usage: $(basename $0) <command>"

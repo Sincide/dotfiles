@@ -219,4 +219,26 @@ tooltip label {
 
 #custom-dotfiles:hover {
     background: rgba(49, 50, 68, 0.5);
+}
+
+#custom-updates {
+    color: #cdd6f4;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 30px;
+    padding: 0 10px;
+}
+
+#custom-updates.has-updates {
+    color: #f9e2af;  /* Yellow for available updates */
+}
+
+#custom-updates.error {
+    color: #f38ba8;  /* Red for errors */
+}
+
+#custom-updates:hover {
+    background: rgba(49, 50, 68, 0.5);
 } 

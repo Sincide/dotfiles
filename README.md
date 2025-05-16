@@ -2,7 +2,7 @@
 
 My personal dotfiles for Arch Linux with Hyprland.
 
-## Directory Structure
+## Directory Structure below
 
 ```
 .

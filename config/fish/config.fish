@@ -54,6 +54,9 @@ alias dots='$HOME/dotfiles/scripts/dotfiles.sh sync'
 alias dotst='$HOME/dotfiles/scripts/dotfiles.sh status'
 alias dotd='$HOME/dotfiles/scripts/dotfiles.sh diff'
 
+# AMD GPU management
+alias amd-oc='sudo $HOME/dotfiles/scripts/amd-overdrive.sh'
+
 # System
 alias update='sudo pacman -Syu'
 alias cleanup='sudo pacman -Rns $(pacman -Qtdq)'

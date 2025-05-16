@@ -1,4 +1,4 @@
 #!/bin/bash
-sudo /usr/bin/corectrl --minimize-systray &
+corectrl --minimize-systray &
 
 

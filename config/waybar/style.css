@@ -241,4 +241,17 @@ tooltip label {
 
 #custom-updates:hover {
     background: rgba(49, 50, 68, 0.5);
+}
+
+#custom-keybinds {
+    color: #cba6f7;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    font-size: 16px;
+}
+
+#custom-keybinds:hover {
+    background: rgba(49, 50, 68, 0.5);
 } 

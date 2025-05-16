@@ -45,6 +45,7 @@ My personal dotfiles for Arch Linux with Hyprland.
   - Clock with calendar
   - Notification toggle
   - Modern, cohesive design with Catppuccin theme
+  - Quick toggle between default and alternate layouts (Super + B)
 - **Terminal**: Kitty
 - **Shell**: Fish
 - **Theme**: Catppuccin Mocha
@@ -124,7 +125,28 @@ The setup includes smart monitor detection and configuration:
 - `SUPER + Space` - Open application launcher
 - `SUPER + [1-0]` - Switch to workspace
 - `SUPER + Shift + [1-0]` - Move window to workspace
+- `SUPER + B` - Toggle between default and alternate Waybar layouts
 - More keybindings can be found in `~/.config/hypr/hyprland.conf`
+
+## Waybar Configuration
+
+The setup includes two different Waybar configurations that can be toggled with `SUPER + B`:
+
+### Default Layout
+- Full-featured status bar with system monitoring
+- Decorated workspaces with application-specific icons
+- Compact design with separators between modules
+- Detailed system information with tooltips
+
+### Alternate Layout
+- Minimalist, centered design with Japanese-inspired workspace indicators
+- Semi-transparent background with modern styling
+- Weather widget showing conditions for your location
+- Grouped system resources
+- Live clock with seconds display
+- High contrast, easily readable at a glance
+
+The toggle functionality is provided by the `~/.config/hypr/scripts/waybar-toggle.sh` script, which switches between configuration files (`config.default`/`style.default.css` and `config.alt`/`style.alt.css`) while preserving your modifications to the active configuration.
 
 ## Included Packages
 

@@ -1,7 +1,11 @@
 # Set environment variables
 set -gx EDITOR nvim
 set -gx VISUAL nvim
-set -gx TERM xterm-256color
+# Set TERM only for non-Kitty terminals
+if not string match -q 'xterm-kitty' $TERM
+    set -gx TERM xterm-256color
+end
+
 
 # Add to PATH
 fish_add_path $HOME/.local/bin

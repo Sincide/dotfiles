@@ -1,187 +1,244 @@
 * {
-    font-family: "JetBrainsMono Nerd Font", "Noto Sans", sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    min-height: 0px;
-    margin: 0px;
-    padding: 0px;
     border: none;
     border-radius: 0px;
+    font-family: "Inter", "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    min-height: 0px;
+    padding: 0px;
+    margin: 0px;
+    transition: all 0.3s ease;
 }
 
-/* Main bar styling */
+@keyframes launcher_gradient {
+    0% { color: #89b4fa; }
+    20% { color: #94e2d5; }
+    40% { color: #a6e3a1; }
+    60% { color: #f9e2af; }
+    80% { color: #f38ba8; }
+    100% { color: #89b4fa; }
+}
+
 window#waybar {
-    background: rgba(30, 30, 46, 0.85);
-    box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.4);
+    background: rgba(30, 30, 46, 0.95);
     border-radius: 12px;
-    border: 2px solid rgba(203, 166, 247, 0.2);
-    transition: all 0.3s ease;
 }
 
-/* Common style for all modules */
-#workspaces,
-#clock,
-#window,
-#custom-weather,
-#cpu,
-#memory,
-#network,
-#wireplumber,
-#tray,
-#custom-updates {
-    background: rgba(49, 50, 68, 0.6);
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+tooltip {
+    background: rgba(30, 30, 46, 0.95);
+    border-radius: 8px;
+    border: 1px solid rgba(137, 180, 250, 0.2);
+}
+
+tooltip label {
+    color: #cdd6f4;
+    padding: 6px;
+}
+
+#custom-launcher {
+    color: #89b4fa;
+    font-size: 20px;
+    padding: 0px 16px;
+    animation: launcher_gradient 10s ease infinite;
+    min-width: 30px;
+    padding: 0px 5px;
+}
+
+#custom-launcher:hover {
+    font-size: 22px;
+}
+
+#custom-separator {
+    color: #6c7086;
+    font-size: 16px;
+    padding: 0px 8px;
+    margin: 0px 2px;
+    padding: 0px;
+}
+
+#custom-notification {
+    color: #f9e2af;
     padding: 0px 12px;
-    margin: 6px 3px;
-    border-radius: 10px;
-    transition: all 0.3s ease;
+    min-width: 30px;
+    padding: 0px 5px;
 }
 
-/* Japanese-inspired workspaces */
 #workspaces {
-    background: rgba(24, 25, 38, 0.7);
-    border-radius: 12px;
-    margin-left: 6px;
-    padding: 0px 0px;
+    background: rgba(30, 30, 46, 0.5);
+    border-radius: 10px;
+    margin: 5px;
+    padding: 0px 5px;
 }
 
 #workspaces button {
     color: #cdd6f4;
+    padding: 0px 5px;
     background: transparent;
-    padding: 0px 8px;
-    margin: 4px 2px;
     border-radius: 8px;
-    font-size: 15px;
-    font-weight: bold;
-    transition: all 0.25s ease;
-}
-
-#workspaces button:hover {
-    background: rgba(203, 166, 247, 0.15);
-    color: #f5c2e7;
-    box-shadow: inset 0px 0px 0px 2px #f5c2e7;
+    margin: 3px 0px;
+    transition: all 0.3s ease;
 }
 
 #workspaces button.active {
-    background: linear-gradient(
-        135deg,
-        rgba(245, 194, 231, 0.7) 0%,
-        rgba(203, 166, 247, 0.7) 100%
-    );
-    color: #1e1e2e;
-    font-weight: bold;
-    text-shadow: 0px 0px 2px rgba(30, 30, 46, 0.6);
-    box-shadow: 0px 0px 8px rgba(203, 166, 247, 0.5);
+    color: #89b4fa;
+    border-bottom: 2px solid #89b4fa;
+    border-radius: 0px;
+    padding-bottom: 2px;
 }
 
-/* Window title */
+#workspaces button:hover {
+    color: #94e2d5;
+    border-bottom: 2px solid #94e2d5;
+    border-radius: 0px;
+    padding-bottom: 2px;
+}
+
+#workspaces button.urgent {
+    color: #f38ba8;
+    border-bottom: 2px solid #f38ba8;
+    border-radius: 0px;
+    padding-bottom: 2px;
+}
+
 #window {
     color: #cdd6f4;
-    background: rgba(166, 173, 200, 0.15);
-    border-radius: 12px;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
 }
 
-/* Clock styling */
 #clock {
     color: #f9e2af;
-    font-weight: bold;
-    font-size: 16px;
-    background: rgba(249, 226, 175, 0.15);
-    border-radius: 12px;
-    padding: 0px 16px;
-    min-width: 180px;
-    box-shadow: 0px 0px 8px rgba(249, 226, 175, 0.15);
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 80px;
+    padding: 0px 10px;
 }
 
-/* Weather widget */
-#custom-weather {
-    color: #89dceb;
-    background: rgba(137, 220, 235, 0.15);
-    border-radius: 12px;
-    margin-left: 8px;
-}
-
-/* System modules */
-#cpu {
-    color: #a6e3a1;
-    background: rgba(166, 227, 161, 0.15);
-    border-radius: 12px;
-    margin-right: 0px;
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 0px;
-}
-
-#memory {
-    color: #fab387;
-    background: rgba(250, 179, 135, 0.15);
-    border-radius: 12px;
-    margin-left: 0px;
-    border-top-left-radius: 0px;
-    border-bottom-left-radius: 0px;
-}
-
-/* Network module */
 #network {
-    color: #89b4fa;
-    background: rgba(137, 180, 250, 0.15);
-    border-radius: 12px;
+    color: #94e2d5;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 140px;
+    padding: 0px 10px;
+    font-family: "JetBrainsMono Nerd Font Mono";
 }
 
 #network.disconnected {
     color: #f38ba8;
-    background: rgba(243, 139, 168, 0.15);
+    background: rgba(243, 139, 168, 0.1);
 }
 
-/* Volume module */
-#wireplumber {
-    color: #cba6f7;
-    background: rgba(203, 166, 247, 0.15);
-    border-radius: 12px;
-}
-
-#wireplumber.muted {
-    color: #f38ba8;
-    background: rgba(243, 139, 168, 0.15);
-    text-decoration: line-through;
-}
-
-/* Updates indicator */
-#custom-updates {
-    color: #f9e2af;
-    background: rgba(249, 226, 175, 0.15);
-    border-radius: 12px;
-}
-
-#custom-updates.has-updates {
-    color: #f5c2e7;
-    background: rgba(245, 194, 231, 0.15);
-}
-
-/* Tray styling */
-#tray {
-    background: rgba(203, 166, 247, 0.1);
-    border-radius: 12px;
-    margin-right: 6px;
+#pulseaudio {
+    color: #89b4fa;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 80px;
     padding: 0px 10px;
 }
 
-/* Hover effects for modules */
+#pulseaudio.muted {
+    color: #6c7086;
+    color: #f38ba8;
+}
+
+#cpu {
+    color: #a6e3a1;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 70px;
+    padding: 0px 10px;
+}
+
+#memory {
+    color: #f5c2e7;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 70px;
+    padding: 0px 10px;
+}
+
+#tray {
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}
+
+#pulseaudio:hover,
+#network:hover,
 #cpu:hover,
 #memory:hover,
-#network:hover,
-#wireplumber:hover,
-#custom-updates:hover,
 #clock:hover {
-    background-color: rgba(131, 132, 154, 0.3);
-    box-shadow: inset 0px 0px 0px 2px rgba(203, 166, 247, 0.3);
+    background: rgba(49, 50, 68, 0.5);
 }
 
-/* Cool animation for window opening/closing */
-@keyframes blink {
-    to {
-        background-color: rgba(203, 166, 247, 0.5);
-    }
+#custom-dotfiles {
+    color: #cdd6f4;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 30px;
+    padding: 0px 10px;
 }
 
-window#waybar.empty #window {
-    animation: blink 1s ease-in-out infinite alternate;
+#custom-dotfiles.modified {
+    color: #fab387;  /* Orange for modified files */
 }
+
+#custom-dotfiles.unpushed {
+    color: #a6e3a1;  /* Green for unpushed changes */
+}
+
+#custom-dotfiles.unpulled {
+    color: #89b4fa;  /* Blue for unpulled changes */
+}
+
+#custom-dotfiles:hover {
+    background: rgba(49, 50, 68, 0.5);
+}
+
+#custom-updates {
+    color: #cdd6f4;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 30px;
+    padding: 0px 10px;
+}
+
+#custom-updates.has-updates {
+    color: #f9e2af;  /* Yellow for available updates */
+}
+
+#custom-updates.error {
+    color: #f38ba8;  /* Red for errors */
+}
+
+#custom-updates:hover {
+    background: rgba(49, 50, 68, 0.5);
+} 

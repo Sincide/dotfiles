@@ -1,136 +1,178 @@
 {
-  "layer": "top",
-  "position": "top",
-  "height": 44,
-  "spacing": 8,
-  "margin-top": 9,
-  "margin-left": 10,
-  "margin-right": 10,
-  "modules-left": [
-    "hyprland/workspaces",
-    "custom/weather",
-    "hyprland/window"
-  ],
-  "modules-center": [
-    "clock"
-  ],
-  "modules-right": [
-    "group/resources",
-    "network",
-    "wireplumber",
-    "custom/updates",
-    "tray"
-  ],
-  "hyprland/workspaces": {
-    "format": "{icon}",
-    "format-icons": {
-      "1": "一",
-      "2": "二",
-      "3": "三",
-      "4": "四",
-      "5": "五",
-      "6": "六",
-      "7": "七",
-      "8": "八",
-      "9": "九",
-      "10": "十",
-      "urgent": "",
-      "default": ""
+    "layer": "top",
+    "position": "top",
+    "height": 38,
+    "spacing": 0,
+    "margin-top": 3,
+    "margin-bottom": 3,
+    "margin-left": 5,
+    "margin-right": 5,
+    "exclusive": true,
+    "gtk-layer-shell": true,
+    "passthrough": false,
+    
+    "modules-left": [
+        "custom/launcher",
+        "hyprland/workspaces"
+    ],
+    
+    "modules-center": [
+        "hyprland/window"
+    ],
+    
+    "modules-right": [
+        "custom/updates",
+        "custom/separator",
+        "custom/dotfiles",
+        "custom/separator",
+        "network",
+        "custom/separator",
+        "wireplumber",
+        "custom/separator",
+        "cpu",
+        "memory",
+        "custom/separator",
+        "clock",
+        "tray"
+    ],
+    
+    "custom/launcher": {
+        "format": "",
+        "on-click": "wofi --show drun",
+        "tooltip": true,
+        "tooltip-format": "Application Launcher"
     },
-    "on-click": "activate",
-    "on-scroll-up": "hyprctl dispatch workspace e+1",
-    "on-scroll-down": "hyprctl dispatch workspace e-1",
-    "sort-by-number": true,
-    "all-outputs": true
-  },
-  "clock": {
-    "interval": 1,
-    "format": "{:%a, %d %b  %H:%M:%S}",
-    "format-alt": "{:%Y-%m-%d}",
-    "tooltip-format": "<big>{:%B %Y}</big>\n<small>{calendar}</small>",
-    "calendar": {
-      "mode": "month",
-      "on-scroll": 1,
-      "format": {
-        "today": "<span color='#f5c2e7'><b>{}</b></span>"
-      }
+
+    "custom/separator": {
+        "format": "•",
+        "interval": "once",
+        "tooltip": false
+    },
+
+    "hyprland/workspaces": {
+        "disable-scroll": true,
+        "all-outputs": true,
+        "on-click": "activate",
+        "format": "{name} {icon}",
+        "format-icons": {
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
+            "5": "",
+            "6": "",
+            "7": "",
+            "8": "",
+            "9": "",
+            "10": "",
+            "urgent": "",
+            "default": ""
+        },
+        "persistent_workspaces": {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": []
+        }
+    },
+
+    "hyprland/window": {
+        "format": "{}",
+        "max-length": 50,
+        "separate-outputs": true,
+        "tooltip": true,
+        "tooltip-format": "Active Window"
+    },
+
+    "tray": {
+        "spacing": 10,
+        "icon-size": 15,
+        "tooltip": true,
+        "tooltip-format": "System Tray"
+    },
+
+    "clock": {
+        "format": " {:%H:%M}",
+        "format-alt": " {:%Y-%m-%d}",
+        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+        "tooltip": true,
+        "calendar": {
+            "mode": "year",
+            "mode-mon-col": 3,
+            "weeks-pos": "right",
+            "on-scroll": 1,
+            "format": {
+                "months": "<span color='#ffead3'><b>{}</b></span>",
+                "days": "<span color='#ecc6d9'><b>{}</b></span>",
+                "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
+                "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+                "today": "<span color='#ff6699'><b><u>{}</u></b></span>"
+            }
+        }
+    },
+
+    "cpu": {
+        "format": " CPU: {usage}%",
+        "tooltip": true,
+        "tooltip-format": "CPU Usage\nCores: {avg_frequency:0.1f}GHz",
+        "interval": 1
+    },
+
+    "memory": {
+        "format": " RAM: {percentage}%",
+        "tooltip": true,
+        "tooltip-format": "Memory Usage\nUsed: {used:0.1f}GB\nTotal: {total:0.1f}GB",
+        "interval": 1
+    },
+
+    "network": {
+        "format": "{ifname}",
+        "format-wifi": " WiFi: {signalStrength:>3}%",
+        "format-ethernet": " Up: {bandwidthUpBits:>6} Down: {bandwidthDownBits:>6}",
+        "format-disconnected": "󰜺 No Network",
+        "tooltip-format": "Network Interface: {ifname}\nIP: {ipaddr}\nGateway: {gwaddr}",
+        "tooltip-format-wifi": "WiFi Network: {essid}\nSignal Strength: {signalStrength}%\nIP: {ipaddr}",
+        "tooltip-format-ethernet": "Ethernet Connection\nUp: {bandwidthUpBits}\nDown: {bandwidthDownBits}\nIP: {ipaddr}",
+        "tooltip-format-disconnected": "Network Disconnected",
+        "max-length": 50,
+        "interval": 1,
+        "min-length": 14
+    },
+
+    "wireplumber": {
+        "format": "{icon} Vol: {volume}%",
+        "format-muted": " Muted",
+        "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "scroll-step": 1,
+        "tooltip": true,
+        "tooltip-format": "Volume Control\nDevice: {node_name}"
+    },
+
+    "custom/dotfiles": {
+        "format": " Git: {}",
+        "exec": "~/.config/waybar/scripts/dotfiles-status.sh",
+        "on-click": "kitty --class floating -e fish -c 'cd ~/dotfiles && dotst'",
+        "return-type": "json",
+        "restart-interval": 5,
+        "tooltip": true
+    },
+
+    "custom/updates": {
+        "format": "Updates: {}",
+        "exec": "~/.config/waybar/scripts/updates.sh",
+        "on-click": "kitty --class floating -e fish -c 'yay -Syu'",
+        "return-type": "json",
+        "interval": 300,
+        "tooltip": true
     }
-  },
-  "hyprland/window": {
-    "format": "{title}",
-    "max-length": 60,
-    "separate-outputs": true
-  },
-  "custom/weather": {
-    "format": "{}",
-    "tooltip": true,
-    "interval": 3600,
-    "exec": "~/.config/waybar/scripts/weather.sh",
-    "return-type": "json"
-  },
-  "group/resources": {
-    "orientation": "horizontal",
-    "modules": [
-      "cpu",
-      "memory"
-    ]
-  },
-  "cpu": {
-    "interval": 2,
-    "format": " {usage}%",
-    "tooltip": true,
-    "on-click": "kitty --start-as=fullscreen --title btop btop"
-  },
-  "memory": {
-    "interval": 2,
-    "format": " {used:0.1f}G",
-    "tooltip-format": "RAM: {used:0.1f}GB/{total:0.1f}GB",
-    "on-click": "kitty --start-as=fullscreen --title btop btop"
-  },
-  "network": {
-    "format": "{ifname}",
-    "format-wifi": " WiFi: {signalStrength:>3}%",
-    "format-ethernet": " Up: {bandwidthUpBits:>6} Down: {bandwidthDownBits:>6}",
-    "format-disconnected": "󰜺 No Network",
-    "tooltip-format": "Network Interface: {ifname}\nIP: {ipaddr}\nGateway: {gwaddr}",
-    "tooltip-format-wifi": "WiFi Network: {essid}\nSignal Strength: {signalStrength}%\nIP: {ipaddr}",
-    "tooltip-format-ethernet": "Ethernet Connection\nUp: {bandwidthUpBits}\nDown: {bandwidthDownBits}\nIP: {ipaddr}",
-    "tooltip-format-disconnected": "Network Disconnected",
-    "max-length": 50,
-    "interval": 1,
-    "min-length": 14
-  },
-  "wireplumber": {
-    "format": "{icon} Vol: {volume}%",
-    "format-muted": " Muted",
-    "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
-    "format-icons": {
-      "headphone": "",
-      "hands-free": "",
-      "headset": "",
-      "phone": "",
-      "portable": "",
-      "car": "",
-      "default": ["", "", ""]
-    },
-    "scroll-step": 1,
-    "tooltip": true,
-    "tooltip-format": "Volume Control\nDevice: {node_name}"
-  },
-  "custom/updates": {
-    "format": "{icon} {}",
-    "return-type": "json",
-    "format-icons": {
-      "has-updates": "󰚰",
-      "updated": "󰚰"
-    },
-    "exec-if": "which checkupdates",
-    "exec": "~/.config/waybar/scripts/updates.sh",
-    "interval": 10800,
-    "on-click": "kitty --title paru paru"
-  },
-  "tray": {
-    "icon-size": 18,
-    "spacing": 8
-  }
-}
+} 

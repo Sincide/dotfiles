@@ -17,7 +17,7 @@ print_help() {
 Usage: $(basename "$0") <command> [options]
 
 Commands:
-  status, st         Show status of dotfiles
+  status, st         Show status of dotfiles (local and remote sync info)
   sync, s [msg]      Sync dotfiles (add, commit, pull, push). Optionally provide a commit message.
   diff, d            Show diff of changes
   help, -h, --help   Show this help message
@@ -79,6 +79,23 @@ show_status() {
         esac
     done < <(git status --porcelain)
     echo
+
+    # --- Remote sync status ---
+    git fetch --quiet
+
+    LOCAL=$(git rev-parse @)
+    REMOTE=$(git rev-parse @{u} 2>/dev/null)
+    BASE=$(git merge-base @ @{u} 2>/dev/null)
+
+    if [[ "$LOCAL" = "$REMOTE" ]]; then
+        print_success "Local and remote are in sync."
+    elif [[ "$LOCAL" = "$BASE" ]]; then
+        print_warning "Your branch is BEHIND remote. Run 'dotfiles.sh sync' to pull changes!"
+    elif [[ "$REMOTE" = "$BASE" ]]; then
+        print_warning "Your branch is AHEAD of remote. Run 'dotfiles.sh sync' to push changes!"
+    else
+        print_error "Your branch and remote have diverged. Manual intervention needed."
+    fi
 }
 
 sync_dotfiles() {
@@ -116,7 +133,7 @@ sync_dotfiles() {
         print_success "Successfully pulled changes"
     fi
 
-    # Only push if we committed or pulled new changes (local_changes=1 or remote not up to date)
+    # Always push (in case rebase rewrote local commits, or you resolved conflicts)
     print_status "Pushing changes..."
     if ! git push; then
         print_error "Failed to push changes. Check your remote/network."

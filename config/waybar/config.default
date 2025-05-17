@@ -13,7 +13,9 @@
     
     "modules-left": [
         "custom/launcher",
-        "hyprland/workspaces"
+        "hyprland/workspaces",
+        "custom/separator",
+        "custom/weather"
     ],
     
     "modules-center": [
@@ -165,6 +167,14 @@
         "return-type": "json",
         "restart-interval": 5,
         "tooltip": true
+    },
+
+    "custom/weather": {
+        "format": "{}",
+        "tooltip": true,
+        "interval": 3600,
+        "exec": "~/.config/waybar/scripts/weather.sh",
+        "return-type": "json"
     },
 
     "custom/updates": {

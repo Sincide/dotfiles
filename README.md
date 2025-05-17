@@ -141,6 +141,7 @@ The setup includes smart monitor detection and configuration:
 
 ### Basic Controls
 - `SUPER + Return` - Open terminal
+- `SUPER + W` - Open Firefox
 - `SUPER + C` - Close window
 - `SUPER + D` - Open application launcher
 - `SUPER + [1-0]` - Switch to workspace

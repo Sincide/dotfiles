@@ -1,6 +1,6 @@
 # Set environment variables
-set -gx EDITOR nvim
-set -gx VISUAL nvim
+set -gx EDITOR nano
+set -gx VISUAL nano
 # Set TERM only for non-Kitty terminals
 if not string match -q 'xterm-kitty' $TERM
     set -gx TERM xterm-256color
@@ -38,30 +38,29 @@ else
     set -a missing_commands eza
 end
 
-# File manager - add Yazi alias with key-chord escape sequence
-if command -v yazi > /dev/null
-    alias fm='yazi'
+# File manager - lf with key-chord escape sequence
+if command -v lf > /dev/null
+    alias fm='lf'
     
-    # Function to use Yazi for navigation
-    function ya
-        yazi $argv
-        
-        # When exiting Yazi, change to the last directory
+    # Function to use lf for navigation
+    function lfcd
         set tmp (mktemp)
-        yazi --cwd-file=$tmp $argv
-        if test -f $tmp
+        lf -last-dir-path=$tmp $argv
+        if test -f "$tmp"
             set dir (cat $tmp)
-            if test -d $dir
-                cd $dir
-            end
             rm -f $tmp
+            if test -d "$dir"
+                if test "$dir" != (pwd)
+                    cd $dir
+                end
+            end
         end
     end
     
-    # Note: Yazi is configured to use nano for file editing
-    # Nano config is in ~/.nanorc with syntax highlighting
+    # Optional keybinding to launch lfcd with Alt+o
+    bind \eo 'lfcd; commandline -f repaint'
 else
-    set -a missing_commands yazi
+    set -a missing_commands lf
 end
 
 # Report missing commands

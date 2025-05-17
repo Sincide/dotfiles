@@ -115,6 +115,24 @@ if [ "$ENV_TYPE" = "physical" ]; then
     yay -S --needed --noconfirm brightnessctl || handle_error "Failed to install brightnessctl"
 fi
 
+# Install lf file manager and dependencies
+print_message "Setting up lf file manager..."
+# Install lf if not present
+if ! command -v lf &> /dev/null; then
+    print_message "Installing lf..."
+    yay -S --needed --noconfirm lf || handle_error "Failed to install lf file manager"
+fi
+
+# Install recommended dependencies for better previews
+LF_DEPENDENCIES="bat file mediainfo chafa atool ffmpegthumbnailer poppler"
+print_message "Installing lf dependencies for preview capabilities..."
+echo "$LF_DEPENDENCIES" | tr ' ' '\n' | while read -r package; do
+    if ! yay -Q "$package" &>/dev/null; then
+        print_message "Installing $package..."
+        yay -S --needed --noconfirm "$package" || print_warning "Failed to install $package (non-critical)"
+    fi
+done
+
 # Backup existing configs
 print_message "Backing up existing configurations..."
 config_dir="$HOME/.config"
@@ -122,7 +140,7 @@ backup_dir="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
 
 if [ -d "$config_dir" ]; then
     mkdir -p "$backup_dir"
-    for dir in hypr waybar kitty fish dunst fuzzel; do
+    for dir in hypr waybar kitty fish dunst fuzzel lf; do
         if [ -d "$config_dir/$dir" ]; then
             cp -r "$config_dir/$dir" "$backup_dir/" || print_warning "Failed to backup $dir"
         fi
@@ -163,6 +181,10 @@ for dir in config/*; do
         esac
     fi
 done
+
+# Make lf scripts executable
+print_message "Setting lf script permissions..."
+chmod +x "$config_dir/lf/preview.sh" "$config_dir/lf/cleaner.sh" || print_warning "Failed to set permissions for lf scripts"
 
 # Create necessary directories
 mkdir -p "$HOME/Pictures/Screenshots" || handle_error "Failed to create Screenshots directory"
@@ -207,7 +229,7 @@ print_message "Note: Some changes might require a system restart to take effect.
 # Final verification
 print_message "Performing final verification..."
 missing_deps=0
-for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-clipboard swaylock sensors radeontop ddcutil; do
+for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-clipboard swaylock sensors radeontop ddcutil lf; do
     if ! command -v "$cmd" &> /dev/null; then
         print_error "Required command '$cmd' not found after installation!"
         missing_deps=1

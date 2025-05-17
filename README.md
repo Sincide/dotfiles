@@ -25,6 +25,10 @@ My personal dotfiles for Arch Linux with Hyprland.
 │   │   ├── monitors-physical.conf  # Physical machine monitor config
 │   │   └── monitors-vm.conf       # VM monitor config
 │   ├── kitty/          # Terminal emulator
+│   ├── lf/             # Terminal file manager
+│   │   ├── lfrc        # Main configuration
+│   │   ├── preview.sh  # File preview script
+│   │   └── cleaner.sh  # Cleanup script
 │   ├── qt5ct/          # Qt5 configuration
 │   ├── qt6ct/          # Qt6 configuration
 │   ├── swappy/         # Screenshot editor
@@ -32,13 +36,7 @@ My personal dotfiles for Arch Linux with Hyprland.
 │   │   ├── config      # Waybar configuration
 │   │   ├── style.css   # Waybar styling
 │   │   └── scripts/    # Status bar scripts
-│   ├── fuzzel/         # Application launcher
-│   ├── yazi/           # Terminal file manager
-│   │   ├── keymap.toml # Custom keybindings
-│   │   ├── yazi.toml   # General configuration
-│   │   ├── theme.toml  # Color theme
-│   │   └── preview.sh  # File preview script
-│   └── xfce4/          # XFCE4 components (Thunar)
+│   └── fuzzel/         # Application launcher
 ├── scripts/            # Utility scripts
 │   ├── amd-overdrive.sh    # AMD GPU management
 │   ├── backup-ssh.sh       # SSH key backup
@@ -72,7 +70,7 @@ My personal dotfiles for Arch Linux with Hyprland.
 - **Theme**: Catppuccin Mocha
 - **File Managers**: 
   - **GUI**: Thunar
-  - **Terminal**: Yazi (with custom user-friendly keybindings)
+  - **Terminal**: lf (with Swedish keyboard-friendly keybindings)
 - **Notifications**: Dunst
 - **Application Launcher**: Fuzzel
 - **Clipboard Manager**: Cliphist
@@ -227,7 +225,7 @@ The setup includes two different Waybar layouts that can be toggled with `SUPER 
 - kitty (Terminal emulator)
 - fish (Shell)
 - thunar (File manager)
-- yazi (Terminal file manager)
+- lf (Terminal file manager)
 
 ### System Integration
 - polkit-gnome (Authentication agent)
@@ -377,8 +375,8 @@ The configuration includes several useful aliases and functions in Fish shell:
 
 ### File Management
 - `ls`, `ll`, `la`, `lt`, `ltr`, `lg` - Enhanced directory listing with `eza`
-- `fm` - Launch Yazi file manager
-- `ya` - Launch Yazi and change to last directory on exit
+- `fm` - Launch lf file manager
+- `lfcd` - Launch lf and change to last directory on exit (bound to Alt+o)
 
 ### Git
 - `g` - Git shorthand
@@ -394,59 +392,84 @@ The configuration includes several useful aliases and functions in Fish shell:
 - `dotst` - Show colored status of dotfiles
 - `dotd` - Show diff of changes
 
-## Yazi Terminal File Manager
+## File Manager Setup
 
-The configuration includes Yazi, a modern terminal file manager with:
+This repository contains configuration for the following file managers:
 
-- Fast file navigation and preview capabilities
-- Custom user-friendly keybindings (non-vim style)
-- Syntax highlighting for code files
-- Image/video preview capabilities
-- Beautiful Catppuccin-based theme
-- Files open in nano with syntax highlighting (easy editing in the same terminal)
+### lf (Current)
 
-### Yazi Keybindings
+A terminal file manager written in Go with vim-like keybindings, configured to work well with Swedish keyboard layout.
+
+Key features:
+- Swedish keyboard-friendly keybindings
+- File previews (text, images, archives)
+- Integration with Fish shell
+
+To use:
+- Run `lf` or the alias `fm` in terminal
+- Use Alt+o in Fish shell to launch lf with directory tracking (lfcd function)
+
+### Key Bindings for lf
 
 #### Navigation
-- `Arrow Keys` - Move cursor up/down/left/right
-- `Home`/`End` - Go to start/end of list
-- `PageUp`/`PageDown` - Scroll up/down
-- `Enter` - Open file/directory
-- `Backspace` - Go to parent directory
-- `.` - Toggle hidden files
+- Arrow keys: Navigate up/down/left/right
+- Enter: Open file/directory
+- Left Arrow: Go up one directory
+- Right Arrow: Open file/directory
 
 #### File Operations
-- `Space` - Select/deselect item
-- `Ctrl+A` - Select all
-- `Ctrl+R` - Reverse selection
-- `Escape` - Clear selection
-- `Ctrl+C` - Copy
-- `Ctrl+X` - Cut
-- `Ctrl+V` - Paste
-- `Delete` - Delete
-- `F2` - Rename
-- `n` - Create new file
-- `N` - Create new directory
+- d or Delete: Delete files (with confirmation)
+- r: Rename file
+- c: Copy file
+- x: Cut file
+- v: Paste file
+- e: Edit file with nano
 
-#### Tab Management
-- `Tab` - Switch between panels
-- `Ctrl+T` - Create new tab
-- `Ctrl+W` - Close tab
-- `Ctrl+Tab` - Next tab
-- `Ctrl+Shift+Tab` - Previous tab
+#### File Creation
+- n: Create new file
+- N: Create new directory
 
-#### Search and Sort
-- `/` - Search
-- `f` - Filter
-- `F` - Clear filter
-- `s` - Sort
-- `S` - Reverse sort
+#### View Options
+- .: Toggle hidden files
+- s: Sort by size
+- t: Sort by time
 
-#### Other
-- `?` - Help
-- `o` - Open with
-- `q` or `Ctrl+Q` - Quit
+## Other Configurations
 
-### Launch Yazi
-- Use `fm` alias to launch Yazi
-- Use `ya` function to launch Yazi and stay in the last directory upon exit 
+Contains configurations for:
+- Fish shell
+- lf file manager
+- (Other configurations in this repository)
+
+## Installation
+
+```
+git clone https://github.com/yourusername/dotfiles.git
+cd dotfiles
+# Create symbolic links as needed
+```
+
+## Key Bindings for lf
+
+### Navigation
+- Arrow keys: Navigate up/down/left/right
+- Enter: Open file/directory
+- Left Arrow: Go up one directory
+- Right Arrow: Open file/directory
+
+### File Operations
+- d or Delete: Delete files (with confirmation)
+- r: Rename file
+- c: Copy file
+- x: Cut file
+- v: Paste file
+- e: Edit file with nano
+
+### File Creation
+- n: Create new file
+- N: Create new directory
+
+### View Options
+- .: Toggle hidden files
+- s: Sort by size
+- t: Sort by time 

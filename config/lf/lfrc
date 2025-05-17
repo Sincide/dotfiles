@@ -1,0 +1,135 @@
+# Basic settings
+set drawbox true
+set icons true
+set ignorecase true
+set incsearch true
+set smartcase true
+set mouse true
+set number true
+set relativenumber true
+
+# Show hidden files by default
+set hidden true
+# You can also customize which files are considered hidden
+# set hiddenfiles ".*:*.aux:*.log:*.bbl:*.bcf:*.blg:*.run.xml"
+
+# Define shell commands to use
+set shell sh
+set shellopts '-eu'
+set ifs "\n"
+
+# Preview settings
+set previewer ~/.config/lf/preview.sh
+set cleaner ~/.config/lf/cleaner.sh
+
+# Custom commands
+# Open files with default application
+cmd open ${{
+    case $(file --mime-type -Lb $f) in
+        text/*) $EDITOR $fx;;
+        image/*) sxiv $fx &;;
+        application/pdf) zathura $fx &;;
+        video/*) mpv $fx &;;
+        audio/*) mpv $fx &;;
+        *) for f in $fx; do xdg-open $f > /dev/null 2> /dev/null & done;;
+    esac
+}}
+
+# Delete command with confirmation
+cmd delete ${{
+    set -f
+    printf "%s\n\t" "$fx"
+    printf "delete?[y/n]"
+    read ans
+    [ "$ans" = "y" ] && rm -rf $fx
+}}
+
+cmd paste &{{
+    set -- $(cat ~/.local/share/lf/files)
+    mode="$1"
+    shift
+    case "$mode" in
+        copy)
+            rsync -av --ignore-existing --progress -- "$@" . |
+            stdbuf -i0 -o0 -e0 tr '\r' '\n' |
+            while IFS= read -r line; do
+                lf -remote "send $id echo $line"
+            done
+            ;;
+        move) mv -n -- "$@" .;;
+    esac
+    rm ~/.local/share/lf/files
+    lf -remote "send clear"
+}}
+
+# Create directory/file command
+cmd mkdir %mkdir -p "$(echo $* | tr ' ' '\ ')"
+cmd mkfile %touch "$(echo $* | tr ' ' '\ ')"
+
+# Rename selected files
+cmd rename %[ -e $1 ] && printf "file exists" || mv "$f" "$1"
+
+# Extract archives
+cmd extract ${{
+    set -f
+    case $f in
+        *.tar.bz|*.tar.bz2|*.tbz|*.tbz2) tar xjf $f;;
+        *.tar.gz|*.tgz) tar xzf $f;;
+        *.tar.xz|*.txz) tar xJf $f;;
+        *.zip) unzip $f;;
+        *.rar) unrar x $f;;
+        *.7z) 7z x $f;;
+    esac
+}}
+
+# Swedish keyboard-friendly keybindings
+# Navigation
+map <up> up
+map <down> down
+map <left> updir
+map <right> open
+
+# File operations
+map d delete
+map <delete> delete
+map r rename
+map c copy
+map x cut
+map v paste
+map <enter> open
+map e $$EDITOR "$f"
+
+# Create files/directories
+map n push :mkfile<space>
+map N push :mkdir<space>
+
+# View/sort options
+map . set hidden! # Toggle hidden files
+map s :set sortby size; set info size
+map t :set sortby time; set info time
+map a :set sortby atime; set info atime
+map A :set sortby name; set info
+map <c-s> :set sortby size; set info size; set reverse!
+
+# Quit
+map q quit
+map <esc> quit
+
+# Search
+map / push :search<space>
+map ? push :filter<space>
+map <c-f> filter
+
+# Select
+map <space> toggle
+map <c-a> invert
+map <c-r> unselect
+
+# Tab operations
+map <tab> push :cd<space>
+map <c-t> tabnew
+map <c-n> tabprev
+map <c-b> tabnext
+
+# Reload
+map <c-r> reload 

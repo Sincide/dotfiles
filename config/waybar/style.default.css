@@ -1,11 +1,11 @@
 * {
     border: none;
-    border-radius: 0px;
+    border-radius: 0;
     font-family: "Inter", "JetBrainsMono Nerd Font";
     font-size: 13px;
-    min-height: 0px;
-    padding: 0px;
-    margin: 0px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
     transition: all 0.3s ease;
 }
 
@@ -18,9 +18,18 @@
     100% { color: #89b4fa; }
 }
 
+@keyframes fade {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
 window#waybar {
     background: rgba(30, 30, 46, 0.95);
     border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition-property: background-color, box-shadow;
+    transition-duration: 0.5s;
 }
 
 window#waybar.hidden {
@@ -31,6 +40,7 @@ tooltip {
     background: rgba(30, 30, 46, 0.95);
     border-radius: 8px;
     border: 1px solid rgba(137, 180, 250, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 tooltip label {
@@ -41,10 +51,10 @@ tooltip label {
 #custom-launcher {
     color: #89b4fa;
     font-size: 20px;
-    padding: 0px 16px;
+    padding: 0 16px;
     animation: launcher_gradient 10s ease infinite;
     min-width: 30px;
-    padding: 0px 5px;
+    padding: 0 5px;
 }
 
 #custom-launcher:hover {
@@ -54,53 +64,54 @@ tooltip label {
 #custom-separator {
     color: #6c7086;
     font-size: 16px;
-    padding: 0px 8px;
-    margin: 0px 2px;
-    padding: 0px;
+    padding: 0 8px;
+    margin: 0 2px;
 }
 
 #custom-notification {
     color: #f9e2af;
-    padding: 0px 12px;
+    padding: 0 12px;
     min-width: 30px;
-    padding: 0px 5px;
+    padding: 0 5px;
 }
 
 #workspaces {
     background: rgba(30, 30, 46, 0.5);
     border-radius: 10px;
     margin: 5px;
-    padding: 0px 5px;
+    padding: 0 5px;
 }
 
 #workspaces button {
     color: #cdd6f4;
-    padding: 0px 5px;
+    padding: 0 5px;
     background: transparent;
     border-radius: 8px;
-    margin: 3px 0px;
+    margin: 3px 0;
     transition: all 0.3s ease;
 }
 
 #workspaces button.active {
     color: #89b4fa;
     border-bottom: 2px solid #89b4fa;
-    border-radius: 0px;
+    border-radius: 0;
     padding-bottom: 2px;
 }
 
 #workspaces button:hover {
     color: #94e2d5;
     border-bottom: 2px solid #94e2d5;
-    border-radius: 0px;
+    border-radius: 0;
     padding-bottom: 2px;
+    background: rgba(148, 226, 213, 0.1);
 }
 
 #workspaces button.urgent {
     color: #f38ba8;
     border-bottom: 2px solid #f38ba8;
-    border-radius: 0px;
+    border-radius: 0;
     padding-bottom: 2px;
+    animation: fade 1s infinite;
 }
 
 #window {
@@ -116,9 +127,8 @@ tooltip label {
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 80px;
-    padding: 0px 10px;
 }
 
 #network {
@@ -126,9 +136,8 @@ tooltip label {
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 140px;
-    padding: 0px 10px;
     font-family: "JetBrainsMono Nerd Font Mono";
 }
 
@@ -137,18 +146,16 @@ tooltip label {
     background: rgba(243, 139, 168, 0.1);
 }
 
-#pulseaudio {
+#pulseaudio, #wireplumber {
     color: #89b4fa;
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 80px;
-    padding: 0px 10px;
 }
 
-#pulseaudio.muted {
-    color: #6c7086;
+#pulseaudio.muted, #wireplumber.muted {
     color: #f38ba8;
 }
 
@@ -157,9 +164,8 @@ tooltip label {
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 70px;
-    padding: 0px 10px;
 }
 
 #memory {
@@ -167,9 +173,8 @@ tooltip label {
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 70px;
-    padding: 0px 10px;
 }
 
 #tray {
@@ -188,11 +193,14 @@ tooltip label {
 }
 
 #pulseaudio:hover,
+#wireplumber:hover,
 #network:hover,
 #cpu:hover,
 #memory:hover,
-#clock:hover {
+#clock:hover,
+#custom-gpu-temp:hover {
     background: rgba(49, 50, 68, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(166, 227, 161, 0.1);
 }
 
 #custom-gpu-temp {
@@ -200,9 +208,8 @@ tooltip label {
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 70px;
-    padding: 0px 10px;
 }
 
 #custom-gpu-temp.error {
@@ -210,18 +217,13 @@ tooltip label {
     background: rgba(243, 139, 168, 0.1);
 }
 
-#custom-gpu-temp:hover {
-    background: rgba(49, 50, 68, 0.5);
-}
-
 #custom-dotfiles {
     color: #cdd6f4;
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 30px;
-    padding: 0px 10px;
 }
 
 #custom-dotfiles.modified {
@@ -245,9 +247,8 @@ tooltip label {
     background: rgba(49, 50, 68, 0.3);
     border-radius: 10px;
     margin: 4px;
-    padding: 2px 12px;
+    padding: 0 10px;
     min-width: 30px;
-    padding: 0px 10px;
 }
 
 #custom-updates.has-updates {
@@ -273,4 +274,52 @@ tooltip label {
 
 #custom-keybinds:hover {
     background: rgba(49, 50, 68, 0.5);
+}
+
+/* Menu modules */
+#custom-quick-settings,
+#custom-system-menu,
+#custom-power {
+    color: #cba6f7;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 10px;
+    font-size: 16px;
+    min-width: 16px;
+    transition: all 0.3s ease;
+}
+
+#custom-quick-settings:hover,
+#custom-system-menu:hover {
+    background: rgba(203, 166, 247, 0.2);
+    color: #f5c2e7;
+    border-radius: 12px;
+    box-shadow: 0 0 5px rgba(203, 166, 247, 0.3);
+}
+
+#custom-power {
+    color: #f38ba8;
+    margin-right: 6px;
+}
+
+#custom-power:hover {
+    background: rgba(243, 139, 168, 0.2);
+    color: #f38ba8;
+    border-radius: 12px;
+    box-shadow: 0 0 5px rgba(243, 139, 168, 0.3);
+}
+
+/* Weather Module */
+#custom-weather {
+    color: #89dceb;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 0 10px;
+}
+
+#custom-weather:hover {
+    background: rgba(49, 50, 68, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(137, 220, 235, 0.2);
 } 

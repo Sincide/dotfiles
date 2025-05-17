@@ -50,7 +50,7 @@ generate_commit_message() {
         scripts=$(echo "$files_changed" | grep "scripts/" | cut -d'/' -f2 | sort -u | tr '\n' ',' | sed 's/,$//')
         [ -n "$scripts" ] && changes+="Modified ${scripts} scripts. "
     fi
-    for app in waybar hypr kitty fish rofi dunst; do
+    for app in waybar hypr kitty fish fuzzel dunst; do
         if echo "$files_changed" | grep -q "config/$app/"; then
             local files
             files=$(echo "$files_changed" | grep "config/$app/" | rev | cut -d'/' -f1 | rev | sort -u | tr '\n' ',' | sed 's/,$//')

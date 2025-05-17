@@ -32,7 +32,7 @@ My personal dotfiles for Arch Linux with Hyprland.
 │   │   ├── config      # Waybar configuration
 │   │   ├── style.css   # Waybar styling
 │   │   └── scripts/    # Status bar scripts
-│   ├── wofi/           # Application launcher
+│   ├── fuzzel/         # Application launcher
 │   └── xfce4/          # XFCE4 components (Thunar)
 ├── scripts/            # Utility scripts
 │   ├── amd-overdrive.sh    # AMD GPU management
@@ -67,7 +67,7 @@ My personal dotfiles for Arch Linux with Hyprland.
 - **Theme**: Catppuccin Mocha
 - **File Manager**: Thunar
 - **Notifications**: Dunst
-- **Application Launcher**: Wofi
+- **Application Launcher**: Fuzzel
 - **Clipboard Manager**: Cliphist
 - **Environment Detection**: Automatic VM/Physical setup
 
@@ -172,7 +172,7 @@ All screenshots are opened in Swappy for editing before saving.
 ### Clipboard
 The system uses Cliphist for clipboard management:
 - Automatically stores text and image clipboard history
-- Accessible through Wofi interface
+- Accessible through Fuzzel interface
 
 More keybindings can be found in `~/.config/hypr/hyprland.conf`
 
@@ -207,7 +207,7 @@ The setup includes two different Waybar layouts that can be toggled with `SUPER 
 ### Core Components
 - hyprland (Wayland compositor)
 - waybar (Status bar)
-- wofi (Application launcher)
+- fuzzel (Application launcher)
 - dunst (Notification daemon)
 - kitty (Terminal emulator)
 - fish (Shell)

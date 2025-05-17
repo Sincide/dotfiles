@@ -35,13 +35,17 @@
         "memory",
         "custom/gpu-temp",
         "custom/separator",
+        "custom/quick-settings",
+        "custom/system-menu",
+        "custom/power",
+        "custom/separator",
         "clock",
         "tray"
     ],
     
     "custom/launcher": {
         "format": "",
-        "on-click": "wofi --show drun",
+        "on-click": "fuzzel",
         "tooltip": true,
         "tooltip-format": "Application Launcher"
     },
@@ -162,7 +166,7 @@
     },
 
     "custom/dotfiles": {
-        "format": " Git: {}",
+        "format": " Git: {text}",
         "exec": "~/.config/waybar/scripts/dotfiles-status.sh",
         "on-click": "kitty --class floating -e fish -c 'cd ~/dotfiles && dotst'",
         "return-type": "json",
@@ -171,7 +175,7 @@
     },
 
     "custom/weather": {
-        "format": "{}",
+        "format": "{text}",
         "tooltip": true,
         "interval": 3600,
         "exec": "~/.config/waybar/scripts/weather.sh",
@@ -179,7 +183,7 @@
     },
 
     "custom/updates": {
-        "format": "Updates: {}",
+        "format": "Updates: {text}",
         "exec": "~/.config/waybar/scripts/updates.sh",
         "on-click": "kitty --class floating -e fish -c 'yay -Syu'",
         "return-type": "json",
@@ -188,11 +192,43 @@
     },
 
     "custom/gpu-temp": {
-        "format": " GPU: {}",
+        "format": " GPU: {text}",
         "exec": "~/.config/waybar/scripts/gpu-temp.sh",
         "return-type": "json",
         "interval": 2,
         "tooltip": true,
         "on-click": "kitty --class floating -e btop"
+    },
+
+    "custom/quick-settings": {
+        "format": "󰢻",
+        "on-click": "~/.config/waybar/scripts/quick-settings.sh",
+        "tooltip": true,
+        "tooltip-format": "Quick Settings"
+    },
+
+    "custom/system-menu": {
+        "format": "󰘚",
+        "on-click": "~/.config/waybar/scripts/system-menu.sh",
+        "tooltip": true,
+        "tooltip-format": "System Status"
+    },
+
+    "custom/power": {
+        "format": "⏻",
+        "on-click": "~/.config/waybar/scripts/power-menu.sh",
+        "tooltip": false
+    },
+
+    "custom/system": {
+        "format": "󰛇",
+        "on-click": "~/.config/waybar/scripts/system-menu.sh",
+        "tooltip": false
+    },
+
+    "custom/settings": {
+        "format": "󰒓",
+        "on-click": "~/.config/waybar/scripts/quick-settings.sh",
+        "tooltip": false
     }
 } 

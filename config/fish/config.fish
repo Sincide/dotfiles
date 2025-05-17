@@ -13,16 +13,75 @@ fish_add_path $HOME/.cargo/bin
 # Check for required commands
 set -l missing_commands
 
-# Better ls with exa if available
-if command -v exa > /dev/null
-    alias ls='exa --icons'
-    alias ll='exa -l --icons'
-    alias la='exa -la --icons'
-    alias lt='exa --tree --icons'
+# Better ls with eza if available
+if command -v eza > /dev/null
+    # Base eza command with icons
+    alias ls='eza --icons'
+    
+    # Detailed listing with:
+    # - Git status
+    # - File sizes with units
+    # - Permissions as text (rwx)
+    # - Group info
+    # - Header row
+    # - Natural sort order
+    # - Time/date in recent format
+    # - Sort by modified time
+    alias ll='eza -l --icons --git --group --header --binary --classify --time-style=relative --sort=modified'
+    
+    # Additional useful variants
+    alias la='ll -a'           # Show all files including hidden
+    alias lt='ll --tree'       # List with tree view
+    alias ltr='lt --sort=modified' # Tree view sorted by modification date
+    alias lg='ll --git-ignore' # List respecting .gitignore
 else
-    set -a missing_commands "exa"
-    alias ll='ls -lh'
-    alias la='ls -lah'
+    set -a missing_commands eza
+end
+
+# File manager - add Yazi alias with key-chord escape sequence
+if command -v yazi > /dev/null
+    alias fm='yazi'
+    
+    # Function to use Yazi for navigation
+    function ya
+        yazi $argv
+        
+        # When exiting Yazi, change to the last directory
+        set tmp (mktemp)
+        yazi --cwd-file=$tmp $argv
+        if test -f $tmp
+            set dir (cat $tmp)
+            if test -d $dir
+                cd $dir
+            end
+            rm -f $tmp
+        end
+    end
+else
+    set -a missing_commands yazi
+end
+
+# Report missing commands
+if test (count $missing_commands) -gt 0
+    echo "Missing commands: $missing_commands"
+    echo "Install them for a better experience"
+end
+
+# Vi mode for Fish shell
+fish_vi_key_bindings
+
+# Aliases
+alias g='git'
+alias v='nvim'
+
+# Custom functions
+function md
+    mkdir -p $argv && cd $argv
+end
+
+# Load custom Fish functions
+for file in ~/.config/fish/functions/*.fish
+    source $file
 end
 
 # Navigation
@@ -32,7 +91,6 @@ alias .3='cd ../../..'
 alias .4='cd ../../../..'
 
 # Git aliases
-alias g='git'
 alias ga='git add'
 alias gc='git commit'
 alias gp='git push'

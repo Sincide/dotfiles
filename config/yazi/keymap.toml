@@ -1,0 +1,89 @@
+[manager]
+# Navigation - use arrow keys instead of vim keys
+"<Up>" = "arrow_up"
+"<Down>" = "arrow_down"
+"<Left>" = "arrow_left"
+"<Right>" = "arrow_right"
+"<Home>" = "home"
+"<End>" = "end"
+"<PageUp>" = "page_up"
+"<PageDown>" = "page_down"
+
+# More familiar selection commands
+"<Space>" = "selection_toggle"
+"<Ctrl-a>" = "select_all"
+"<Ctrl-r>" = "selection_reverse"
+"<Escape>" = "selection_clear"
+
+# Familiar file operations
+"<Ctrl-c>" = "copy"
+"<Ctrl-x>" = "cut"
+"<Ctrl-v>" = "paste"
+"<Delete>" = "delete"
+"<F2>" = "rename"
+"<F5>" = "reload"
+"n" = "create"
+"N" = "create_directory"
+
+# More intuitive
+"<Enter>" = "open"
+"<Backspace>" = "parent"
+"." = "toggle_hidden"
+"<Tab>" = "tab_swap"
+"<Ctrl-t>" = "tab_create"
+"<Ctrl-w>" = "tab_close"
+"<Ctrl-Tab>" = "tab_next"
+"<Ctrl-Shift-Tab>" = "tab_prev"
+
+# Search
+"/" = "search"
+"?" = "help"
+"f" = "filter"
+"F" = "filter_clear"
+
+# Sorting
+"s" = "sort"
+"S" = "sort_reverse"
+
+# Open with
+"o" = "open_with"
+
+# Easy quit
+"q" = "quit"
+"<Ctrl-q>" = "quit"
+
+[tasks]
+"<Escape>" = "close"
+"q" = "close"
+
+[select]
+"<Up>" = "arrow_up"
+"<Down>" = "arrow_down"
+"<Enter>" = "submit"
+"<Escape>" = "cancel"
+
+[input]
+"<Up>" = "arrow_up"
+"<Down>" = "arrow_down"
+"<Left>" = "arrow_left"
+"<Right>" = "arrow_right"
+"<Home>" = "home"
+"<End>" = "end"
+"<Escape>" = "cancel"
+"<Enter>" = "submit"
+"<Backspace>" = "backspace"
+"<Delete>" = "delete"
+"<Ctrl-Backspace>" = "backspace_word"
+"<Ctrl-Delete>" = "delete_word"
+
+[help]
+"<Up>" = "arrow_up"
+"<Down>" = "arrow_down"
+"<PageUp>" = "page_up"
+"<PageDown>" = "page_down"
+"<Escape>" = "cancel"
+"q" = "cancel"
+
+[filetype]
+"<Enter>" = "submit"
+"<Escape>" = "cancel" 

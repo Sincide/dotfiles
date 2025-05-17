@@ -1,0 +1,51 @@
+[manager]
+# Show hidden files by default (toggle with .)
+show_hidden = false
+
+# More user-friendly sort order (directories first, name case-insensitive)
+sort_by = "natural"
+sort_sensitive = false
+sort_reverse = false
+sort_dir_first = true
+
+# Use icons to make it easier to identify file types
+show_icons = true
+
+# Improved navigation experience
+linemode = "size"
+show_symlinks = true
+
+[preview]
+# Try to show previews whenever possible
+cache_dir = ""
+script = "~/.config/yazi/preview.sh"
+max_width = 1920
+max_height = 1080
+image_filter = "triangle"
+image_quality = 75
+
+[opener]
+edit = [
+    { exec = 'nvim "$@"', block = true, for = "unix", run = true },
+    { exec = 'code "%*"', orphan = true, for = "windows", run = true },
+]
+open = [
+    { exec = 'xdg-open "$@"', for = "linux", run = true },
+    { exec = 'open "$@"', for = "macos", run = true },
+    { exec = 'start "%1"', for = "windows", run = true }
+]
+reveal = [
+    { exec = 'nautilus "$1"', for = "linux", run = true },
+    { exec = 'open -R "$1"', for = "macos", run = true },
+    { exec = 'explorer /select,%1', for = "windows", run = true }
+]
+
+[tasks]
+micro_workers = 5
+macro_workers = 10
+bizarre_retry = 5
+
+[input]
+# Make history a bit larger for convenience
+cd_history = 100
+file_history = 100 

@@ -33,6 +33,11 @@ My personal dotfiles for Arch Linux with Hyprland.
 │   │   ├── style.css   # Waybar styling
 │   │   └── scripts/    # Status bar scripts
 │   ├── fuzzel/         # Application launcher
+│   ├── yazi/           # Terminal file manager
+│   │   ├── keymap.toml # Custom keybindings
+│   │   ├── yazi.toml   # General configuration
+│   │   ├── theme.toml  # Color theme
+│   │   └── preview.sh  # File preview script
 │   └── xfce4/          # XFCE4 components (Thunar)
 ├── scripts/            # Utility scripts
 │   ├── amd-overdrive.sh    # AMD GPU management
@@ -65,7 +70,9 @@ My personal dotfiles for Arch Linux with Hyprland.
 - **Terminal**: Kitty
 - **Shell**: Fish
 - **Theme**: Catppuccin Mocha
-- **File Manager**: Thunar
+- **File Managers**: 
+  - **GUI**: Thunar
+  - **Terminal**: Yazi (with custom user-friendly keybindings)
 - **Notifications**: Dunst
 - **Application Launcher**: Fuzzel
 - **Clipboard Manager**: Cliphist
@@ -220,6 +227,7 @@ The setup includes two different Waybar layouts that can be toggled with `SUPER 
 - kitty (Terminal emulator)
 - fish (Shell)
 - thunar (File manager)
+- yazi (Terminal file manager)
 
 ### System Integration
 - polkit-gnome (Authentication agent)
@@ -361,4 +369,83 @@ Security Notes:
 - Always encrypt backups with a strong passphrase
 - Store backups in a secure location
 - Never share or transfer unencrypted keys
-- Verify key permissions after restore (600 for private keys) 
+- Verify key permissions after restore (600 for private keys)
+
+## Fish Shell Aliases and Functions
+
+The configuration includes several useful aliases and functions in Fish shell:
+
+### File Management
+- `ls`, `ll`, `la`, `lt`, `ltr`, `lg` - Enhanced directory listing with `eza`
+- `fm` - Launch Yazi file manager
+- `ya` - Launch Yazi and change to last directory on exit
+
+### Git
+- `g` - Git shorthand
+- `ga`, `gc`, `gp` etc. - Git command shortcuts
+
+### Navigation
+- `..`, `...`, `.3`, `.4` - Quickly navigate up directories
+- `md` - Create and navigate to a directory in one command
+
+### Dotfiles
+- `dot` - Show available commands and usage
+- `dots` - Sync dotfiles (add, commit, pull, push)
+- `dotst` - Show colored status of dotfiles
+- `dotd` - Show diff of changes
+
+## Yazi Terminal File Manager
+
+The configuration includes Yazi, a modern terminal file manager with:
+
+- Fast file navigation and preview capabilities
+- Custom user-friendly keybindings (non-vim style)
+- Syntax highlighting for code files
+- Image/video preview capabilities
+- Beautiful Catppuccin-based theme
+
+### Yazi Keybindings
+
+#### Navigation
+- `Arrow Keys` - Move cursor up/down/left/right
+- `Home`/`End` - Go to start/end of list
+- `PageUp`/`PageDown` - Scroll up/down
+- `Enter` - Open file/directory
+- `Backspace` - Go to parent directory
+- `.` - Toggle hidden files
+
+#### File Operations
+- `Space` - Select/deselect item
+- `Ctrl+A` - Select all
+- `Ctrl+R` - Reverse selection
+- `Escape` - Clear selection
+- `Ctrl+C` - Copy
+- `Ctrl+X` - Cut
+- `Ctrl+V` - Paste
+- `Delete` - Delete
+- `F2` - Rename
+- `n` - Create new file
+- `N` - Create new directory
+
+#### Tab Management
+- `Tab` - Switch between panels
+- `Ctrl+T` - Create new tab
+- `Ctrl+W` - Close tab
+- `Ctrl+Tab` - Next tab
+- `Ctrl+Shift+Tab` - Previous tab
+
+#### Search and Sort
+- `/` - Search
+- `f` - Filter
+- `F` - Clear filter
+- `s` - Sort
+- `S` - Reverse sort
+
+#### Other
+- `?` - Help
+- `o` - Open with
+- `q` or `Ctrl+Q` - Quit
+
+### Launch Yazi
+- Use `fm` alias to launch Yazi
+- Use `ya` function to launch Yazi and stay in the last directory upon exit 

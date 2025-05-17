@@ -10,6 +10,7 @@
     "exclusive": true,
     "gtk-layer-shell": true,
     "passthrough": false,
+    "hide_on_fullscreen": true,
     
     "modules-left": [
         "hyprland/workspaces",

@@ -79,7 +79,8 @@
     "orientation": "horizontal",
     "modules": [
       "cpu",
-      "memory"
+      "memory",
+      "custom/gpu-temp"
     ]
   },
   "cpu": {
@@ -92,6 +93,14 @@
     "interval": 2,
     "format": " {used:0.1f}G",
     "tooltip-format": "RAM: {used:0.1f}GB/{total:0.1f}GB",
+    "on-click": "kitty --start-as=fullscreen --title btop btop"
+  },
+  "custom/gpu-temp": {
+    "format": " {}",
+    "exec": "~/.config/waybar/scripts/gpu-temp.sh",
+    "return-type": "json",
+    "interval": 2,
+    "tooltip": true,
     "on-click": "kitty --start-as=fullscreen --title btop btop"
   },
   "network": {

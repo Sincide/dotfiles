@@ -33,6 +33,7 @@
         "custom/separator",
         "cpu",
         "memory",
+        "custom/gpu-temp",
         "custom/separator",
         "clock",
         "tray"
@@ -184,5 +185,14 @@
         "return-type": "json",
         "interval": 300,
         "tooltip": true
+    },
+
+    "custom/gpu-temp": {
+        "format": " GPU: {}",
+        "exec": "~/.config/waybar/scripts/gpu-temp.sh",
+        "return-type": "json",
+        "interval": 2,
+        "tooltip": true,
+        "on-click": "kitty --class floating -e btop"
     }
 } 

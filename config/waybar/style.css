@@ -254,4 +254,33 @@ tooltip label {
 
 #custom-keybinds:hover {
     background: rgba(49, 50, 68, 0.5);
+}
+
+#custom-gpu-temp {
+    color: #fab387;  /* Orange for GPU temp */
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 70px;
+    padding: 0px 10px;
+}
+
+#custom-gpu-temp.error {
+    color: #f38ba8;  /* Red for errors */
+    background: rgba(243, 139, 168, 0.1);
+}
+
+#custom-gpu-temp:hover {
+    background: rgba(49, 50, 68, 0.5);
+}
+
+/* Add GPU temp to hover effects list */
+#pulseaudio:hover,
+#network:hover,
+#cpu:hover,
+#memory:hover,
+#custom-gpu-temp:hover,
+#clock:hover {
+    background: rgba(49, 50, 68, 0.5);
 } 

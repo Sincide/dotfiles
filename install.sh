@@ -100,7 +100,7 @@ fi
 
 # Install required packages
 print_message "Installing required packages..."
-COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish wofi dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf ttf-inter"
+COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish wofi dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf ttf-inter lm_sensors radeontop"
 
 # Split installation to handle errors better
 echo "$COMMON_PACKAGES" | tr ' ' '\n' | while read -r package; do
@@ -207,7 +207,7 @@ print_message "Note: Some changes might require a system restart to take effect.
 # Final verification
 print_message "Performing final verification..."
 missing_deps=0
-for cmd in hyprland waybar kitty fish wofi dunst jq wl-clipboard swaylock; do
+for cmd in hyprland waybar kitty fish wofi dunst jq wl-clipboard swaylock sensors radeontop; do
     if ! command -v "$cmd" &> /dev/null; then
         print_error "Required command '$cmd' not found after installation!"
         missing_deps=1
@@ -218,4 +218,15 @@ if [ $missing_deps -eq 1 ]; then
     print_warning "Some dependencies are missing. Please check the error messages above."
 else
     print_success "All core dependencies are installed correctly."
+fi
+
+# Verify GPU monitoring setup
+if [ "$ENV_TYPE" = "physical" ]; then
+    print_message "Verifying GPU monitoring setup..."
+    if ! sensors amdgpu-* > /dev/null 2>&1; then
+        print_warning "AMD GPU sensors not detected. GPU monitoring may not work correctly."
+    fi
+    if ! radeontop -d- -l1 > /dev/null 2>&1; then
+        print_warning "Unable to read GPU usage. Make sure you have the necessary permissions."
+    fi
 fi 

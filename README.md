@@ -179,14 +179,20 @@ The setup includes two different Waybar layouts that can be toggled with `SUPER 
 - Decorated workspaces with application-specific icons
 - Compact design with separators between modules
 - Detailed system information with tooltips
-- Package updates counter
-- Git status monitoring
+  - CPU usage and frequency
+  - Memory usage
+  - GPU temperature, usage, and memory
+  - Package updates counter
+  - Git status monitoring
 
 ### Alternate Layout
 - Minimalist, centered design
 - Workspace indicators
 - Semi-transparent background with modern styling
 - Grouped system resources
+  - CPU, memory, and GPU monitoring
+  - Live resource usage updates
+  - Detailed tooltips with comprehensive stats
 - Live clock with seconds display
 - High contrast, easily readable at a glance
 
@@ -223,6 +229,8 @@ The setup includes two different Waybar layouts that can be toggled with `SUPER 
 - vulkan-radeon (Vulkan support)
 - libva-mesa-driver (Video acceleration)
 - mesa-vdpau (OpenGL support)
+- radeontop (GPU usage monitoring)
+- lm_sensors (Hardware sensors)
 
 ### Utilities
 - brightnessctl (Brightness control)

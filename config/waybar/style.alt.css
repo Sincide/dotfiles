@@ -26,6 +26,7 @@ window#waybar {
 #custom-keybinds,
 #cpu,
 #memory,
+#custom-gpu-temp,
 #network,
 #wireplumber,
 #tray,
@@ -116,8 +117,22 @@ window#waybar {
     background: rgba(250, 179, 135, 0.15);
     border-radius: 12px;
     margin-left: 0px;
+    margin-right: 0px;
+    border-radius: 0px;
+}
+
+#custom-gpu-temp {
+    color: #f5c2e7;
+    background: rgba(245, 194, 231, 0.15);
+    border-radius: 12px;
+    margin-left: 0px;
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
+}
+
+#custom-gpu-temp.error {
+    color: #f38ba8;
+    background: rgba(243, 139, 168, 0.15);
 }
 
 /* Network module */
@@ -177,6 +192,7 @@ window#waybar {
 /* Hover effects for modules */
 #cpu:hover,
 #memory:hover,
+#custom-gpu-temp:hover,
 #network:hover,
 #wireplumber:hover,
 #custom-updates:hover,

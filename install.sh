@@ -100,7 +100,7 @@ fi
 
 # Install required packages
 print_message "Installing required packages..."
-COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf ttf-inter lm_sensors radeontop wlsunset light"
+COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf ttf-inter lm_sensors radeontop wlsunset light ddcutil"
 
 # Split installation to handle errors better
 echo "$COMMON_PACKAGES" | tr ' ' '\n' | while read -r package; do
@@ -207,7 +207,7 @@ print_message "Note: Some changes might require a system restart to take effect.
 # Final verification
 print_message "Performing final verification..."
 missing_deps=0
-for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-clipboard swaylock sensors radeontop; do
+for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-clipboard swaylock sensors radeontop ddcutil; do
     if ! command -v "$cmd" &> /dev/null; then
         print_error "Required command '$cmd' not found after installation!"
         missing_deps=1

@@ -27,22 +27,43 @@ case "$choice" in
     *"Volume"*)
         pavucontrol ;;
     *"Brightness"*)
-        # Simple brightness control using wlsunset
-        if [ -f ~/.config/wlsunset/brightness ]; then
-            current=$(cat ~/.config/wlsunset/brightness)
-            if [ "$current" == "bright" ]; then
-                echo "dim" > ~/.config/wlsunset/brightness
-                brightness="50"
-            else
-                echo "bright" > ~/.config/wlsunset/brightness
-                brightness="100"
-            fi
-        else
-            mkdir -p ~/.config/wlsunset/
-            echo "bright" > ~/.config/wlsunset/brightness
-            brightness="100"
+        # Brightness options using DDC/CI
+        brightness_options="100%\n75%\n50%\n25%"
+        brightness_choice=$(echo -e "$brightness_options" | fuzzel --dmenu --prompt="Set Brightness: " --width=10 --anchor=top-right)
+        
+        if [ -n "$brightness_choice" ]; then
+            case "$brightness_choice" in
+                "100%")
+                    # Get the list of displays
+                    displays=$(ddcutil detect | grep "Display" | cut -d' ' -f2)
+                    for display in $displays; do
+                        ddcutil --display $display setvcp 10 100
+                    done
+                    notify-send "Brightness" "Set to 100%" -i ~/.config/dunst/icons/brightness.png
+                    ;;
+                "75%")
+                    displays=$(ddcutil detect | grep "Display" | cut -d' ' -f2)
+                    for display in $displays; do
+                        ddcutil --display $display setvcp 10 75
+                    done
+                    notify-send "Brightness" "Set to 75%" -i ~/.config/dunst/icons/brightness.png
+                    ;;
+                "50%")
+                    displays=$(ddcutil detect | grep "Display" | cut -d' ' -f2)
+                    for display in $displays; do
+                        ddcutil --display $display setvcp 10 50
+                    done
+                    notify-send "Brightness" "Set to 50%" -i ~/.config/dunst/icons/brightness.png
+                    ;;
+                "25%")
+                    displays=$(ddcutil detect | grep "Display" | cut -d' ' -f2)
+                    for display in $displays; do
+                        ddcutil --display $display setvcp 10 25
+                    done
+                    notify-send "Brightness" "Set to 25%" -i ~/.config/dunst/icons/brightness.png
+                    ;;
+            esac
         fi
-        light -S $brightness
         ;;
     *"Night Light"*)
         # Toggle night light using direct temperature control

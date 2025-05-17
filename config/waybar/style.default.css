@@ -48,6 +48,43 @@ tooltip label {
     padding: 6px;
 }
 
+/* Common background for all modules */
+#workspaces,
+#window,
+#clock,
+#network,
+#pulseaudio, #wireplumber,
+#cpu,
+#memory,
+#tray,
+#custom-gpu-temp,
+#custom-dotfiles,
+#custom-updates,
+#custom-weather,
+#custom-quick-settings,
+#custom-system-menu,
+#custom-power {
+    background: rgba(49, 50, 68, 0.4);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 0 10px;
+}
+
+/* Hover effect for all modules */
+#pulseaudio:hover,
+#wireplumber:hover,
+#network:hover,
+#cpu:hover,
+#memory:hover,
+#clock:hover,
+#custom-gpu-temp:hover,
+#custom-dotfiles:hover,
+#custom-updates:hover,
+#custom-weather:hover {
+    background: rgba(49, 50, 68, 0.6);
+    box-shadow: inset 0 0 0 1px rgba(205, 214, 244, 0.2);
+}
+
 #custom-launcher {
     color: #89b4fa;
     font-size: 20px;
@@ -76,14 +113,14 @@ tooltip label {
 }
 
 #workspaces {
-    background: rgba(30, 30, 46, 0.5);
+    background: rgba(49, 50, 68, 0.4);
     border-radius: 10px;
     margin: 5px;
     padding: 0 5px;
 }
 
 #workspaces button {
-    color: #cdd6f4;
+    color: #bac2de;
     padding: 0 5px;
     background: transparent;
     border-radius: 8px;
@@ -116,42 +153,29 @@ tooltip label {
 
 #window {
     color: #cdd6f4;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
+    min-width: 100px;
     padding: 2px 12px;
 }
 
+/* System stats modules with consistent colors */
 #clock {
     color: #f9e2af;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
-    min-width: 80px;
+    min-width: 210px;
 }
 
 #network {
-    color: #94e2d5;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
+    color: #a6e3a1;
     min-width: 140px;
     font-family: "JetBrainsMono Nerd Font Mono";
 }
 
 #network.disconnected {
     color: #f38ba8;
-    background: rgba(243, 139, 168, 0.1);
+    background: rgba(243, 139, 168, 0.15);
 }
 
 #pulseaudio, #wireplumber {
     color: #89b4fa;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
     min-width: 80px;
 }
 
@@ -161,26 +185,15 @@ tooltip label {
 
 #cpu {
     color: #a6e3a1;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
     min-width: 70px;
 }
 
 #memory {
-    color: #f5c2e7;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
+    color: #cba6f7;
     min-width: 70px;
 }
 
 #tray {
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
     padding: 2px 12px;
 }
 
@@ -192,37 +205,18 @@ tooltip label {
     -gtk-icon-effect: highlight;
 }
 
-#pulseaudio:hover,
-#wireplumber:hover,
-#network:hover,
-#cpu:hover,
-#memory:hover,
-#clock:hover,
-#custom-gpu-temp:hover {
-    background: rgba(49, 50, 68, 0.5);
-    box-shadow: inset 0 0 0 1px rgba(166, 227, 161, 0.1);
-}
-
 #custom-gpu-temp {
-    color: #f5c2e7;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
+    color: #fab387;
     min-width: 70px;
 }
 
 #custom-gpu-temp.error {
     color: #f38ba8;
-    background: rgba(243, 139, 168, 0.1);
+    background: rgba(243, 139, 168, 0.15);
 }
 
 #custom-dotfiles {
     color: #cdd6f4;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
     min-width: 30px;
 }
 
@@ -238,16 +232,8 @@ tooltip label {
     color: #89b4fa;  /* Blue for unpulled changes */
 }
 
-#custom-dotfiles:hover {
-    background: rgba(49, 50, 68, 0.5);
-}
-
 #custom-updates {
     color: #cdd6f4;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
     min-width: 30px;
 }
 
@@ -259,13 +245,9 @@ tooltip label {
     color: #f38ba8;  /* Red for errors */
 }
 
-#custom-updates:hover {
-    background: rgba(49, 50, 68, 0.5);
-}
-
 #custom-keybinds {
     color: #cba6f7;
-    background: rgba(49, 50, 68, 0.3);
+    background: rgba(49, 50, 68, 0.4);
     border-radius: 10px;
     margin: 4px;
     padding: 2px 12px;
@@ -273,20 +255,16 @@ tooltip label {
 }
 
 #custom-keybinds:hover {
-    background: rgba(49, 50, 68, 0.5);
+    background: rgba(49, 50, 68, 0.6);
 }
 
 /* Menu modules */
 #custom-quick-settings,
-#custom-system-menu,
-#custom-power {
+#custom-system-menu {
     color: #cba6f7;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 2px 10px;
     font-size: 16px;
     min-width: 16px;
+    padding: 2px 10px;
     transition: all 0.3s ease;
 }
 
@@ -301,6 +279,9 @@ tooltip label {
 #custom-power {
     color: #f38ba8;
     margin-right: 6px;
+    font-size: 16px;
+    min-width: 16px;
+    padding: 2px 10px;
 }
 
 #custom-power:hover {
@@ -313,13 +294,10 @@ tooltip label {
 /* Weather Module */
 #custom-weather {
     color: #89dceb;
-    background: rgba(49, 50, 68, 0.3);
-    border-radius: 10px;
-    margin: 4px;
-    padding: 0 10px;
+    min-width: 100px;
 }
 
 #custom-weather:hover {
-    background: rgba(49, 50, 68, 0.5);
+    background: rgba(49, 50, 68, 0.6);
     box-shadow: inset 0 0 0 1px rgba(137, 220, 235, 0.2);
 } 

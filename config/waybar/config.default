@@ -23,24 +23,30 @@
     ],
     
     "modules-right": [
-        "custom/updates",
+        "tray",
         "custom/separator",
-        "custom/dotfiles",
-        "custom/separator",
-        "network",
-        "custom/separator",
-        "wireplumber",
-        "custom/separator",
+        
         "cpu",
         "memory",
         "custom/gpu-temp",
         "custom/separator",
+        
+        "network",
+        "custom/separator",
+        
+        "wireplumber",
+        "custom/separator",
+        
+        "custom/updates",
+        "custom/dotfiles",
+        "custom/separator",
+        
+        "clock",
+        "custom/separator",
+        
         "custom/quick-settings",
         "custom/system-menu",
-        "custom/power",
-        "custom/separator",
-        "clock",
-        "tray"
+        "custom/power"
     ],
     
     "custom/launcher": {
@@ -100,8 +106,8 @@
     },
 
     "clock": {
-        "format": " {:%H:%M}",
-        "format-alt": " {:%Y-%m-%d}",
+        "format": " {:%H:%M %Y-%m-%d W%V}",
+        "format-alt": " {:%A, %B %d}",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
         "tooltip": true,
         "calendar": {

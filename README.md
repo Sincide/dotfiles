@@ -69,6 +69,7 @@ My personal dotfiles for Arch Linux with Hyprland.
 - **Notifications**: Dunst
 - **Application Launcher**: Fuzzel
 - **Clipboard Manager**: Cliphist
+- **Brightness Control**: DDC/CI-based multi-monitor brightness control
 - **Environment Detection**: Automatic VM/Physical setup
 
 ## Prerequisites
@@ -131,6 +132,7 @@ The setup includes smart monitor detection and configuration:
 - Supports multi-monitor setup with different resolutions and refresh rates
 - Automatically configures workspace assignments
 - Handles high refresh rate displays (up to 165Hz)
+- DDC/CI monitor brightness control via quick settings menu
 
 ### VM Setup
 - Automatically detects VM environment
@@ -173,6 +175,12 @@ All screenshots are opened in Swappy for editing before saving.
 The system uses Cliphist for clipboard management:
 - Automatically stores text and image clipboard history
 - Accessible through Fuzzel interface
+
+### Quick Settings
+- Available through Waybar menu
+- Brightness control via DDC/CI (controls actual monitor brightness)
+- Night light mode (blue light filter)
+- Quick access to system settings
 
 More keybindings can be found in `~/.config/hypr/hyprland.conf`
 
@@ -239,7 +247,9 @@ The setup includes two different Waybar layouts that can be toggled with `SUPER 
 - lm_sensors (Hardware sensors)
 
 ### Utilities
-- brightnessctl (Brightness control)
+- brightnessctl (Brightness control for laptops)
+- ddcutil (Monitor brightness control via DDC/CI)
+- wlsunset (Night light / blue light filter)
 - grim (Screenshot utility)
 - slurp (Area selection)
 - swappy (Screenshot editor)

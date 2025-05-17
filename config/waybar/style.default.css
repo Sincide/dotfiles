@@ -195,6 +195,25 @@ tooltip label {
     background: rgba(49, 50, 68, 0.5);
 }
 
+#custom-gpu-temp {
+    color: #f5c2e7;
+    background: rgba(49, 50, 68, 0.3);
+    border-radius: 10px;
+    margin: 4px;
+    padding: 2px 12px;
+    min-width: 70px;
+    padding: 0px 10px;
+}
+
+#custom-gpu-temp.error {
+    color: #f38ba8;
+    background: rgba(243, 139, 168, 0.1);
+}
+
+#custom-gpu-temp:hover {
+    background: rgba(49, 50, 68, 0.5);
+}
+
 #custom-dotfiles {
     color: #cdd6f4;
     background: rgba(49, 50, 68, 0.3);

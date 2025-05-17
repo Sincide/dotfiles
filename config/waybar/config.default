@@ -12,7 +12,6 @@
     "passthrough": false,
     
     "modules-left": [
-        "custom/launcher",
         "hyprland/workspaces",
         "custom/separator",
         "custom/weather"

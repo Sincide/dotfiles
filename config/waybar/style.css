@@ -9,15 +9,6 @@
     transition: all 0.3s ease;
 }
 
-@keyframes launcher_gradient {
-    0% { color: #89b4fa; }
-    20% { color: #94e2d5; }
-    40% { color: #a6e3a1; }
-    60% { color: #f9e2af; }
-    80% { color: #f38ba8; }
-    100% { color: #89b4fa; }
-}
-
 window#waybar {
     background: rgba(30, 30, 46, 0.95);
     border-radius: 12px;
@@ -36,19 +27,6 @@ tooltip {
 tooltip label {
     color: #cdd6f4;
     padding: 6px;
-}
-
-#custom-launcher {
-    color: #89b4fa;
-    font-size: 20px;
-    padding: 0px 16px;
-    animation: launcher_gradient 10s ease infinite;
-    min-width: 30px;
-    padding: 0px 5px;
-}
-
-#custom-launcher:hover {
-    font-size: 22px;
 }
 
 #custom-separator {

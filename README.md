@@ -403,6 +403,7 @@ The configuration includes Yazi, a modern terminal file manager with:
 - Syntax highlighting for code files
 - Image/video preview capabilities
 - Beautiful Catppuccin-based theme
+- Files open in nano with syntax highlighting (easy editing in the same terminal)
 
 ### Yazi Keybindings
 

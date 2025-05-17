@@ -57,6 +57,9 @@ if command -v yazi > /dev/null
             rm -f $tmp
         end
     end
+    
+    # Note: Yazi is configured to use nano for file editing
+    # Nano config is in ~/.nanorc with syntax highlighting
 else
     set -a missing_commands yazi
 end

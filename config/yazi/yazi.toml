@@ -1,6 +1,6 @@
 [manager]
 # Show hidden files by default (toggle with .)
-show_hidden = false
+show_hidden = true
 
 # More user-friendly sort order (directories first, name case-insensitive)
 sort_by = "natural"
@@ -26,19 +26,20 @@ image_quality = 75
 
 [opener]
 edit = [
-    { exec = 'nvim "$@"', block = true, for = "unix", run = true },
-    { exec = 'code "%*"', orphan = true, for = "windows", run = true },
+    { run = 'nano "$@"', block = true, for = "unix" },
+    { run = 'code "%*"', orphan = true, for = "windows" }
 ]
 open = [
-    { exec = 'xdg-open "$@"', for = "linux", run = true },
-    { exec = 'open "$@"', for = "macos", run = true },
-    { exec = 'start "%1"', for = "windows", run = true }
+    { run = 'xdg-open "$@"', for = "linux" },
+    { run = 'open "$@"', for = "macos" },
+    { run = 'start "%1"', for = "windows" }
 ]
 reveal = [
-    { exec = 'nautilus "$1"', for = "linux", run = true },
-    { exec = 'open -R "$1"', for = "macos", run = true },
-    { exec = 'explorer /select,%1', for = "windows", run = true }
+    { run = 'nautilus "$1"', for = "linux" },
+    { run = 'open -R "$1"', for = "macos" },
+    { run = 'explorer /select,%1', for = "windows" }
 ]
+
 
 [tasks]
 micro_workers = 5

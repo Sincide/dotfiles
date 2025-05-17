@@ -12,7 +12,7 @@ print_message() {
     echo -e "${BLUE}==>${NC} $1"
 }
 
-# Print error message
+# Print error msage
 print_error() {
     echo -e "${RED}Error:${NC} $1"
 }

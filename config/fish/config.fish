@@ -6,10 +6,12 @@ if not string match -q 'xterm-kitty' $TERM
     set -gx TERM xterm-256color
 end
 
-
 # Add to PATH
 fish_add_path $HOME/.local/bin
 fish_add_path $HOME/.cargo/bin
+
+# Check for required commands
+set -l missing_commands
 
 # Better ls with exa if available
 if command -v exa > /dev/null
@@ -18,6 +20,7 @@ if command -v exa > /dev/null
     alias la='exa -la --icons'
     alias lt='exa --tree --icons'
 else
+    set -a missing_commands "exa"
     alias ll='ls -lh'
     alias la='ls -lah'
 end
@@ -64,6 +67,8 @@ alias cleanup='sudo pacman -Rns $(pacman -Qtdq)'
 # Better grep with ripgrep if available
 if command -v rg > /dev/null
     alias grep='rg'
+else
+    set -a missing_commands "ripgrep"
 end
 
 # Directory shortcuts
@@ -76,19 +81,26 @@ function mkcd
     mkdir -p $argv[1] && cd $argv[1]
 end
 
-# Initialize starship prompt if installed
-# Commented out since we're using custom fish prompt
-# if command -v starship > /dev/null
-#     starship init fish | source
-# end
-
 # Use vim bindings
 fish_vi_key_bindings
 
 # Better command history with fzf if available
 if command -v fzf > /dev/null
     bind \cr 'history | fzf | read -l command; commandline $command'
+else
+    set -a missing_commands "fzf"
 end
 
 # Disable fish greeting
-set -g fish_greeting 
+set -g fish_greeting
+
+# Print missing commands warning if any
+if test (count $missing_commands) -gt 0
+    set_color yellow
+    echo "Warning: The following recommended commands are not installed:"
+    for cmd in $missing_commands
+        echo "  - $cmd"
+    end
+    echo "You can install them using 'yay -S $missing_commands'"
+    set_color normal
+end 

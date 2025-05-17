@@ -12,12 +12,18 @@ My personal dotfiles for Arch Linux with Hyprland.
 │   ├── applications/    # Desktop entries
 │   ├── dunst/          # Notification daemon
 │   ├── fish/           # Fish shell
+│   │   ├── conf.d/     # Fish configuration modules
+│   │   ├── completions/# Custom completions
+│   │   └── config.fish # Main fish config
 │   ├── gtk-3.0/        # GTK3 theming
 │   ├── gtk-4.0/        # GTK4 theming
 │   ├── hypr/           # Hyprland compositor
+│   │   ├── scripts/    # Hyprland helper scripts
+│   │   ├── hyprland.conf    # Main config
+│   │   ├── hyprpaper.conf   # Wallpaper config
+│   │   ├── env.conf         # Environment variables
 │   │   ├── monitors-physical.conf  # Physical machine monitor config
-│   │   ├── monitors-vm.conf       # VM monitor config
-│   │   └── hyprland.conf         # Main config
+│   │   └── monitors-vm.conf       # VM monitor config
 │   ├── kitty/          # Terminal emulator
 │   ├── qt5ct/          # Qt5 configuration
 │   ├── qt6ct/          # Qt6 configuration
@@ -29,7 +35,11 @@ My personal dotfiles for Arch Linux with Hyprland.
 │   ├── wofi/           # Application launcher
 │   └── xfce4/          # XFCE4 components (Thunar)
 ├── scripts/            # Utility scripts
-│   └── dotfiles.sh     # Dotfiles management script
+│   ├── amd-overdrive.sh    # AMD GPU management
+│   ├── backup-ssh.sh       # SSH key backup
+│   ├── restore-ssh.sh      # SSH key restore
+│   ├── setup-virtualization.sh # VM setup
+│   └── dotfiles.sh         # Dotfiles management
 ├── install.sh          # Installation script
 └── README.md           # This file
 ```
@@ -222,4 +232,72 @@ The install script automatically detects whether it's running in a VM or on phys
 - Configures multi-monitor setup
 - Uses hardware acceleration
 - Enables all features including brightness control
-- Full monitor-specific wallpaper setup 
+- Full monitor-specific wallpaper setup
+
+## AMD-Specific Features
+
+### AMD GPU Management
+The repository includes an AMD GPU management script (`scripts/amd-overdrive.sh`) that provides:
+- GPU overclocking capabilities
+- Power management control
+- Fan curve configuration
+- Temperature monitoring and control
+
+Usage:
+```bash
+# View current GPU settings
+amd-oc status
+
+# Apply custom profile
+sudo amd-oc apply profile1
+
+# Reset to default settings
+sudo amd-oc reset
+```
+
+### AMD Hardware Acceleration
+The configuration automatically sets up hardware acceleration for AMD GPUs with:
+- VAAPI support for video decoding
+- Vulkan support with RADV driver
+- OpenGL optimization with mesa-vdpau
+
+## Virtualization Support
+
+The `scripts/setup-virtualization.sh` script helps set up a complete virtualization environment:
+- Configures KVM/QEMU
+- Sets up network bridges
+- Configures user permissions
+- Enables required kernel modules
+
+Usage:
+```bash
+./scripts/setup-virtualization.sh
+```
+
+## SSH Key Management
+
+The repository includes scripts for safely managing SSH keys:
+
+### Backup SSH Keys
+```bash
+./scripts/backup-ssh.sh [backup_path]
+```
+Features:
+- Encrypts SSH keys before backup
+- Creates timestamped backups
+- Verifies backup integrity
+
+### Restore SSH Keys
+```bash
+./scripts/restore-ssh.sh [backup_file]
+```
+Features:
+- Verifies backup authenticity
+- Restores keys with correct permissions
+- Validates restored keys
+
+Security Notes:
+- Always encrypt backups with a strong passphrase
+- Store backups in a secure location
+- Never share or transfer unencrypted keys
+- Verify key permissions after restore (600 for private keys) 

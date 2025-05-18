@@ -15,11 +15,12 @@
     "modules-left": [
         "hyprland/workspaces",
         "custom/separator",
-        "custom/weather"
+        "custom/weather",
+        "custom/separator",
+        "hyprland/window"
     ],
     
     "modules-center": [
-        "hyprland/window"
     ],
     
     "modules-right": [
@@ -94,6 +95,13 @@
         "format": "{}",
         "max-length": 50,
         "separate-outputs": true,
+        "rewrite": {
+            "(.*) - Brave": "$1",
+            "(.*) - Chromium": "$1",
+            "(.*) - Mozilla Firefox": "$1"
+        },
+        "on-click": "activate",
+        "all-outputs": true,
         "tooltip": true,
         "tooltip-format": "Active Window"
     },

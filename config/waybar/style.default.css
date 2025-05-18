@@ -155,6 +155,8 @@ tooltip label {
     color: #cdd6f4;
     min-width: 100px;
     padding: 2px 12px;
+    background: rgba(49, 50, 68, 0.7);
+    border-bottom: 2px solid #89b4fa;
 }
 
 /* System stats modules with consistent colors */

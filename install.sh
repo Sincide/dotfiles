@@ -223,6 +223,13 @@ if [ "$SHELL" != "$(which fish)" ]; then
     chsh -s "$(which fish)" || print_warning "Failed to set fish as default shell"
 fi
 
+# Ensure scripts are executable
+chmod +x "$dotfiles_dir/scripts/launch-win11-vm.sh"
+
+# Install desktop entry for win11 VM
+mkdir -p "$HOME/.local/share/applications"
+cp "$dotfiles_dir/desktop/win11-vm.desktop" "$HOME/.local/share/applications/win11-vm.desktop"
+
 print_success "Installation completed! Please log out and log back in to start Hyprland."
 print_message "Note: Some changes might require a system restart to take effect."
 
@@ -251,4 +258,20 @@ if [ "$ENV_TYPE" = "physical" ]; then
     if ! radeontop -d- -l1 > /dev/null 2>&1; then
         print_warning "Unable to read GPU usage. Make sure you have the necessary permissions."
     fi
+fi
+
+# Restore Windows 11 VM definition from repo XML if disk exists
+VM_XML="$dotfiles_dir/vm/win11.xml"
+VM_DISK="/mnt/Stuff/VM_Backup/win11.qcow2"
+
+if [ -f "$VM_XML" ] && [ -f "$VM_DISK" ]; then
+    # Only define if not already defined
+    if ! virsh --connect qemu:///system list --all | grep -q win11; then
+        sudo virsh --connect qemu:///system define "$VM_XML"
+        print_success "Restored Windows 11 VM from repo XML."
+    else
+        print_message "Windows 11 VM already defined, skipping restore."
+    fi
+else
+    print_warning "VM XML or disk not found, skipping VM restore."
 fi 

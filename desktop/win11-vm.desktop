@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Windows 11 VM
+Exec=/home/martin/dotfiles/scripts/launch-win11-vm.sh
+Type=Application
+Terminal=false
+Icon=computer
+Categories=System; 

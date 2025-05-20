@@ -50,8 +50,7 @@ My personal dotfiles for Arch Linux with Hyprland.
 ## Features
 
 - **Window Manager**: Hyprland
-- **Status Bar**: Waybar with two layouts:
-  - Default Layout:
+- **Status Bar**: Waybar with a modern, cohesive design and Catppuccin theme
     - Decorated workspaces with application-specific icons
     - Full system monitoring (CPU, memory, GPU)
     - Audio controls with device selection
@@ -59,12 +58,6 @@ My personal dotfiles for Arch Linux with Hyprland.
     - Git status monitoring
     - Package updates tracking
     - Modern, cohesive design with Catppuccin theme
-  - Alternate Layout:
-    - Minimalist, centered design
-    - Japanese-style workspace indicators
-    - Grouped system resources
-    - Clean, semi-transparent styling
-  - Quick toggle between layouts (Super + B)
 - **Terminal**: Kitty
 - **Shell**: Fish
 - **Theme**: Catppuccin Mocha

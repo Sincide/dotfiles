@@ -302,4 +302,9 @@ tooltip label {
 #custom-weather:hover {
     background: rgba(49, 50, 68, 0.6);
     box-shadow: inset 0 0 0 1px rgba(137, 220, 235, 0.2);
-} 
+}
+
+#custom-gpu-info.gpu-ok { color: #a6e3a1; }      /* Green */
+#custom-gpu-info.gpu-warm { color: #f9e2af; }    /* Yellow */
+#custom-gpu-info.gpu-hot { color: #f38ba8; }     /* Red */
+#custom-gpu-info.gpu-unknown { color: #cdd6f4; } /* Default */ 

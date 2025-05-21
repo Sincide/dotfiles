@@ -195,6 +195,9 @@ install_packages() {
         print_substep "Refreshing package database..."
         run_yay -Syy || print_warning "Failed to refresh package database"
         
+        # Refresh sudo timestamp to avoid password prompt during suppressed output
+        sudo -v
+        
         # Install core packages
         print_substep "Installing core system packages..."
         local core_total=0; local core_installed=0

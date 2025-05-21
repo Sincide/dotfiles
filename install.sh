@@ -29,9 +29,9 @@ check_sudo() {
     print_success "Sudo privileges cached for 15 minutes"
 }
 
-# Function to run yay with sudo and non-interactive AUR flags
+# Function to run yay with non-interactive AUR flags (no sudo)
 run_yay() {
-    sudo -n yay --answerclean None --answerdiff None --answeredit None --mflags --noconfirm "$@"
+    yay --answerclean None --answerdiff None --answeredit None --mflags --noconfirm "$@"
 }
 
 cleanup() {

@@ -29,6 +29,12 @@ check_sudo() {
     print_success "Sudo privileges cached for 15 minutes"
 }
 
+# Function to run yay with sudo
+run_yay() {
+    # Use sudo -n to prevent password prompt
+    sudo -n yay "$@"
+}
+
 cleanup() {
     if [ -n "$SUDO_PID" ]; then
         kill $SUDO_PID 2>/dev/null
@@ -125,6 +131,34 @@ install_yay() {
     fi
 }
 
+# Progress bar function with spinner and ETA
+spinner_chars=("|" "/" "-" "\\")
+default_bar_length=30
+show_progress_bar() {
+    local current=$1
+    local total=$2
+    local elapsed=$3
+    local bar_length=${4:-$default_bar_length}
+    local percent=$(( 100 * current / total ))
+    local filled=$(( bar_length * current / total ))
+    local empty=$(( bar_length - filled ))
+    local bar=""
+    for ((i=0; i<filled; i++)); do bar+="#"; done
+    for ((i=0; i<empty; i++)); do bar+="-"; done
+    local spinner_idx=$((current % 4))
+    local spinner=${spinner_chars[$spinner_idx]}
+    local eta="--:--"
+    if [ "$current" -gt 0 ]; then
+        local avg_time=$(awk "BEGIN {print $elapsed/$current}")
+        local remaining=$((total - current))
+        local eta_sec=$(awk "BEGIN {print int($remaining * $avg_time)}")
+        local eta_min=$((eta_sec / 60))
+        local eta_rem=$((eta_sec % 60))
+        eta=$(printf "%02d:%02d" $eta_min $eta_rem)
+    fi
+    echo -ne "    [${bar}] ${percent}% (${current}/${total}) ${spinner} ETA: ${eta}\r"
+}
+
 install_packages() {
     print_step "Installing required packages"
     
@@ -156,51 +190,84 @@ install_packages() {
     if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
         print_message "Found ${#MISSING_PACKAGES[@]} packages to install"
         
+        # Refresh package database once
+        print_substep "Refreshing package database..."
+        run_yay -Syy &>/dev/null || print_warning "Failed to refresh package database"
+        
         # Install core packages
         print_substep "Installing core system packages..."
+        local core_total=0; local core_installed=0
         for pkg in $CORE_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                print_progress "Installing $pkg..."
-                if yay -S --needed --noconfirm "$pkg"; then
-                    print_success "Installed $pkg"
-                    INSTALLED_PACKAGES+=("$pkg")
-                else
-                    print_warning "Failed to install $pkg"
-                    FAILED_PACKAGES+=("$pkg")
-                fi
+                ((core_total++))
             fi
         done
+        local core_done=0
+        local core_start_time=$(date +%s)
+        for pkg in $CORE_PACKAGES; do
+            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+                local pkg_start_time=$(date +%s)
+                if run_yay -S --needed --noconfirm "$pkg" &>/dev/null; then
+                    INSTALLED_PACKAGES+=("$pkg")
+                else
+                    FAILED_PACKAGES+=("$pkg")
+                fi
+                ((core_done++))
+                local now=$(date +%s)
+                local elapsed=$((now - core_start_time))
+                show_progress_bar $core_done $core_total $elapsed
+            fi
+        done
+        if [ $core_total -gt 0 ]; then echo; fi
         
         # Install lf and its dependencies
         print_substep "Installing file manager and dependencies..."
+        local lf_total=0; local lf_done=0
         for pkg in $LF_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                print_progress "Installing $pkg..."
-                if yay -S --needed --noconfirm "$pkg"; then
-                    print_success "Installed $pkg"
-                    INSTALLED_PACKAGES+=("$pkg")
-                else
-                    print_warning "Failed to install $pkg"
-                    FAILED_PACKAGES+=("$pkg")
-                fi
+                ((lf_total++))
             fi
         done
+        local lf_start_time=$(date +%s)
+        for pkg in $LF_PACKAGES; do
+            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+                if run_yay -S --needed --noconfirm "$pkg" &>/dev/null; then
+                    INSTALLED_PACKAGES+=("$pkg")
+                else
+                    FAILED_PACKAGES+=("$pkg")
+                fi
+                ((lf_done++))
+                local now=$(date +%s)
+                local elapsed=$((now - lf_start_time))
+                show_progress_bar $lf_done $lf_total $elapsed
+            fi
+        done
+        if [ $lf_total -gt 0 ]; then echo; fi
         
         # Install physical machine specific packages
         if [ "$(detect_environment)" = "physical" ]; then
             print_substep "Installing physical machine specific packages..."
+            local phys_total=0; local phys_done=0
             for pkg in $PHYSICAL_PACKAGES; do
                 if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                    print_progress "Installing $pkg..."
-                    if yay -S --needed --noconfirm "$pkg"; then
-                        print_success "Installed $pkg"
-                        INSTALLED_PACKAGES+=("$pkg")
-                    else
-                        print_warning "Failed to install $pkg"
-                        FAILED_PACKAGES+=("$pkg")
-                    fi
+                    ((phys_total++))
                 fi
             done
+            local phys_start_time=$(date +%s)
+            for pkg in $PHYSICAL_PACKAGES; do
+                if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+                    if run_yay -S --needed --noconfirm "$pkg" &>/dev/null; then
+                        INSTALLED_PACKAGES+=("$pkg")
+                    else
+                        FAILED_PACKAGES+=("$pkg")
+                    fi
+                    ((phys_done++))
+                    local now=$(date +%s)
+                    local elapsed=$((now - phys_start_time))
+                    show_progress_bar $phys_done $phys_total $elapsed
+                fi
+            done
+            if [ $phys_total -gt 0 ]; then echo; fi
         fi
         
         # Print installation summary

@@ -12,6 +12,32 @@ CYAN='\033[1;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+# Check if we have sudo privileges and cache them
+check_sudo() {
+    print_step "Checking sudo privileges"
+    if ! sudo -v; then
+        handle_error "Failed to get sudo privileges"
+    fi
+    # Extend sudo timeout to 15 minutes
+    sudo -v -S <<< "" 2>/dev/null
+    while true; do
+        sudo -n true
+        sleep 60
+        kill -0 "$$" 2>/dev/null || exit
+    done &
+    SUDO_PID=$!
+    print_success "Sudo privileges cached for 15 minutes"
+}
+
+cleanup() {
+    if [ -n "$SUDO_PID" ]; then
+        kill $SUDO_PID 2>/dev/null
+    fi
+}
+
+# Register cleanup function
+trap cleanup EXIT
+
 print_message() {
     echo -e "${BLUE}==>${NC} $1"
 }
@@ -101,54 +127,96 @@ install_yay() {
 
 install_packages() {
     print_step "Installing required packages"
-    COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide"
-    MISSING_PACKAGES=()
+    
+    # Define all package groups
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide"
+    local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
+    local PHYSICAL_PACKAGES="brightnessctl"
+    
+    # Arrays to track installed packages
+    local INSTALLED_PACKAGES=()
+    local FAILED_PACKAGES=()
+    
+    # Combine all packages based on environment
+    local ALL_PACKAGES="$CORE_PACKAGES $LF_PACKAGES"
+    if [ "$(detect_environment)" = "physical" ]; then
+        ALL_PACKAGES="$ALL_PACKAGES $PHYSICAL_PACKAGES"
+    fi
+    
+    # Check for missing packages
     print_substep "Checking for missing packages..."
-    for package in $COMMON_PACKAGES; do
+    local MISSING_PACKAGES=()
+    for package in $ALL_PACKAGES; do
         if ! yay -Q "$package" &>/dev/null; then
             MISSING_PACKAGES+=("$package")
         fi
     done
+    
+    # Install missing packages
     if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
         print_message "Found ${#MISSING_PACKAGES[@]} packages to install"
-        for pkg in "${MISSING_PACKAGES[@]}"; do
-            print_progress "Installing $pkg..."
-            if yay -S --needed --noconfirm "$pkg"; then
-                print_success "Installed $pkg"
-            else
-                print_warning "Failed to install $pkg. Please check if this package exists or if there are network/repo issues."
+        
+        # Install core packages
+        print_substep "Installing core system packages..."
+        for pkg in $CORE_PACKAGES; do
+            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+                print_progress "Installing $pkg..."
+                if yay -S --needed --noconfirm "$pkg"; then
+                    print_success "Installed $pkg"
+                    INSTALLED_PACKAGES+=("$pkg")
+                else
+                    print_warning "Failed to install $pkg"
+                    FAILED_PACKAGES+=("$pkg")
+                fi
             fi
         done
+        
+        # Install lf and its dependencies
+        print_substep "Installing file manager and dependencies..."
+        for pkg in $LF_PACKAGES; do
+            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+                print_progress "Installing $pkg..."
+                if yay -S --needed --noconfirm "$pkg"; then
+                    print_success "Installed $pkg"
+                    INSTALLED_PACKAGES+=("$pkg")
+                else
+                    print_warning "Failed to install $pkg"
+                    FAILED_PACKAGES+=("$pkg")
+                fi
+            fi
+        done
+        
+        # Install physical machine specific packages
+        if [ "$(detect_environment)" = "physical" ]; then
+            print_substep "Installing physical machine specific packages..."
+            for pkg in $PHYSICAL_PACKAGES; do
+                if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+                    print_progress "Installing $pkg..."
+                    if yay -S --needed --noconfirm "$pkg"; then
+                        print_success "Installed $pkg"
+                        INSTALLED_PACKAGES+=("$pkg")
+                    else
+                        print_warning "Failed to install $pkg"
+                        FAILED_PACKAGES+=("$pkg")
+                    fi
+                fi
+            done
+        fi
+        
+        # Print installation summary
+        echo -e "\n${BOLD}${MAGENTA}==>${NC} ${BOLD}Installation Summary${NC}"
+        if [ ${#INSTALLED_PACKAGES[@]} -gt 0 ]; then
+            print_success "Successfully installed ${#INSTALLED_PACKAGES[@]} packages:"
+            printf '%s\n' "${INSTALLED_PACKAGES[@]}" | sort | sed 's/^/  - /'
+        fi
+        
+        if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
+            print_warning "Failed to install ${#FAILED_PACKAGES[@]} packages:"
+            printf '%s\n' "${FAILED_PACKAGES[@]}" | sort | sed 's/^/  - /'
+        fi
     else
         print_success "All required packages are already installed"
     fi
-}
-
-install_physical_packages() {
-    ENV_TYPE=$(detect_environment)
-    if [ "$ENV_TYPE" = "physical" ]; then
-        print_step "Installing physical machine specific packages"
-        print_substep "Installing brightnessctl..."
-        yay -S --needed --noconfirm brightnessctl || handle_error "Failed to install brightnessctl"
-        print_success "Physical machine packages installed"
-    fi
-}
-
-install_lf_and_deps() {
-    print_step "Setting up lf file manager"
-    if ! command -v lf &>/dev/null; then
-        print_substep "Installing lf..."
-        yay -S --needed --noconfirm lf || handle_error "Failed to install lf file manager"
-    fi
-    LF_DEPENDENCIES="bat file mediainfo chafa atool ffmpegthumbnailer poppler"
-    print_substep "Installing lf dependencies for preview capabilities..."
-    for package in $LF_DEPENDENCIES; do
-        if ! yay -Q "$package" &>/dev/null; then
-            print_progress "Installing $package..."
-            yay -S --needed --noconfirm "$package" || print_warning "Failed to install $package (non-critical)"
-        fi
-    done
-    print_success "lf and its dependencies installed"
 }
 
 backup_configs() {
@@ -366,6 +434,10 @@ EOF
 automount_external_drives() {
     print_step "Setting up external drive automounting"
     print_substep "Scanning for external drives with labels..."
+    # Create a temporary file for fstab modifications
+    local temp_fstab=$(mktemp)
+    sudo cp /etc/fstab "$temp_fstab"
+    
     lsblk -o NAME,LABEL,TYPE,MOUNTPOINT | grep part | grep -v '/$' | grep -v '/boot' | while read -r line; do
         dev_name=$(echo $line | awk '{print $1}')
         label=$(echo $line | awk '{print $2}')
@@ -374,15 +446,25 @@ automount_external_drives() {
             device="/dev/$dev_name"
             print_progress "Found drive: $label ($device)"
             # Check if already in fstab
-            if ! grep -q "LABEL=$label" /etc/fstab; then
+            if ! grep -q "LABEL=$label" "$temp_fstab"; then
                 print_substep "Adding $label to /etc/fstab..."
                 sudo mkdir -p "$mountpoint"
-                echo "LABEL=$label $mountpoint auto nosuid,nodev,nofail,x-gvfs-show 0 0" | sudo tee -a /etc/fstab
+                echo "LABEL=$label $mountpoint auto nosuid,nodev,nofail,x-gvfs-show 0 0" >> "$temp_fstab"
             else
                 print_message "$label already in /etc/fstab"
             fi
         fi
     done
+    
+    # Apply all fstab changes at once
+    if ! cmp -s /etc/fstab "$temp_fstab"; then
+        print_substep "Applying fstab changes..."
+        sudo cp "$temp_fstab" /etc/fstab
+        print_success "fstab updated successfully"
+    else
+        print_message "No changes needed in fstab"
+    fi
+    rm -f "$temp_fstab"
     print_success "Automount configuration complete! You can now run: sudo mount -a"
 }
 
@@ -390,6 +472,10 @@ main() {
     if [ "$EUID" -eq 0 ]; then
         handle_error "Please do not run as root"
     fi
+    
+    # Check and cache sudo privileges at the start
+    check_sudo
+    
     check_command "git"
     check_command "make"
     check_command "gcc"
@@ -401,8 +487,6 @@ main() {
     if [[ ! "$ans" =~ ^[Nn]$ ]]; then
         install_yay
         install_packages
-        install_physical_packages
-        install_lf_and_deps
     fi
 
     read -p "Do you want to backup existing configs? [Y/n]: " ans

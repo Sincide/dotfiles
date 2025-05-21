@@ -9,40 +9,33 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Print colored message
 print_message() {
     echo -e "${BLUE}==>${NC} $1"
 }
 
-# Print error msage
 print_error() {
     echo -e "${RED}Error:${NC} $1"
 }
 
-# Print warning message
 print_warning() {
     echo -e "${YELLOW}Warning:${NC} $1"
 }
 
-# Print success message
 print_success() {
     echo -e "${GREEN}Success:${NC} $1"
 }
 
-# Error handler
 handle_error() {
     print_error "$1"
     exit 1
 }
 
-# Check if a command exists
 check_command() {
     if ! command -v "$1" &> /dev/null; then
         handle_error "Required command '$1' not found. Please install it first."
     fi
 }
 
-# Verify symlink creation
 verify_symlink() {
     local source="$1"
     local target="$2"
@@ -57,14 +50,12 @@ verify_symlink() {
     return 0
 }
 
-# Check for Wayland session
 check_wayland_session() {
     if [ "$XDG_SESSION_TYPE" != "wayland" ]; then
         print_warning "Not running in a Wayland session. Some features may not work until you log into Wayland."
     fi
 }
 
-# Detect if running in a VM
 detect_environment() {
     if systemd-detect-virt --vm > /dev/null 2>&1; then
         echo "vm"
@@ -75,24 +66,6 @@ detect_environment() {
     fi
 }
 
-# Check if running as root
-if [ "$EUID" -eq 0 ]; then
-    handle_error "Please do not run as root"
-fi
-
-# Check for required base commands
-check_command "git"
-check_command "make"
-check_command "gcc"
-
-# Detect environment
-ENV_TYPE=$(detect_environment)
-print_message "Detected environment: $ENV_TYPE"
-
-# Check for Wayland session
-check_wayland_session
-
-# Install yay if not present
 install_yay() {
     if ! command -v yay &>/dev/null; then
         print_message "Installing yay..."
@@ -102,7 +75,6 @@ install_yay() {
     fi
 }
 
-# Install required packages
 install_packages() {
     print_message "Installing required packages..."
     COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf ttf-inter lm_sensors radeontop wlsunset light ddcutil zoxide"
@@ -118,7 +90,6 @@ install_packages() {
     fi
 }
 
-# Install physical-specific packages
 install_physical_packages() {
     ENV_TYPE=$(detect_environment)
     if [ "$ENV_TYPE" = "physical" ]; then
@@ -127,7 +98,6 @@ install_physical_packages() {
     fi
 }
 
-# Install lf file manager and dependencies
 install_lf_and_deps() {
     print_message "Setting up lf file manager..."
     if ! command -v lf &>/dev/null; then
@@ -144,7 +114,6 @@ install_lf_and_deps() {
     done
 }
 
-# Backup existing configs
 backup_configs() {
     print_message "Backing up existing configurations..."
     config_dir="$HOME/.config"
@@ -159,13 +128,11 @@ backup_configs() {
     fi
 }
 
-# Rotate old backups (keep last 5)
 rotate_backups() {
     find "$HOME" -maxdepth 1 -name ".config-backup-*" -type d -printf '%T@ %p\n' | \
         sort -n | head -n -5 | cut -d' ' -f2- | xargs -r rm -rf
 }
 
-# Create symlinks
 create_symlinks() {
     print_message "Creating symlinks..."
     dotfiles_dir="$(pwd)"
@@ -194,7 +161,6 @@ create_symlinks() {
     done
 }
 
-# Make lf scripts executable
 set_permissions() {
     print_message "Setting lf script permissions..."
     chmod +x "$HOME/.config/lf/preview.sh" "$HOME/.config/lf/cleaner.sh" || print_warning "Failed to set permissions for lf scripts"
@@ -294,7 +260,14 @@ prompt_reboot() {
 }
 
 main() {
-    check_prerequisites
+    if [ "$EUID" -eq 0 ]; then
+        handle_error "Please do not run as root"
+    fi
+    check_command "git"
+    check_command "make"
+    check_command "gcc"
+    ENV_TYPE=$(detect_environment)
+    print_message "Detected environment: $ENV_TYPE"
     check_wayland_session
     install_yay
     install_packages

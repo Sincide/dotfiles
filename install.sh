@@ -332,31 +332,54 @@ main() {
     ENV_TYPE=$(detect_environment)
     print_message "Detected environment: $ENV_TYPE"
     check_wayland_session
-    install_yay
-    install_packages
-    install_physical_packages
-    install_lf_and_deps
-    backup_configs
-    rotate_backups
-    create_symlinks
+
+    read -p "Do you want to install all required packages? [Y/n]: " ans
+    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+        install_yay
+        install_packages
+        install_physical_packages
+        install_lf_and_deps
+    fi
+
+    read -p "Do you want to backup existing configs? [Y/n]: " ans
+    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+        backup_configs
+        rotate_backups
+    fi
+
+    read -p "Do you want to create symlinks for configs? [Y/n]: " ans
+    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+        create_symlinks
+    fi
+
+    read -p "Do you want to set up wallpapers? [Y/n]: " ans
+    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+        set_hyprpaper_conf
+    fi
+
     set_permissions
     configure_env_specific
     configure_defaults
-    set_fish_shell
-    ENV_TYPE=$(detect_environment)
-    if [ "$ENV_TYPE" = "physical" ]; then
-        install_win11_vm_entry
-        restore_vm
+
+    read -p "Do you want to set fish as your default shell? [Y/n]: " ans
+    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+        set_fish_shell
     fi
-    set_hyprpaper_conf
-    final_verification
-    verify_gpu_monitoring
+
     if [ "$ENV_TYPE" = "physical" ]; then
+        read -p "Do you want to set up the Windows 11 VM entry? [y/N]: " ans
+        if [[ "$ans" =~ ^[Yy]$ ]]; then
+            install_win11_vm_entry
+            restore_vm
+        fi
         read -p "Would you like to automatically add external drives to /etc/fstab for automounting? [y/N]: " automount_ans
         if [[ "$automount_ans" =~ ^[Yy]$ ]]; then
             automount_external_drives
         fi
     fi
+
+    final_verification
+    verify_gpu_monitoring
     print_success "Installation completed! Please log out and log back in to start Hyprland."
     print_message "Note: Some changes might require a system restart to take effect."
     prompt_reboot

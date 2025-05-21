@@ -301,6 +301,27 @@ EOF
     print_success "hyprpaper.conf generated for $env_type."
 }
 
+automount_external_drives() {
+    print_message "Scanning for external drives with labels..."
+    lsblk -o NAME,LABEL,TYPE,MOUNTPOINT | grep part | grep -v '/$' | grep -v '/boot' | while read -r line; do
+        dev_name=$(echo $line | awk '{print $1}')
+        label=$(echo $line | awk '{print $2}')
+        if [ -n "$label" ]; then
+            mountpoint="/mnt/$label"
+            device="/dev/$dev_name"
+            # Check if already in fstab
+            if ! grep -q "LABEL=$label" /etc/fstab; then
+                print_message "Adding $label to /etc/fstab..."
+                sudo mkdir -p "$mountpoint"
+                echo "LABEL=$label $mountpoint auto nosuid,nodev,nofail,x-gvfs-show 0 0" | sudo tee -a /etc/fstab
+            else
+                print_message "$label already in /etc/fstab"
+            fi
+        fi
+    done
+    print_success "Automount configuration complete! You can now run: sudo mount -a"
+}
+
 main() {
     if [ "$EUID" -eq 0 ]; then
         handle_error "Please do not run as root"
@@ -330,6 +351,12 @@ main() {
     set_hyprpaper_conf
     final_verification
     verify_gpu_monitoring
+    if [ "$ENV_TYPE" = "physical" ]; then
+        read -p "Would you like to automatically add external drives to /etc/fstab for automounting? [y/N]: " automount_ans
+        if [[ "$automount_ans" =~ ^[Yy]$ ]]; then
+            automount_external_drives
+        fi
+    fi
     print_success "Installation completed! Please log out and log back in to start Hyprland."
     print_message "Note: Some changes might require a system restart to take effect."
     prompt_reboot

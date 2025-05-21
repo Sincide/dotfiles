@@ -163,6 +163,10 @@ show_progress_bar() {
 install_packages() {
     print_step "Installing required packages"
     
+    # Set up log file
+    LOGFILE="$(pwd)/install.log"
+    echo "Install log started at $(date)" > "$LOGFILE"
+    
     # Define all package groups
     local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
@@ -211,12 +215,14 @@ install_packages() {
         for pkg in $CORE_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
                 local pkg_start_time=$(date +%s)
-                if run_yay -S --needed "$pkg" &>/dev/null; then
+                if run_yay -S --needed "$pkg" &>>"$LOGFILE"; then
                     INSTALLED_PACKAGES+=("$pkg")
                 else
                     # Show output for failed install
                     run_yay -S --needed "$pkg"
                     FAILED_PACKAGES+=("$pkg")
+                    echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
+                    tail -n 20 "$LOGFILE"
                 fi
                 ((core_done++))
                 local now=$(date +%s)
@@ -237,11 +243,13 @@ install_packages() {
         local lf_start_time=$(date +%s)
         for pkg in $LF_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                if run_yay -S --needed "$pkg" &>/dev/null; then
+                if run_yay -S --needed "$pkg" &>>"$LOGFILE"; then
                     INSTALLED_PACKAGES+=("$pkg")
                 else
                     run_yay -S --needed "$pkg"
                     FAILED_PACKAGES+=("$pkg")
+                    echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
+                    tail -n 20 "$LOGFILE"
                 fi
                 ((lf_done++))
                 local now=$(date +%s)
@@ -263,11 +271,13 @@ install_packages() {
             local phys_start_time=$(date +%s)
             for pkg in $PHYSICAL_PACKAGES; do
                 if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                    if run_yay -S --needed "$pkg" &>/dev/null; then
+                    if run_yay -S --needed "$pkg" &>>"$LOGFILE"; then
                         INSTALLED_PACKAGES+=("$pkg")
                     else
                         run_yay -S --needed "$pkg"
                         FAILED_PACKAGES+=("$pkg")
+                        echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
+                        tail -n 20 "$LOGFILE"
                     fi
                     ((phys_done++))
                     local now=$(date +%s)

@@ -197,7 +197,7 @@ install_packages() {
         
         # Refresh package database once
         print_substep "Refreshing package database..."
-        run_yay -Syy || print_warning "Failed to refresh package database"
+        run_yay -Syy --noconfirm || print_warning "Failed to refresh package database"
         
         # Refresh sudo timestamp to avoid password prompt during suppressed output
         sudo -v
@@ -215,11 +215,11 @@ install_packages() {
         for pkg in $CORE_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
                 local pkg_start_time=$(date +%s)
-                if run_yay -S --needed "$pkg" &>>"$LOGFILE"; then
+                if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
                     INSTALLED_PACKAGES+=("$pkg")
                 else
                     # Show output for failed install
-                    run_yay -S --needed "$pkg"
+                    run_yay -S --needed --noconfirm "$pkg"
                     FAILED_PACKAGES+=("$pkg")
                     echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
                     tail -n 20 "$LOGFILE"
@@ -243,10 +243,10 @@ install_packages() {
         local lf_start_time=$(date +%s)
         for pkg in $LF_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                if run_yay -S --needed "$pkg" &>>"$LOGFILE"; then
+                if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
                     INSTALLED_PACKAGES+=("$pkg")
                 else
-                    run_yay -S --needed "$pkg"
+                    run_yay -S --needed --noconfirm "$pkg"
                     FAILED_PACKAGES+=("$pkg")
                     echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
                     tail -n 20 "$LOGFILE"
@@ -271,10 +271,10 @@ install_packages() {
             local phys_start_time=$(date +%s)
             for pkg in $PHYSICAL_PACKAGES; do
                 if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                    if run_yay -S --needed "$pkg" &>>"$LOGFILE"; then
+                    if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
                         INSTALLED_PACKAGES+=("$pkg")
                     else
-                        run_yay -S --needed "$pkg"
+                        run_yay -S --needed --noconfirm "$pkg"
                         FAILED_PACKAGES+=("$pkg")
                         echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
                         tail -n 20 "$LOGFILE"

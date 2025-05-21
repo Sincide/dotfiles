@@ -90,7 +90,13 @@ install_packages() {
     done
     if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
         print_message "Installing missing packages: ${MISSING_PACKAGES[*]}"
-        yay -S --needed --noconfirm "${MISSING_PACKAGES[@]}" || handle_error "Failed to install some packages"
+        for pkg in "${MISSING_PACKAGES[@]}"; do
+            if yay -S --needed --noconfirm "$pkg"; then
+                print_success "Installed $pkg"
+            else
+                print_warning "Failed to install $pkg. Please check if this package exists or if there are network/repo issues."
+            fi
+        done
     fi
 }
 
@@ -211,6 +217,22 @@ install_win11_vm_entry() {
     cp "$dotfiles_dir/desktop/win11-vm.desktop" "$HOME/.local/share/applications/win11-vm.desktop"
 }
 
+restore_vm() {
+    dotfiles_dir="$(pwd)"
+    VM_XML="$dotfiles_dir/vm/win11.xml"
+    VM_DISK="/mnt/Stuff/VM_Backup/win11.qcow2"
+    if [ -f "$VM_XML" ] && [ -f "$VM_DISK" ]; then
+        if ! virsh --connect qemu:///system list --all | grep -q win11; then
+            sudo virsh --connect qemu:///system define "$VM_XML"
+            print_success "Restored Windows 11 VM from repo XML."
+        else
+            print_message "Windows 11 VM already defined, skipping restore."
+        fi
+    else
+        print_warning "VM XML or disk not found, skipping VM restore."
+    fi
+}
+
 final_verification() {
     print_message "Performing final verification..."
     missing_deps=0
@@ -237,22 +259,6 @@ verify_gpu_monitoring() {
         if ! radeontop -d- -l1 > /dev/null 2>&1; then
             print_warning "Unable to read GPU usage. Make sure you have the necessary permissions."
         fi
-    fi
-}
-
-restore_vm() {
-    dotfiles_dir="$(pwd)"
-    VM_XML="$dotfiles_dir/vm/win11.xml"
-    VM_DISK="/mnt/Stuff/VM_Backup/win11.qcow2"
-    if [ -f "$VM_XML" ] && [ -f "$VM_DISK" ]; then
-        if ! virsh --connect qemu:///system list --all | grep -q win11; then
-            sudo virsh --connect qemu:///system define "$VM_XML"
-            print_success "Restored Windows 11 VM from repo XML."
-        else
-            print_message "Windows 11 VM already defined, skipping restore."
-        fi
-    else
-        print_warning "VM XML or disk not found, skipping VM restore."
     fi
 }
 
@@ -284,10 +290,13 @@ main() {
     configure_env_specific
     configure_defaults
     set_fish_shell
-    install_win11_vm_entry
+    ENV_TYPE=$(detect_environment)
+    if [ "$ENV_TYPE" = "physical" ]; then
+        install_win11_vm_entry
+        restore_vm
+    fi
     final_verification
     verify_gpu_monitoring
-    restore_vm
     print_success "Installation completed! Please log out and log back in to start Hyprland."
     print_message "Note: Some changes might require a system restart to take effect."
     prompt_reboot

@@ -2,6 +2,10 @@
 
 # NOTE: The original version of this script is backed up as install.sh.bak
 
+# Set up log file immediately
+LOGFILE="$(pwd)/install.log"
+echo "Install log started at $(date)" > "$LOGFILE"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -162,10 +166,6 @@ show_progress_bar() {
 
 install_packages() {
     print_step "Installing required packages"
-    
-    # Set up log file
-    LOGFILE="$(pwd)/install.log"
-    echo "Install log started at $(date)" > "$LOGFILE"
     
     # Define all package groups
     local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide"

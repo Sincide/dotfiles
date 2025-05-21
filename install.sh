@@ -68,14 +68,14 @@ detect_environment() {
 
 install_yay() {
     if ! command -v yay &>/dev/null; then
-        print_message "Installing yay..."
-        if [ -d /tmp/yay ]; then
-            print_warning "/tmp/yay already exists. Removing it to continue yay installation."
-            rm -rf /tmp/yay || handle_error "Failed to remove existing /tmp/yay directory"
+        print_message "Installing yay-bin..."
+        if [ -d /tmp/yay-bin ]; then
+            print_warning "/tmp/yay-bin already exists. Removing it to continue yay-bin installation."
+            rm -rf /tmp/yay-bin || handle_error "Failed to remove existing /tmp/yay-bin directory"
         fi
-        git clone https://aur.archlinux.org/yay.git /tmp/yay || handle_error "Failed to clone yay repository"
-        (cd /tmp/yay && makepkg -si --noconfirm) || handle_error "Failed to install yay"
-        rm -rf /tmp/yay
+        git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin || handle_error "Failed to clone yay-bin repository"
+        (cd /tmp/yay-bin && makepkg -si --noconfirm) || handle_error "Failed to install yay-bin"
+        rm -rf /tmp/yay-bin
     fi
 }
 

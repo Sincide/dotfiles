@@ -29,10 +29,9 @@ check_sudo() {
     print_success "Sudo privileges cached for 15 minutes"
 }
 
-# Function to run yay with sudo
+# Function to run yay with sudo and non-interactive AUR flags
 run_yay() {
-    # Use sudo -n to prevent password prompt
-    sudo -n yay "$@"
+    sudo -n yay --answerclean None --answerdiff None --answeredit None --mflags --noconfirm "$@"
 }
 
 cleanup() {
@@ -131,14 +130,15 @@ install_yay() {
     fi
 }
 
-# Progress bar function with spinner and ETA
+# Progress bar function with spinner, ETA, and current package name
 spinner_chars=("|" "/" "-" "\\")
 default_bar_length=30
 show_progress_bar() {
     local current=$1
     local total=$2
     local elapsed=$3
-    local bar_length=${4:-$default_bar_length}
+    local pkg_name="$4"
+    local bar_length=${5:-$default_bar_length}
     local percent=$(( 100 * current / total ))
     local filled=$(( bar_length * current / total ))
     local empty=$(( bar_length - filled ))
@@ -156,7 +156,8 @@ show_progress_bar() {
         local eta_rem=$((eta_sec % 60))
         eta=$(printf "%02d:%02d" $eta_min $eta_rem)
     fi
-    echo -ne "    [${bar}] ${percent}% (${current}/${total}) ${spinner} ETA: ${eta}\r"
+    printf "    [%-*s] %3d%% (%d/%d) %s ETA: %s | Installing: %s\r" \
+        $bar_length "$bar" $percent $current $total "$spinner" "$eta" "$pkg_name"
 }
 
 install_packages() {
@@ -207,15 +208,17 @@ install_packages() {
         for pkg in $CORE_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
                 local pkg_start_time=$(date +%s)
-                if run_yay -S --needed --noconfirm "$pkg" &>/dev/null; then
+                if run_yay -S --needed "$pkg" &>/dev/null; then
                     INSTALLED_PACKAGES+=("$pkg")
                 else
+                    # Show output for failed install
+                    run_yay -S --needed "$pkg"
                     FAILED_PACKAGES+=("$pkg")
                 fi
                 ((core_done++))
                 local now=$(date +%s)
                 local elapsed=$((now - core_start_time))
-                show_progress_bar $core_done $core_total $elapsed
+                show_progress_bar $core_done $core_total $elapsed "$pkg"
             fi
         done
         if [ $core_total -gt 0 ]; then echo; fi
@@ -231,15 +234,16 @@ install_packages() {
         local lf_start_time=$(date +%s)
         for pkg in $LF_PACKAGES; do
             if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                if run_yay -S --needed --noconfirm "$pkg" &>/dev/null; then
+                if run_yay -S --needed "$pkg" &>/dev/null; then
                     INSTALLED_PACKAGES+=("$pkg")
                 else
+                    run_yay -S --needed "$pkg"
                     FAILED_PACKAGES+=("$pkg")
                 fi
                 ((lf_done++))
                 local now=$(date +%s)
                 local elapsed=$((now - lf_start_time))
-                show_progress_bar $lf_done $lf_total $elapsed
+                show_progress_bar $lf_done $lf_total $elapsed "$pkg"
             fi
         done
         if [ $lf_total -gt 0 ]; then echo; fi
@@ -256,15 +260,16 @@ install_packages() {
             local phys_start_time=$(date +%s)
             for pkg in $PHYSICAL_PACKAGES; do
                 if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                    if run_yay -S --needed --noconfirm "$pkg" &>/dev/null; then
+                    if run_yay -S --needed "$pkg" &>/dev/null; then
                         INSTALLED_PACKAGES+=("$pkg")
                     else
+                        run_yay -S --needed "$pkg"
                         FAILED_PACKAGES+=("$pkg")
                     fi
                     ((phys_done++))
                     local now=$(date +%s)
                     local elapsed=$((now - phys_start_time))
-                    show_progress_bar $phys_done $phys_total $elapsed
+                    show_progress_bar $phys_done $phys_total $elapsed "$pkg"
                 fi
             done
             if [ $phys_total -gt 0 ]; then echo; fi

@@ -277,6 +277,30 @@ prompt_reboot() {
     fi
 }
 
+set_hyprpaper_conf() {
+    local config_path="$HOME/.config/hypr/hyprpaper.conf"
+    local wallpaper="/home/martin/dotfiles/assets/wallpapers/evilpuccin.png"
+    local env_type
+    env_type=$(detect_environment)
+
+    if [ "$env_type" = "vm" ]; then
+        cat > "$config_path" <<EOF
+preload = $wallpaper
+wallpaper = Virtual-1,$wallpaper
+splash = false
+EOF
+    else
+        cat > "$config_path" <<EOF
+preload = $wallpaper
+wallpaper = DP-3,$wallpaper
+wallpaper = DP-1,$wallpaper
+wallpaper = HDMI-A-1,$wallpaper
+splash = false
+EOF
+    fi
+    print_success "hyprpaper.conf generated for $env_type."
+}
+
 main() {
     if [ "$EUID" -eq 0 ]; then
         handle_error "Please do not run as root"
@@ -303,6 +327,7 @@ main() {
         install_win11_vm_entry
         restore_vm
     fi
+    set_hyprpaper_conf
     final_verification
     verify_gpu_monitoring
     print_success "Installation completed! Please log out and log back in to start Hyprland."

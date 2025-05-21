@@ -204,9 +204,17 @@ configure_defaults() {
 }
 
 set_fish_shell() {
-    if [ "$SHELL" != "$(which fish)" ]; then
+    local fish_path
+    fish_path="$(command -v fish)"
+    if [ "$SHELL" != "$fish_path" ]; then
         print_message "Setting fish as default shell..."
-        chsh -s "$(which fish)" || print_warning "Failed to set fish as default shell"
+        if chsh -s "$fish_path"; then
+            print_success "Default shell changed to fish."
+        else
+            print_warning "Could not change default shell. You may need to do it manually."
+        fi
+    else
+        print_message "Fish is already the default shell."
     fi
 }
 
@@ -236,7 +244,7 @@ restore_vm() {
 final_verification() {
     print_message "Performing final verification..."
     missing_deps=0
-    for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-clipboard swaylock sensors radeontop ddcutil lf; do
+    for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-copy wl-paste swaylock sensors radeontop ddcutil lf; do
         if ! command -v "$cmd" &> /dev/null; then
             print_error "Required command '$cmd' not found after installation!"
             missing_deps=1

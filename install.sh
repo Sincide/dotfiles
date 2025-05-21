@@ -294,14 +294,18 @@ install_packages() {
         if [ ${#INSTALLED_PACKAGES[@]} -gt 0 ]; then
             print_success "Successfully installed ${#INSTALLED_PACKAGES[@]} packages:"
             printf '%s\n' "${INSTALLED_PACKAGES[@]}" | sort | sed 's/^/  - /'
+            INSTALLED_PACKAGES_SUMMARY="$(printf '%s\n' "${INSTALLED_PACKAGES[@]}")"
         fi
         
         if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
             print_warning "Failed to install ${#FAILED_PACKAGES[@]} packages:"
             printf '%s\n' "${FAILED_PACKAGES[@]}" | sort | sed 's/^/  - /'
+            FAILED_PACKAGES_SUMMARY="$(printf '%s\n' "${FAILED_PACKAGES[@]}")"
         fi
     else
         print_success "All required packages are already installed"
+        INSTALLED_PACKAGES_SUMMARY=""
+        FAILED_PACKAGES_SUMMARY=""
     fi
 }
 
@@ -554,6 +558,25 @@ automount_external_drives() {
     print_success "Automount configuration complete! You can now run: sudo mount -a"
 }
 
+print_final_summary() {
+    echo -e "\n${BOLD}${MAGENTA}==> FINAL INSTALLATION SUMMARY <==${NC}"
+    if [ -f "$LOGFILE" ]; then
+        echo -e "${CYAN}Log file:${NC} $LOGFILE"
+    fi
+    if [ -n "$INSTALLED_PACKAGES_SUMMARY" ]; then
+        print_success "Total packages installed: $(echo "$INSTALLED_PACKAGES_SUMMARY" | wc -l)"
+        echo "$INSTALLED_PACKAGES_SUMMARY" | sort | sed 's/^/  - /'
+    fi
+    if [ -n "$FAILED_PACKAGES_SUMMARY" ]; then
+        print_warning "Total packages failed: $(echo "$FAILED_PACKAGES_SUMMARY" | wc -l)"
+        echo "$FAILED_PACKAGES_SUMMARY" | sort | sed 's/^/  - /'
+        echo -e "${YELLOW}Check the log file above for details on failed packages.${NC}"
+    else
+        print_success "No package installation failures detected."
+    fi
+    echo -e "${BOLD}If you encountered issues, review the log file for troubleshooting.${NC}"
+}
+
 main() {
     if [ "$EUID" -eq 0 ]; then
         handle_error "Please do not run as root"
@@ -614,6 +637,7 @@ main() {
 
     final_verification
     verify_gpu_monitoring
+    print_final_summary
     prompt_reboot
 }
 

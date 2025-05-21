@@ -26,4 +26,5 @@ gtk-update-icon-cache -f /usr/share/icons/Adwaita
 
 # Reload Waybar
 killall waybar
-waybar & 
+waybar &
+waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css & 

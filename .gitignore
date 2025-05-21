@@ -22,10 +22,6 @@ config/fish/conf.d/*
 .cache/
 cache/
 
-# Ignore Waybar toggle files that change frequently
-config/waybar/config
-config/waybar/style.css
-
 # Allow encrypted private files
 !private/
 !private/*.gpg 

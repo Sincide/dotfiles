@@ -193,7 +193,7 @@ install_packages() {
         
         # Refresh package database once
         print_substep "Refreshing package database..."
-        run_yay -Syy &>/dev/null || print_warning "Failed to refresh package database"
+        run_yay -Syy || print_warning "Failed to refresh package database"
         
         # Install core packages
         print_substep "Installing core system packages..."

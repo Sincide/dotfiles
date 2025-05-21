@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NOTE: The original version of this script is backed up as install.sh.bak
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -91,187 +93,227 @@ print_message "Detected environment: $ENV_TYPE"
 check_wayland_session
 
 # Install yay if not present
-if ! command -v yay &> /dev/null; then
-    print_message "Installing yay..."
-    git clone https://aur.archlinux.org/yay.git /tmp/yay || handle_error "Failed to clone yay repository"
-    (cd /tmp/yay && makepkg -si --noconfirm) || handle_error "Failed to install yay"
-    rm -rf /tmp/yay
-fi
+install_yay() {
+    if ! command -v yay &>/dev/null; then
+        print_message "Installing yay..."
+        git clone https://aur.archlinux.org/yay.git /tmp/yay || handle_error "Failed to clone yay repository"
+        (cd /tmp/yay && makepkg -si --noconfirm) || handle_error "Failed to install yay"
+        rm -rf /tmp/yay
+    fi
+}
 
 # Install required packages
-print_message "Installing required packages..."
-COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf ttf-inter lm_sensors radeontop wlsunset light ddcutil"
-
-# Split installation to handle errors better
-echo "$COMMON_PACKAGES" | tr ' ' '\n' | while read -r package; do
-    if ! yay -Q "$package" &>/dev/null; then
-        print_message "Installing $package..."
-        yay -S --needed --noconfirm "$package" || handle_error "Failed to install $package"
-    fi
-done
-
-if [ "$ENV_TYPE" = "physical" ]; then
-    print_message "Installing physical machine specific packages..."
-    yay -S --needed --noconfirm brightnessctl || handle_error "Failed to install brightnessctl"
-fi
-
-# Install lf file manager and dependencies
-print_message "Setting up lf file manager..."
-# Install lf if not present
-if ! command -v lf &> /dev/null; then
-    print_message "Installing lf..."
-    yay -S --needed --noconfirm lf || handle_error "Failed to install lf file manager"
-fi
-
-# Install recommended dependencies for better previews
-LF_DEPENDENCIES="bat file mediainfo chafa atool ffmpegthumbnailer poppler"
-print_message "Installing lf dependencies for preview capabilities..."
-echo "$LF_DEPENDENCIES" | tr ' ' '\n' | while read -r package; do
-    if ! yay -Q "$package" &>/dev/null; then
-        print_message "Installing $package..."
-        yay -S --needed --noconfirm "$package" || print_warning "Failed to install $package (non-critical)"
-    fi
-done
-
-# Backup existing configs
-print_message "Backing up existing configurations..."
-config_dir="$HOME/.config"
-backup_dir="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
-
-if [ -d "$config_dir" ]; then
-    mkdir -p "$backup_dir"
-    for dir in hypr waybar kitty fish dunst fuzzel lf; do
-        if [ -d "$config_dir/$dir" ]; then
-            cp -r "$config_dir/$dir" "$backup_dir/" || print_warning "Failed to backup $dir"
+install_packages() {
+    print_message "Installing required packages..."
+    COMMON_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf ttf-inter lm_sensors radeontop wlsunset light ddcutil zoxide"
+    MISSING_PACKAGES=()
+    for package in $COMMON_PACKAGES; do
+        if ! yay -Q "$package" &>/dev/null; then
+            MISSING_PACKAGES+=("$package")
         fi
     done
-fi
+    if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+        print_message "Installing missing packages: ${MISSING_PACKAGES[*]}"
+        yay -S --needed --noconfirm "${MISSING_PACKAGES[@]}" || handle_error "Failed to install some packages"
+    fi
+}
+
+# Install physical-specific packages
+install_physical_packages() {
+    ENV_TYPE=$(detect_environment)
+    if [ "$ENV_TYPE" = "physical" ]; then
+        print_message "Installing physical machine specific packages..."
+        yay -S --needed --noconfirm brightnessctl || handle_error "Failed to install brightnessctl"
+    fi
+}
+
+# Install lf file manager and dependencies
+install_lf_and_deps() {
+    print_message "Setting up lf file manager..."
+    if ! command -v lf &>/dev/null; then
+        print_message "Installing lf..."
+        yay -S --needed --noconfirm lf || handle_error "Failed to install lf file manager"
+    fi
+    LF_DEPENDENCIES="bat file mediainfo chafa atool ffmpegthumbnailer poppler"
+    print_message "Installing lf dependencies for preview capabilities..."
+    for package in $LF_DEPENDENCIES; do
+        if ! yay -Q "$package" &>/dev/null; then
+            print_message "Installing $package..."
+            yay -S --needed --noconfirm "$package" || print_warning "Failed to install $package (non-critical)"
+        fi
+    done
+}
+
+# Backup existing configs
+backup_configs() {
+    print_message "Backing up existing configurations..."
+    config_dir="$HOME/.config"
+    backup_dir="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
+    if [ -d "$config_dir" ]; then
+        mkdir -p "$backup_dir"
+        for dir in hypr waybar kitty fish dunst fuzzel lf; do
+            if [ -d "$config_dir/$dir" ]; then
+                cp -r "$config_dir/$dir" "$backup_dir/" || print_warning "Failed to backup $dir"
+            fi
+        done
+    fi
+}
 
 # Rotate old backups (keep last 5)
-find "$HOME" -maxdepth 1 -name ".config-backup-*" -type d -printf '%T@ %p\n' | \
-    sort -n | head -n -5 | cut -d' ' -f2- | xargs -r rm -rf
+rotate_backups() {
+    find "$HOME" -maxdepth 1 -name ".config-backup-*" -type d -printf '%T@ %p\n' | \
+        sort -n | head -n -5 | cut -d' ' -f2- | xargs -r rm -rf
+}
 
 # Create symlinks
-print_message "Creating symlinks..."
-dotfiles_dir="$(pwd)"
-
-# Symlink config files
-for dir in config/*; do
-    if [ -d "$dir" ]; then
-        base_name=$(basename "$dir")
-        case "$base_name" in
-            "applications")
-                # Handle .local/share/applications directory
-                mkdir -p "$HOME/.local/share/applications"
-                for file in "$dir"/*; do
-                    if [ -f "$file" ]; then
-                        target="$HOME/.local/share/applications/$(basename "$file")"
-                        ln -sf "$dotfiles_dir/$file" "$target"
-                        verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
-                    fi
-                done
-                ;;
-            *)
-                # Handle .config directories
-                target_dir="$HOME/.config/$base_name"
-                mkdir -p "$(dirname "$target_dir")"
-                ln -sf "$dotfiles_dir/$dir" "$target_dir"
-                verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
-                ;;
-        esac
-    fi
-done
+create_symlinks() {
+    print_message "Creating symlinks..."
+    dotfiles_dir="$(pwd)"
+    for dir in config/*; do
+        if [ -d "$dir" ]; then
+            base_name=$(basename "$dir")
+            case "$base_name" in
+                "applications")
+                    mkdir -p "$HOME/.local/share/applications"
+                    for file in "$dir"/*; do
+                        if [ -f "$file" ]; then
+                            target="$HOME/.local/share/applications/$(basename "$file")"
+                            ln -sf "$dotfiles_dir/$file" "$target"
+                            verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
+                        fi
+                    done
+                    ;;
+                *)
+                    target_dir="$HOME/.config/$base_name"
+                    mkdir -p "$(dirname "$target_dir")"
+                    ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                    verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                    ;;
+            esac
+        fi
+    done
+}
 
 # Make lf scripts executable
-print_message "Setting lf script permissions..."
-chmod +x "$config_dir/lf/preview.sh" "$config_dir/lf/cleaner.sh" || print_warning "Failed to set permissions for lf scripts"
+set_permissions() {
+    print_message "Setting lf script permissions..."
+    chmod +x "$HOME/.config/lf/preview.sh" "$HOME/.config/lf/cleaner.sh" || print_warning "Failed to set permissions for lf scripts"
+    print_message "Setting script permissions..."
+    find "$HOME/.config/hypr/scripts/" -type f -name "*.sh" -exec chmod +x {} \; || print_warning "Failed to set permissions for Hyprland scripts"
+    find "$HOME/.config/waybar/scripts/" -type f -name "*.sh" -exec chmod +x {} \; || print_warning "Failed to set permissions for Waybar scripts"
+}
 
-# Create necessary directories
-mkdir -p "$HOME/Pictures/Screenshots" || handle_error "Failed to create Screenshots directory"
-
-# Configure environment-specific settings
-print_message "Configuring environment-specific settings..."
-if [ "$ENV_TYPE" = "vm" ]; then
-    # Link VM-specific monitor config
-    ln -sf "$dotfiles_dir/config/hypr/monitors-vm.conf" "$HOME/.config/hypr/monitors.conf"
-    verify_symlink "$dotfiles_dir/config/hypr/monitors-vm.conf" "$HOME/.config/hypr/monitors.conf" || \
-        handle_error "Failed to configure VM monitor settings"
-else
-    # Link physical machine monitor config
-    ln -sf "$dotfiles_dir/config/hypr/monitors-physical.conf" "$HOME/.config/hypr/monitors.conf"
-    verify_symlink "$dotfiles_dir/config/hypr/monitors-physical.conf" "$HOME/.config/hypr/monitors.conf" || \
-        handle_error "Failed to configure physical monitor settings"
-fi
-
-# Ensure proper permissions for scripts
-print_message "Setting script permissions..."
-find "$HOME/.config/hypr/scripts/" -type f -name "*.sh" -exec chmod +x {} \; || print_warning "Failed to set permissions for Hyprland scripts"
-find "$HOME/.config/waybar/scripts/" -type f -name "*.sh" -exec chmod +x {} \; || print_warning "Failed to set permissions for Waybar scripts"
-
-# Configure default applications
-print_message "Configuring default applications..."
-xdg-mime default kitty.desktop x-scheme-handler/terminal
-xdg-mime default kitty.desktop application/x-terminal-emulator
-
-# Update XDG user directories
-print_message "Updating XDG user directories..."
-xdg-user-dirs-update || print_warning "Failed to update XDG user directories"
-
-# Set fish as default shell
-if [ "$SHELL" != "$(which fish)" ]; then
-    print_message "Setting fish as default shell..."
-    chsh -s "$(which fish)" || print_warning "Failed to set fish as default shell"
-fi
-
-# Ensure scripts are executable
-chmod +x "$dotfiles_dir/scripts/launch-win11-vm.sh"
-
-# Install desktop entry for win11 VM
-mkdir -p "$HOME/.local/share/applications"
-cp "$dotfiles_dir/desktop/win11-vm.desktop" "$HOME/.local/share/applications/win11-vm.desktop"
-
-print_success "Installation completed! Please log out and log back in to start Hyprland."
-print_message "Note: Some changes might require a system restart to take effect."
-
-# Final verification
-print_message "Performing final verification..."
-missing_deps=0
-for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-clipboard swaylock sensors radeontop ddcutil lf; do
-    if ! command -v "$cmd" &> /dev/null; then
-        print_error "Required command '$cmd' not found after installation!"
-        missing_deps=1
-    fi
-done
-
-if [ $missing_deps -eq 1 ]; then
-    print_warning "Some dependencies are missing. Please check the error messages above."
-else
-    print_success "All core dependencies are installed correctly."
-fi
-
-# Verify GPU monitoring setup
-if [ "$ENV_TYPE" = "physical" ]; then
-    print_message "Verifying GPU monitoring setup..."
-    if ! sensors amdgpu-* > /dev/null 2>&1; then
-        print_warning "AMD GPU sensors not detected. GPU monitoring may not work correctly."
-    fi
-    if ! radeontop -d- -l1 > /dev/null 2>&1; then
-        print_warning "Unable to read GPU usage. Make sure you have the necessary permissions."
-    fi
-fi
-
-# Restore Windows 11 VM definition from repo XML if disk exists
-VM_XML="$dotfiles_dir/vm/win11.xml"
-VM_DISK="/mnt/Stuff/VM_Backup/win11.qcow2"
-
-if [ -f "$VM_XML" ] && [ -f "$VM_DISK" ]; then
-    # Only define if not already defined
-    if ! virsh --connect qemu:///system list --all | grep -q win11; then
-        sudo virsh --connect qemu:///system define "$VM_XML"
-        print_success "Restored Windows 11 VM from repo XML."
+configure_env_specific() {
+    print_message "Configuring environment-specific settings..."
+    dotfiles_dir="$(pwd)"
+    ENV_TYPE=$(detect_environment)
+    if [ "$ENV_TYPE" = "vm" ]; then
+        ln -sf "$dotfiles_dir/config/hypr/monitors-vm.conf" "$HOME/.config/hypr/monitors.conf"
+        verify_symlink "$dotfiles_dir/config/hypr/monitors-vm.conf" "$HOME/.config/hypr/monitors.conf" || \
+            handle_error "Failed to configure VM monitor settings"
     else
-        print_message "Windows 11 VM already defined, skipping restore."
+        ln -sf "$dotfiles_dir/config/hypr/monitors-physical.conf" "$HOME/.config/hypr/monitors.conf"
+        verify_symlink "$dotfiles_dir/config/hypr/monitors-physical.conf" "$HOME/.config/hypr/monitors.conf" || \
+            handle_error "Failed to configure physical monitor settings"
     fi
-else
-    print_warning "VM XML or disk not found, skipping VM restore."
-fi 
+}
+
+configure_defaults() {
+    print_message "Configuring default applications..."
+    xdg-mime default kitty.desktop x-scheme-handler/terminal
+    xdg-mime default kitty.desktop application/x-terminal-emulator
+    print_message "Updating XDG user directories..."
+    xdg-user-dirs-update || print_warning "Failed to update XDG user directories"
+    mkdir -p "$HOME/Pictures/Screenshots" || handle_error "Failed to create Screenshots directory"
+}
+
+set_fish_shell() {
+    if [ "$SHELL" != "$(which fish)" ]; then
+        print_message "Setting fish as default shell..."
+        chsh -s "$(which fish)" || print_warning "Failed to set fish as default shell"
+    fi
+}
+
+install_win11_vm_entry() {
+    dotfiles_dir="$(pwd)"
+    chmod +x "$dotfiles_dir/scripts/launch-win11-vm.sh"
+    mkdir -p "$HOME/.local/share/applications"
+    cp "$dotfiles_dir/desktop/win11-vm.desktop" "$HOME/.local/share/applications/win11-vm.desktop"
+}
+
+final_verification() {
+    print_message "Performing final verification..."
+    missing_deps=0
+    for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-clipboard swaylock sensors radeontop ddcutil lf; do
+        if ! command -v "$cmd" &> /dev/null; then
+            print_error "Required command '$cmd' not found after installation!"
+            missing_deps=1
+        fi
+    done
+    if [ $missing_deps -eq 1 ]; then
+        print_warning "Some dependencies are missing. Please check the error messages above."
+    else
+        print_success "All core dependencies are installed correctly."
+    fi
+}
+
+verify_gpu_monitoring() {
+    ENV_TYPE=$(detect_environment)
+    if [ "$ENV_TYPE" = "physical" ]; then
+        print_message "Verifying GPU monitoring setup..."
+        if ! sensors amdgpu-* > /dev/null 2>&1; then
+            print_warning "AMD GPU sensors not detected. GPU monitoring may not work correctly."
+        fi
+        if ! radeontop -d- -l1 > /dev/null 2>&1; then
+            print_warning "Unable to read GPU usage. Make sure you have the necessary permissions."
+        fi
+    fi
+}
+
+restore_vm() {
+    dotfiles_dir="$(pwd)"
+    VM_XML="$dotfiles_dir/vm/win11.xml"
+    VM_DISK="/mnt/Stuff/VM_Backup/win11.qcow2"
+    if [ -f "$VM_XML" ] && [ -f "$VM_DISK" ]; then
+        if ! virsh --connect qemu:///system list --all | grep -q win11; then
+            sudo virsh --connect qemu:///system define "$VM_XML"
+            print_success "Restored Windows 11 VM from repo XML."
+        else
+            print_message "Windows 11 VM already defined, skipping restore."
+        fi
+    else
+        print_warning "VM XML or disk not found, skipping VM restore."
+    fi
+}
+
+prompt_reboot() {
+    read -p "Would you like to reboot now? [y/N]: " answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        systemctl reboot
+    fi
+}
+
+main() {
+    check_prerequisites
+    check_wayland_session
+    install_yay
+    install_packages
+    install_physical_packages
+    install_lf_and_deps
+    backup_configs
+    rotate_backups
+    create_symlinks
+    set_permissions
+    configure_env_specific
+    configure_defaults
+    set_fish_shell
+    install_win11_vm_entry
+    final_verification
+    verify_gpu_monitoring
+    restore_vm
+    print_success "Installation completed! Please log out and log back in to start Hyprland."
+    print_message "Note: Some changes might require a system restart to take effect."
+    prompt_reboot
+}
+
+main 

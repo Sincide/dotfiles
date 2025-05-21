@@ -123,6 +123,7 @@ alias amd-oc='sudo $HOME/dotfiles/scripts/amd-overdrive.sh'
 # System
 alias update='sudo pacman -Syu'
 alias cleanup='sudo pacman -Rns $(pacman -Qtdq)'
+alias cleanall='sudo journalctl --vacuum-time=2weeks; sudo pacman -Sc --noconfirm'
 
 # Better grep with ripgrep if available
 if command -v rg > /dev/null
@@ -146,6 +147,16 @@ fish_vi_key_bindings
 
 # Better command history with fzf if available
 if command -v fzf > /dev/null
+    # Set FZF default options
+    set -gx FZF_DEFAULT_OPTS '--height 40% --layout=reverse --border'
+    set -gx FZF_CTRL_T_OPTS '--preview "bat --color=always --style=numbers --line-range=:500 {}"'
+    set -gx FZF_ALT_C_OPTS '--preview "ls -la {}"'
+    
+    # Limit history size
+    set -gx HISTSIZE 2000
+    set -gx HISTFILESIZE 2000
+    
+    # Bind fzf to Ctrl+R
     bind \cr 'history | fzf | read -l command; commandline $command'
 else
     set -a missing_commands "fzf"
@@ -163,4 +174,48 @@ if test (count $missing_commands) -gt 0
     end
     echo "You can install them using 'yay -S $missing_commands'"
     set_color normal
+end
+
+# Zoxide: smarter cd
+if command -v zoxide > /dev/null
+    zoxide init fish | source
+end
+
+# Universal extract function
+function extract
+    if test -f $argv[1]
+        switch $argv[1]
+            case '*.tar.bz2'
+                tar xjf $argv[1]
+            case '*.tar.gz'
+                tar xzf $argv[1]
+            case '*.bz2'
+                bunzip2 $argv[1]
+            case '*.rar'
+                unrar x $argv[1]
+            case '*.gz'
+                gunzip $argv[1]
+            case '*.tar'
+                tar xf $argv[1]
+            case '*.tbz2'
+                tar xjf $argv[1]
+            case '*.tgz'
+                tar xzf $argv[1]
+            case '*.zip'
+                unzip $argv[1]
+            case '*.Z'
+                uncompress $argv[1]
+            case '*.7z'
+                7z x $argv[1]
+            case '*'
+                echo "Cannot extract '$argv[1]' via extract()"
+        end
+    else
+        echo "'$argv[1]' is not a valid file"
+    end
+end
+
+# Print $PATH entries on separate lines
+function path
+    echo $PATH | tr ' ' '\n' | tr ':' '\n'
 end 

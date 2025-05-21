@@ -160,6 +160,7 @@ show_progress_bar() {
         local eta_rem=$((eta_sec % 60))
         eta=$(printf "%02d:%02d" $eta_min $eta_rem)
     fi
+    printf "\r%*s\r" 120 " "  # Clear the line (adjust 120 for terminal width)
     printf "    [%-*s] %3d%% (%d/%d) %s ETA: %s | Installing: %s\r" \
         $bar_length "$bar" $percent $current $total "$spinner" "$eta" "$pkg_name"
 }

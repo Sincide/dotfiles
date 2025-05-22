@@ -515,26 +515,21 @@ automount_external_drives() {
 }
 
 print_final_summary() {
-    gum_style --bold --border double --border-foreground 212 --width 60 "FINAL INSTALLATION SUMMARY"
-    
+    echo
+    print_step "FINAL INSTALLATION SUMMARY"
     if [ -f "$LOGFILE" ]; then
         print_message "Log file: $LOGFILE"
     fi
-    
     if [ -n "$INSTALLED_PACKAGES_SUMMARY" ]; then
-        print_success "Total packages installed: $(echo "$INSTALLED_PACKAGES_SUMMARY" | wc -l)"
-        echo "$INSTALLED_PACKAGES_SUMMARY" | sort | sed 's/^/  - /'
+        print_success "Packages installed: $(echo "$INSTALLED_PACKAGES_SUMMARY" | wc -l)"
     fi
-    
     if [ -n "$FAILED_PACKAGES_SUMMARY" ]; then
-        print_warning "Total packages failed: $(echo "$FAILED_PACKAGES_SUMMARY" | wc -l)"
-        echo "$FAILED_PACKAGES_SUMMARY" | sort | sed 's/^/  - /'
-        print_message "Check the log file above for details on failed packages."
+        print_warning "Packages failed: $(echo "$FAILED_PACKAGES_SUMMARY" | wc -l)"
+        print_message "Check the log file for details."
     else
         print_success "No package installation failures detected."
     fi
-    
-    gum_style --border none --foreground 212 "If you encountered issues, review the log file for troubleshooting."
+    echo
 }
 
 # Gum-based UI functions

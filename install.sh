@@ -205,26 +205,27 @@ install_packages() {
         # Refresh sudo timestamp to avoid password prompt during suppressed output
         sudo -v
         
-        # Install packages in groups with correct gum progress
+        # Install packages in groups with bash progress bar
         print_substep "Installing packages..."
-        {
-            total=${#MISSING_PACKAGES[@]}
-            count=0
-            echo 0
-            for pkg in "${MISSING_PACKAGES[@]}"; do
-                if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
-                    INSTALLED_PACKAGES+=("$pkg")
-                else
-                    run_yay -S --needed --noconfirm "$pkg"
-                    FAILED_PACKAGES+=("$pkg")
-                    echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
-                    tail -n 20 "$LOGFILE"
-                fi
-                count=$((count + 1))
-                percent=$((100 * count / total))
-                echo "$percent"
-            done
-        } | gum progress --title "Installing packages..." --bar-size 20 --width 50
+        local total=${#MISSING_PACKAGES[@]}
+        local count=0
+        local start_time=$(date +%s)
+        for pkg in "${MISSING_PACKAGES[@]}"; do
+            local pkg_start_time=$(date +%s)
+            if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
+                INSTALLED_PACKAGES+=("$pkg")
+            else
+                run_yay -S --needed --noconfirm "$pkg"
+                FAILED_PACKAGES+=("$pkg")
+                echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
+                tail -n 20 "$LOGFILE"
+            fi
+            count=$((count + 1))
+            local now=$(date +%s)
+            local elapsed=$((now - start_time))
+            show_progress_bar $count $total $elapsed "$pkg"
+        done
+        if [ $total -gt 0 ]; then echo; fi
         
         # Print installation summary
         echo
@@ -254,16 +255,21 @@ backup_configs() {
     if [ -d "$config_dir" ]; then
         mkdir -p "$backup_dir"
         print_substep "Creating backup in $backup_dir"
-        {
-            echo "0"
-            for dir in hypr waybar kitty fish dunst fuzzel lf; do
-                if [ -d "$config_dir/$dir" ]; then
-                    print_progress "Backing up $dir..."
-                    cp -r "$config_dir/$dir" "$backup_dir/" || print_warning "Failed to backup $dir"
-                fi
-                echo "$((100 * (${#dir} + 1) / 7))"
-            done
-        } | gum_progress "Backing up configurations..."
+        local dirs=(hypr waybar kitty fish dunst fuzzel lf)
+        local total=${#dirs[@]}
+        local count=0
+        local start_time=$(date +%s)
+        for dir in "${dirs[@]}"; do
+            if [ -d "$config_dir/$dir" ]; then
+                print_progress "Backing up $dir..."
+                cp -r "$config_dir/$dir" "$backup_dir/" || print_warning "Failed to backup $dir"
+            fi
+            count=$((count + 1))
+            local now=$(date +%s)
+            local elapsed=$((now - start_time))
+            show_progress_bar $count $total $elapsed "$dir"
+        done
+        if [ $total -gt 0 ]; then echo; fi
         print_success "Configurations backed up to $backup_dir"
     fi
 }
@@ -278,36 +284,41 @@ rotate_backups() {
 create_symlinks() {
     print_step "Creating configuration symlinks"
     dotfiles_dir="$(pwd)"
-    {
-        echo "0"
-        for dir in config/*; do
-            if [ -d "$dir" ]; then
-                base_name=$(basename "$dir")
-                case "$base_name" in
-                    "applications")
-                        print_substep "Setting up application shortcuts..."
-                        mkdir -p "$HOME/.local/share/applications"
-                        for file in "$dir"/*; do
-                            if [ -f "$file" ]; then
-                                target="$HOME/.local/share/applications/$(basename "$file")"
-                                print_progress "Creating shortcut for $(basename "$file")..."
-                                ln -sf "$dotfiles_dir/$file" "$target"
-                                verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
-                            fi
-                        done
-                        ;;
-                    *)
-                        print_substep "Setting up $base_name configuration..."
-                        target_dir="$HOME/.config/$base_name"
-                        mkdir -p "$(dirname "$target_dir")"
-                        ln -sf "$dotfiles_dir/$dir" "$target_dir"
-                        verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
-                        ;;
-                esac
-            fi
-            echo "$((100 * (${#dir} + 1) / $(ls -1 config/ | wc -l)))"
-        done
-    } | gum_progress "Creating symlinks..."
+    local dirs=(config/*)
+    local total=$(ls -1d config/* | wc -l)
+    local count=0
+    local start_time=$(date +%s)
+    for dir in ${dirs[@]}; do
+        if [ -d "$dir" ]; then
+            base_name=$(basename "$dir")
+            case "$base_name" in
+                "applications")
+                    print_substep "Setting up application shortcuts..."
+                    mkdir -p "$HOME/.local/share/applications"
+                    for file in "$dir"/*; do
+                        if [ -f "$file" ]; then
+                            target="$HOME/.local/share/applications/$(basename "$file")"
+                            print_progress "Creating shortcut for $(basename "$file")..."
+                            ln -sf "$dotfiles_dir/$file" "$target"
+                            verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
+                        fi
+                    done
+                    ;;
+                *)
+                    print_substep "Setting up $base_name configuration..."
+                    target_dir="$HOME/.config/$base_name"
+                    mkdir -p "$(dirname "$target_dir")"
+                    ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                    verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                    ;;
+            esac
+        fi
+        count=$((count + 1))
+        local now=$(date +%s)
+        local elapsed=$((now - start_time))
+        show_progress_bar $count $total $elapsed "$dir"
+    done
+    if [ $total -gt 0 ]; then echo; fi
     print_success "All symlinks created"
 }
 
@@ -553,38 +564,6 @@ gum_input() {
 
 gum_choose() {
     gum choose --header "$1" "${@:2}"
-}
-
-gum_progress() {
-    gum progress --title "$1" --bar-size 20 --width 50
-}
-
-print_step() {
-    gum_style --bold "$1"
-}
-
-print_substep() {
-    gum_style --border none --foreground 212 "$1"
-}
-
-print_success() {
-    gum_style --border none --foreground 46 "✓ $1"
-}
-
-print_warning() {
-    gum_style --border none --foreground 208 "⚠ $1"
-}
-
-print_error() {
-    gum_style --border none --foreground 196 "✗ $1"
-}
-
-print_message() {
-    gum_style --border none --foreground 212 "→ $1"
-}
-
-print_progress() {
-    gum_style --border none --foreground 212 "  $1"
 }
 
 # Ensure gum is installed before any gum-based UI is used

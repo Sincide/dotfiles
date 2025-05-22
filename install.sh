@@ -583,7 +583,23 @@ print_progress() {
     gum_style --border none --foreground 212 "  $1"
 }
 
+# Ensure gum is installed before any gum-based UI is used
+ensure_gum() {
+    if ! command -v gum &>/dev/null; then
+        echo "==> Installing gum for beautiful UI..."
+        if command -v yay &>/dev/null; then
+            yay -S --noconfirm gum
+        elif command -v pacman &>/dev/null; then
+            sudo pacman -Sy --noconfirm gum
+        else
+            echo "Error: Neither yay nor pacman found. Please install gum manually."
+            exit 1
+        fi
+    fi
+}
+
 main() {
+    ensure_gum
     if [ "$EUID" -eq 0 ]; then
         print_error "Please do not run as root"
         exit 1

@@ -169,7 +169,7 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local PHYSICAL_PACKAGES="brightnessctl"
     
@@ -185,6 +185,7 @@ install_packages() {
     
     # Check for missing packages
     print_substep "Checking for missing packages..."
+    gum_spin "Scanning installed packages..."
     local MISSING_PACKAGES=()
     for package in $ALL_PACKAGES; do
         if ! yay -Q "$package" &>/dev/null; then
@@ -198,52 +199,17 @@ install_packages() {
         
         # Refresh package database once
         print_substep "Refreshing package database..."
+        gum_spin "Updating package database..."
         run_yay -Syy --noconfirm || print_warning "Failed to refresh package database"
         
         # Refresh sudo timestamp to avoid password prompt during suppressed output
         sudo -v
         
-        # Install core packages
-        print_substep "Installing core system packages..."
-        local core_total=0; local core_installed=0
-        for pkg in $CORE_PACKAGES; do
-            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                ((core_total++))
-            fi
-        done
-        local core_done=0
-        local core_start_time=$(date +%s)
-        for pkg in $CORE_PACKAGES; do
-            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                local pkg_start_time=$(date +%s)
-                if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
-                    INSTALLED_PACKAGES+=("$pkg")
-                else
-                    # Show output for failed install
-                    run_yay -S --needed --noconfirm "$pkg"
-                    FAILED_PACKAGES+=("$pkg")
-                    echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
-                    tail -n 20 "$LOGFILE"
-                fi
-                ((core_done++))
-                local now=$(date +%s)
-                local elapsed=$((now - core_start_time))
-                show_progress_bar $core_done $core_total $elapsed "$pkg"
-            fi
-        done
-        if [ $core_total -gt 0 ]; then echo; fi
-        
-        # Install lf and its dependencies
-        print_substep "Installing file manager and dependencies..."
-        local lf_total=0; local lf_done=0
-        for pkg in $LF_PACKAGES; do
-            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                ((lf_total++))
-            fi
-        done
-        local lf_start_time=$(date +%s)
-        for pkg in $LF_PACKAGES; do
-            if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
+        # Install packages in groups
+        print_substep "Installing packages..."
+        {
+            echo "0"
+            for pkg in "${MISSING_PACKAGES[@]}"; do
                 if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
                     INSTALLED_PACKAGES+=("$pkg")
                 else
@@ -252,45 +218,13 @@ install_packages() {
                     echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
                     tail -n 20 "$LOGFILE"
                 fi
-                ((lf_done++))
-                local now=$(date +%s)
-                local elapsed=$((now - lf_start_time))
-                show_progress_bar $lf_done $lf_total $elapsed "$pkg"
-            fi
-        done
-        if [ $lf_total -gt 0 ]; then echo; fi
-        
-        # Install physical machine specific packages
-        if [ "$(detect_environment)" = "physical" ]; then
-            print_substep "Installing physical machine specific packages..."
-            local phys_total=0; local phys_done=0
-            for pkg in $PHYSICAL_PACKAGES; do
-                if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                    ((phys_total++))
-                fi
+                echo "$((100 * ${#INSTALLED_PACKAGES[@]} / ${#MISSING_PACKAGES[@]}))"
             done
-            local phys_start_time=$(date +%s)
-            for pkg in $PHYSICAL_PACKAGES; do
-                if [[ " ${MISSING_PACKAGES[@]} " =~ " ${pkg} " ]]; then
-                    if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
-                        INSTALLED_PACKAGES+=("$pkg")
-                    else
-                        run_yay -S --needed --noconfirm "$pkg"
-                        FAILED_PACKAGES+=("$pkg")
-                        echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
-                        tail -n 20 "$LOGFILE"
-                    fi
-                    ((phys_done++))
-                    local now=$(date +%s)
-                    local elapsed=$((now - phys_start_time))
-                    show_progress_bar $phys_done $phys_total $elapsed "$pkg"
-                fi
-            done
-            if [ $phys_total -gt 0 ]; then echo; fi
-        fi
+        } | gum_progress "Installing packages..."
         
         # Print installation summary
-        echo -e "\n${BOLD}${MAGENTA}==>${NC} ${BOLD}Installation Summary${NC}"
+        echo
+        print_step "Installation Summary"
         if [ ${#INSTALLED_PACKAGES[@]} -gt 0 ]; then
             print_success "Successfully installed ${#INSTALLED_PACKAGES[@]} packages:"
             printf '%s\n' "${INSTALLED_PACKAGES[@]}" | sort | sed 's/^/  - /'
@@ -316,12 +250,16 @@ backup_configs() {
     if [ -d "$config_dir" ]; then
         mkdir -p "$backup_dir"
         print_substep "Creating backup in $backup_dir"
-        for dir in hypr waybar kitty fish dunst fuzzel lf; do
-            if [ -d "$config_dir/$dir" ]; then
-                print_progress "Backing up $dir..."
-                cp -r "$config_dir/$dir" "$backup_dir/" || print_warning "Failed to backup $dir"
-            fi
-        done
+        {
+            echo "0"
+            for dir in hypr waybar kitty fish dunst fuzzel lf; do
+                if [ -d "$config_dir/$dir" ]; then
+                    print_progress "Backing up $dir..."
+                    cp -r "$config_dir/$dir" "$backup_dir/" || print_warning "Failed to backup $dir"
+                fi
+                echo "$((100 * (${#dir} + 1) / 7))"
+            done
+        } | gum_progress "Backing up configurations..."
         print_success "Configurations backed up to $backup_dir"
     fi
 }
@@ -336,32 +274,36 @@ rotate_backups() {
 create_symlinks() {
     print_step "Creating configuration symlinks"
     dotfiles_dir="$(pwd)"
-    for dir in config/*; do
-        if [ -d "$dir" ]; then
-            base_name=$(basename "$dir")
-            case "$base_name" in
-                "applications")
-                    print_substep "Setting up application shortcuts..."
-                    mkdir -p "$HOME/.local/share/applications"
-                    for file in "$dir"/*; do
-                        if [ -f "$file" ]; then
-                            target="$HOME/.local/share/applications/$(basename "$file")"
-                            print_progress "Creating shortcut for $(basename "$file")..."
-                            ln -sf "$dotfiles_dir/$file" "$target"
-                            verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
-                        fi
-                    done
-                    ;;
-                *)
-                    print_substep "Setting up $base_name configuration..."
-                    target_dir="$HOME/.config/$base_name"
-                    mkdir -p "$(dirname "$target_dir")"
-                    ln -sf "$dotfiles_dir/$dir" "$target_dir"
-                    verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
-                    ;;
-            esac
-        fi
-    done
+    {
+        echo "0"
+        for dir in config/*; do
+            if [ -d "$dir" ]; then
+                base_name=$(basename "$dir")
+                case "$base_name" in
+                    "applications")
+                        print_substep "Setting up application shortcuts..."
+                        mkdir -p "$HOME/.local/share/applications"
+                        for file in "$dir"/*; do
+                            if [ -f "$file" ]; then
+                                target="$HOME/.local/share/applications/$(basename "$file")"
+                                print_progress "Creating shortcut for $(basename "$file")..."
+                                ln -sf "$dotfiles_dir/$file" "$target"
+                                verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
+                            fi
+                        done
+                        ;;
+                    *)
+                        print_substep "Setting up $base_name configuration..."
+                        target_dir="$HOME/.config/$base_name"
+                        mkdir -p "$(dirname "$target_dir")"
+                        ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                        verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                        ;;
+                esac
+            fi
+            echo "$((100 * (${#dir} + 1) / $(ls -1 config/ | wc -l)))"
+        done
+    } | gum_progress "Creating symlinks..."
     print_success "All symlinks created"
 }
 
@@ -486,10 +428,9 @@ verify_gpu_monitoring() {
 }
 
 prompt_reboot() {
-    echo -e "\n${BOLD}${MAGENTA}==>${NC} ${BOLD}Installation completed!${NC}"
-    echo -e "${YELLOW}Note:${NC} Some changes might require a system restart to take effect."
-    read -p "Would you like to reboot now? [y/N]: " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
+    gum_style --bold "Installation completed!"
+    print_message "Some changes might require a system restart to take effect."
+    if gum_confirm "Would you like to reboot now?"; then
         print_message "Rebooting system..."
         systemctl reboot
     fi
@@ -559,28 +500,97 @@ automount_external_drives() {
 }
 
 print_final_summary() {
-    echo -e "\n${BOLD}${MAGENTA}==> FINAL INSTALLATION SUMMARY <==${NC}"
+    gum_style --bold --border double --border-foreground 212 --width 60 "FINAL INSTALLATION SUMMARY"
+    
     if [ -f "$LOGFILE" ]; then
-        echo -e "${CYAN}Log file:${NC} $LOGFILE"
+        print_message "Log file: $LOGFILE"
     fi
+    
     if [ -n "$INSTALLED_PACKAGES_SUMMARY" ]; then
         print_success "Total packages installed: $(echo "$INSTALLED_PACKAGES_SUMMARY" | wc -l)"
         echo "$INSTALLED_PACKAGES_SUMMARY" | sort | sed 's/^/  - /'
     fi
+    
     if [ -n "$FAILED_PACKAGES_SUMMARY" ]; then
         print_warning "Total packages failed: $(echo "$FAILED_PACKAGES_SUMMARY" | wc -l)"
         echo "$FAILED_PACKAGES_SUMMARY" | sort | sed 's/^/  - /'
-        echo -e "${YELLOW}Check the log file above for details on failed packages.${NC}"
+        print_message "Check the log file above for details on failed packages."
     else
         print_success "No package installation failures detected."
     fi
-    echo -e "${BOLD}If you encountered issues, review the log file for troubleshooting.${NC}"
+    
+    gum_style --border none --foreground 212 "If you encountered issues, review the log file for troubleshooting."
+}
+
+# Gum-based UI functions
+gum_style() {
+    gum style \
+        --border normal \
+        --border-foreground 212 \
+        --foreground 212 \
+        --align center \
+        --width 50 \
+        --margin "1 2" \
+        --padding "1 2" \
+        "$@"
+}
+
+gum_spin() {
+    gum spin --spinner dot --title "$1" -- sleep 0.1
+}
+
+gum_confirm() {
+    gum confirm --affirmative "Yes" --negative "No" "$1"
+}
+
+gum_input() {
+    gum input --placeholder "$1"
+}
+
+gum_choose() {
+    gum choose --header "$1" "${@:2}"
+}
+
+gum_progress() {
+    gum progress --title "$1" --bar-size 20 --width 50
+}
+
+print_step() {
+    gum_style --bold "$1"
+}
+
+print_substep() {
+    gum_style --border none --foreground 212 "$1"
+}
+
+print_success() {
+    gum_style --border none --foreground 46 "✓ $1"
+}
+
+print_warning() {
+    gum_style --border none --foreground 208 "⚠ $1"
+}
+
+print_error() {
+    gum_style --border none --foreground 196 "✗ $1"
+}
+
+print_message() {
+    gum_style --border none --foreground 212 "→ $1"
+}
+
+print_progress() {
+    gum_style --border none --foreground 212 "  $1"
 }
 
 main() {
     if [ "$EUID" -eq 0 ]; then
-        handle_error "Please do not run as root"
+        print_error "Please do not run as root"
+        exit 1
     fi
+    
+    gum_style --bold "Arch Linux Dotfiles Installer"
+    print_message "This script will set up your system with the provided dotfiles."
     
     # Check and cache sudo privileges at the start
     check_sudo
@@ -592,25 +602,21 @@ main() {
     print_message "Detected environment: $ENV_TYPE"
     check_wayland_session
 
-    read -p "Do you want to install all required packages? [Y/n]: " ans
-    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+    if gum_confirm "Do you want to install all required packages?"; then
         install_yay
         install_packages
     fi
 
-    read -p "Do you want to backup existing configs? [Y/n]: " ans
-    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+    if gum_confirm "Do you want to backup existing configs?"; then
         backup_configs
         rotate_backups
     fi
 
-    read -p "Do you want to create symlinks for configs? [Y/n]: " ans
-    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+    if gum_confirm "Do you want to create symlinks for configs?"; then
         create_symlinks
     fi
 
-    read -p "Do you want to set up wallpapers? [Y/n]: " ans
-    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+    if gum_confirm "Do you want to set up wallpapers?"; then
         set_hyprpaper_conf
     fi
 
@@ -618,19 +624,17 @@ main() {
     configure_env_specific
     configure_defaults
 
-    read -p "Do you want to set fish as your default shell? [Y/n]: " ans
-    if [[ ! "$ans" =~ ^[Nn]$ ]]; then
+    if gum_confirm "Do you want to set fish as your default shell?"; then
         set_fish_shell
     fi
 
     if [ "$ENV_TYPE" = "physical" ]; then
-        read -p "Do you want to set up the Windows 11 VM entry? [y/N]: " ans
-        if [[ "$ans" =~ ^[Yy]$ ]]; then
+        if gum_confirm "Do you want to set up the Windows 11 VM entry?"; then
             install_win11_vm_entry
             restore_vm
         fi
-        read -p "Would you like to automatically add external drives to /etc/fstab for automounting? [y/N]: " automount_ans
-        if [[ "$automount_ans" =~ ^[Yy]$ ]]; then
+        
+        if gum_confirm "Would you like to automatically add external drives to /etc/fstab for automounting?"; then
             automount_external_drives
         fi
     fi

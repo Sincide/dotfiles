@@ -568,52 +568,16 @@ gum_choose() {
 
 # Ensure gum is installed before any gum-based UI is used
 ensure_gum() {
-    # Check for wget or curl
-    if ! command -v wget &>/dev/null && ! command -v curl &>/dev/null; then
-        echo "==> Installing wget for downloading gum..."
+    if ! command -v gum &>/dev/null; then
+        echo "==> Installing gum from the official Arch repository..."
         if command -v yay &>/dev/null; then
-            yay -S --noconfirm wget
+            yay -S --noconfirm gum
         elif command -v pacman &>/dev/null; then
-            sudo pacman -Sy --noconfirm wget
+            sudo pacman -Sy --noconfirm gum
         else
-            echo "Error: Neither yay nor pacman found. Please install wget or curl manually."
+            echo "Error: Neither yay nor pacman found. Please install gum manually."
             exit 1
         fi
-    fi
-
-    # Check if gum exists and supports 'progress'
-    if ! command -v gum &>/dev/null || ! gum help 2>&1 | grep -q progress; then
-        echo "==> Installing official Charmbracelet gum for TUI..."
-        # Remove any existing gum
-        if command -v gum &>/dev/null; then
-            sudo rm -f "$(command -v gum)"
-        fi
-        # Download and install the official gum
-        tmpdir=$(mktemp -d)
-        arch=$(uname -m)
-        case "$arch" in
-            x86_64|amd64) arch="x86_64" ;;
-            aarch64|arm64) arch="arm64" ;;
-            *) echo "Unsupported arch: $arch"; exit 1 ;;
-        esac
-        url="https://github.com/charmbracelet/gum/releases/latest/download/gum_Linux_${arch}.tar.gz"
-        echo "Downloading: $url"
-        if command -v wget &>/dev/null; then
-            wget -O "$tmpdir/gum.tar.gz" "$url"
-        else
-            curl -L -o "$tmpdir/gum.tar.gz" "$url"
-        fi
-        if [ ! -f "$tmpdir/gum.tar.gz" ]; then
-            echo "ERROR: Download failed. Please check your internet connection or try the URL above manually."
-            exit 1
-        fi
-        tar -xzf "$tmpdir/gum.tar.gz" -C "$tmpdir"
-        if [ ! -f "$tmpdir/gum" ]; then
-            echo "ERROR: Extraction failed. Archive may be corrupt."
-            exit 1
-        fi
-        sudo install "$tmpdir/gum" /usr/local/bin/gum
-        rm -rf "$tmpdir"
     fi
 }
 

@@ -205,10 +205,12 @@ install_packages() {
         # Refresh sudo timestamp to avoid password prompt during suppressed output
         sudo -v
         
-        # Install packages in groups
+        # Install packages in groups with correct gum progress
         print_substep "Installing packages..."
         {
-            echo "0"
+            total=${#MISSING_PACKAGES[@]}
+            count=0
+            echo 0
             for pkg in "${MISSING_PACKAGES[@]}"; do
                 if run_yay -S --needed --noconfirm "$pkg" &>>"$LOGFILE"; then
                     INSTALLED_PACKAGES+=("$pkg")
@@ -218,9 +220,11 @@ install_packages() {
                     echo -e "\n${RED}Last 20 lines of install.log for $pkg:${NC}"
                     tail -n 20 "$LOGFILE"
                 fi
-                echo "$((100 * ${#INSTALLED_PACKAGES[@]} / ${#MISSING_PACKAGES[@]}))"
+                count=$((count + 1))
+                percent=$((100 * count / total))
+                echo "$percent"
             done
-        } | gum_progress "Installing packages..."
+        } | gum progress --title "Installing packages..." --bar-size 20 --width 50
         
         # Print installation summary
         echo

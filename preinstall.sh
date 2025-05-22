@@ -3,10 +3,11 @@ set -e
 
 echo "==> Installing base dependencies for Python installer..."
 
-sudo pacman -Sy --noconfirm python python-pip git make gcc
+sudo pacman -Sy --noconfirm python python-pip git make gcc python-rich
 
-pip install --user --upgrade pip
-pip install --user rich questionary
+if ! pacman -Q python-questionary &>/dev/null; then
+    yay -S --noconfirm python-questionary
+fi
 
 if ! command -v yay &>/dev/null; then
     echo "==> Installing yay-bin (AUR helper)..."

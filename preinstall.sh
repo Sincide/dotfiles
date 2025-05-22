@@ -21,10 +21,14 @@ fi
 
 echo "==> All dependencies installed. Launching the Python installer..."
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 if command -v python3 &>/dev/null; then
     PYTHON=python3
 else
     PYTHON=python
 fi
 
+cd "$SCRIPT_DIR"
 $PYTHON install.py "$@"

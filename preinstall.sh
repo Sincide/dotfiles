@@ -5,10 +5,6 @@ echo "==> Installing base dependencies for Python installer..."
 
 sudo pacman -Sy --noconfirm python python-pip git make gcc python-rich
 
-if ! pacman -Q python-questionary &>/dev/null; then
-    yay -S --noconfirm python-questionary
-fi
-
 if ! command -v yay &>/dev/null; then
     echo "==> Installing yay-bin (AUR helper)..."
     cd /tmp
@@ -17,6 +13,10 @@ if ! command -v yay &>/dev/null; then
     makepkg -si --noconfirm
     cd ..
     rm -rf yay-bin
+fi
+
+if ! pacman -Q python-questionary &>/dev/null; then
+    yay -S --noconfirm python-questionary
 fi
 
 echo "==> All dependencies installed. Launching the Python installer..."

@@ -589,16 +589,26 @@ print_progress() {
 
 # Ensure gum is installed before any gum-based UI is used
 ensure_gum() {
-    if ! command -v gum &>/dev/null; then
-        echo "==> Installing gum for beautiful UI..."
-        if command -v yay &>/dev/null; then
-            yay -S --noconfirm gum
-        elif command -v pacman &>/dev/null; then
-            sudo pacman -Sy --noconfirm gum
-        else
-            echo "Error: Neither yay nor pacman found. Please install gum manually."
-            exit 1
+    # Check if gum exists and supports 'progress'
+    if ! command -v gum &>/dev/null || ! gum help 2>&1 | grep -q progress; then
+        echo "==> Installing official Charmbracelet gum for TUI..."
+        # Remove any existing gum
+        if command -v gum &>/dev/null; then
+            sudo rm -f "$(command -v gum)"
         fi
+        # Download and install the official gum
+        tmpdir=$(mktemp -d)
+        arch=$(uname -m)
+        case "$arch" in
+            x86_64|amd64) arch="x86_64" ;;
+            aarch64|arm64) arch="arm64" ;;
+            *) echo "Unsupported arch: $arch"; exit 1 ;;
+        esac
+        url="https://github.com/charmbracelet/gum/releases/latest/download/gum_Linux_${arch}.tar.gz"
+        wget -O "$tmpdir/gum.tar.gz" "$url"
+        tar -xzf "$tmpdir/gum.tar.gz" -C "$tmpdir"
+        sudo install "$tmpdir/gum" /usr/local/bin/gum
+        rm -rf "$tmpdir"
     fi
 }
 

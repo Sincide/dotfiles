@@ -465,4 +465,58 @@ cd dotfiles
 ### View Options
 - .: Toggle hidden files
 - s: Sort by size
-- t: Sort by time 
+- t: Sort by time
+
+## GTK and Qt Theming (Wayland/Hyprland)
+
+### Recommended: Use `nwg-look` for GTK Theming
+- **nwg-look** is a modern, Wayland-native GUI tool for changing GTK themes, icons, cursors, and fonts.
+- It works with Hyprland and other wlroots compositors, and updates both GSettings (for portals/file pickers) and `settings.ini` (for regular GTK apps).
+- To install:
+  ```sh
+  sudo pacman -S nwg-look
+  # or from AUR: yay -S nwg-look
+  ```
+- To use:
+  1. Run `nwg-look` from your launcher or terminal.
+  2. Select your desired GTK theme, icon theme, cursor, and font.
+  3. Click **Apply**. Changes take effect immediately.
+
+### Important: Do NOT Hardcode GTK_THEME or gsettings
+- Do **not** set `GTK_THEME` in `~/.config/hypr/env.conf` if you want to use `nwg-look`.
+- Do **not** hardcode `gsettings set org.gnome.desktop.interface gtk-theme ...` in startup scripts (e.g., `xdg-portal-hyprland`).
+- Let `nwg-look` manage your GTK theming for best compatibility with file pickers and portals.
+
+### Troubleshooting GTK Theming
+- If changing the theme in `nwg-look` has no effect, check for hardcoded theme settings in your environment variables or scripts and remove/comment them out.
+- Restart Hyprland or your session after making changes.
+- For more details, see the [nwg-look GitHub page](https://github.com/nwg-piotr/nwg-look).
+
+### Qt Theming
+- Use `qt5ct` and `qt6ct` for Qt5/Qt6 theming.
+- Set the style to `kvantum` for best results, and use a matching Kvantum theme (e.g., Catppuccin).
+- Do **not** set conflicting environment variables for Qt theming if you want to use the GUI tools.
+
+### Example: Clean env.conf for Theming
+```ini
+# GTK Environment variables
+# env = GTK_THEME,catppuccin-mocha-blue-standard+default  # (Commented out to allow nwg-look to control theme)
+env = GTK_ICON_THEME,Papirus-Dark
+env = GTK_FONT_NAME,Noto Sans 11
+# ...
+```
+
+### Example: Clean xdg-portal-hyprland Script
+```sh
+# gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-blue-standard+default"  # (Commented out to allow nwg-look to control theme)
+gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
+gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
+gsettings set org.gnome.desktop.interface font-name "Noto Sans 11"
+# ...
+```
+
+### Summary
+- Use `nwg-look` for all GTK theming on Hyprland/Wayland.
+- Remove or comment out any hardcoded GTK_THEME or gsettings theme settings.
+- Use `qt5ct`/`qt6ct` and Kvantum for Qt theming.
+- Restart your session after making changes. 

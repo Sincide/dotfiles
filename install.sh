@@ -169,7 +169,7 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local PHYSICAL_PACKAGES="brightnessctl"
     
@@ -532,6 +532,20 @@ print_final_summary() {
     echo
 }
 
+print_theming_instructions() {
+    echo
+    print_step "GTK and Qt Theming Recommendations"
+    print_message "For GTK theming, use the GUI tool nwg-look (Wayland-native, works with Hyprland)."
+    print_message "  Install: sudo pacman -S nwg-look"
+    print_message "  Run: nwg-look (from your launcher or terminal)"
+    print_message "  Do NOT set GTK_THEME in env.conf or hardcode gsettings in scripts if you want GUI control."
+    print_message "For Qt theming, use qt5ct, qt6ct, and Kvantum."
+    print_message "  Install: sudo pacman -S qt5ct qt6ct kvantum"
+    print_message "  Set style to Kvantum in qt5ct/qt6ct, and use a matching Kvantum theme."
+    print_message "See the README for more details."
+    echo
+}
+
 # Gum-based UI functions
 gum_style() {
     gum style \
@@ -636,6 +650,7 @@ main() {
     final_verification
     verify_gpu_monitoring
     print_final_summary
+    print_theming_instructions
     prompt_reboot
 }
 

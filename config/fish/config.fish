@@ -1,6 +1,8 @@
 # Set environment variables
 set -gx EDITOR nano
 set -gx VISUAL nano
+set -x OPENAI_API_KEY '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'
+
 # Set TERM only for non-Kitty terminals
 if not string match -q 'xterm-kitty' $TERM
     set -gx TERM xterm-256color
@@ -27,7 +29,7 @@ if command -v eza > /dev/null
     # - Natural sort order
     # - Time/date in recent format
     # - Sort by modified time
-    alias ll='eza -l --icons --git --group --header --binary --classify --time-style=relative --sort=modified'
+    alias ll='eza -l -a --icons --git --group --header --binary --classify --time-style=relative --sort=modified'
     
     # Additional useful variants
     alias la='ll -a'           # Show all files including hidden

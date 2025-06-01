@@ -40,6 +40,60 @@ This system represents a paradigm shift from static rule-based theming to intell
 
 ---
 
+## 🔮 **UPCOMING DEVELOPMENT PHASE: FIREFOX AI THEMING INTEGRATION**
+
+**Planned Start Date**: 2025-06-02  
+**Priority**: High  
+**Complexity**: Medium-High  
+
+### **🎯 Project Goal**
+Extend the AI-enhanced dynamic theming system to include Firefox browser theming, providing seamless visual integration between the desktop environment and web browsing experience.
+
+### **📋 Implementation Plan**
+
+#### **Phase 1: Research & Analysis** 
+- **Firefox theming mechanisms**: userChrome.css, userContent.css, CSS variables
+- **AI color integration**: How to inject matugen colors into Firefox CSS
+- **Browser restart automation**: Strategies for applying themes without manual restart
+- **Profile management**: Multi-profile support and theme isolation
+
+#### **Phase 2: Firefox CSS Framework**
+- **Template system**: Create Firefox CSS templates compatible with matugen variables
+- **Dynamic injection**: Mechanism to update Firefox CSS from AI color analysis
+- **Component coverage**: Address bar, tabs, sidebars, content area, scrollbars
+- **Dark/light mode**: Respect system theme preferences from AI analysis
+
+#### **Phase 3: Integration with AI System**
+- **Script enhancement**: Extend `wallpaper-theme-changer.sh` to include Firefox
+- **Configuration management**: Firefox profile detection and CSS file management
+- **Live reloading**: Implement CSS hot-reloading for Firefox without restart
+- **Error handling**: Graceful fallbacks if Firefox theming fails
+
+#### **Phase 4: Testing & Refinement**
+- **Multi-profile testing**: Ensure compatibility across different Firefox profiles
+- **Performance validation**: Measure theme application speed including Firefox
+- **User experience**: Seamless workflow - wallpaper change instantly themes Firefox
+- **Documentation**: Update guides with Firefox theming setup and troubleshooting
+
+### **🔧 Technical Considerations**
+- **Firefox userChrome.css**: Requires `toolkit.legacyUserProfileCustomizations.stylesheets = true`
+- **CSS Variable injection**: Bridge between matugen output and Firefox CSS variables
+- **Profile auto-detection**: Script should find and update active Firefox profiles
+- **Browser state handling**: Theme application whether Firefox is running or closed
+
+### **📊 Success Metrics**
+- ✅ Firefox visual theme matches desktop theme within 3 seconds of wallpaper change
+- ✅ All major Firefox UI elements adopt AI-optimized colors
+- ✅ Zero manual intervention required for Firefox theme updates
+- ✅ Graceful degradation if Firefox theming fails
+
+### **🎁 Expected Outcome**
+Complete desktop-to-browser visual harmony where AI analyzes wallpaper content and automatically optimizes Firefox appearance accordingly, creating a truly unified computing experience.
+
+**Next Session Focus**: Firefox CSS template research and initial userChrome.css framework development.
+
+---
+
 ## 📋 Development Session Overview
 
 ### Current System Status

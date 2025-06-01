@@ -107,13 +107,8 @@ check_wayland_session() {
 }
 
 detect_environment() {
-    if systemd-detect-virt --vm > /dev/null 2>&1; then
-        echo "vm"
-    elif systemd-detect-virt --container > /dev/null 2>&1; then
-        echo "container"
-    else
-        echo "physical"
-    fi
+    # Always assume physical environment
+    echo "physical"
 }
 
 install_yay() {
@@ -335,20 +330,6 @@ set_permissions() {
 
 configure_env_specific() {
     print_step "Configuring environment-specific settings"
-    dotfiles_dir="$(pwd)"
-    ENV_TYPE=$(detect_environment)
-    print_substep "Detected environment: $ENV_TYPE"
-    if [ "$ENV_TYPE" = "vm" ]; then
-        print_progress "Setting up VM monitor configuration..."
-        ln -sf "$dotfiles_dir/config/hypr/monitors-vm.conf" "$HOME/.config/hypr/monitors.conf"
-        verify_symlink "$dotfiles_dir/config/hypr/monitors-vm.conf" "$HOME/.config/hypr/monitors.conf" || \
-            handle_error "Failed to configure VM monitor settings"
-    else
-        print_progress "Setting up physical monitor configuration..."
-        ln -sf "$dotfiles_dir/config/hypr/monitors-physical.conf" "$HOME/.config/hypr/monitors.conf"
-        verify_symlink "$dotfiles_dir/config/hypr/monitors-physical.conf" "$HOME/.config/hypr/monitors.conf" || \
-            handle_error "Failed to configure physical monitor settings"
-    fi
     print_success "Environment configuration completed"
 }
 
@@ -454,26 +435,16 @@ prompt_reboot() {
 set_hyprpaper_conf() {
     print_step "Setting up wallpaper configuration"
     local config_path="$HOME/.config/hypr/hyprpaper.conf"
-    local wallpaper="/home/martin/dotfiles/assets/wallpapers/evilpuccin.png"
-    local env_type
-    env_type=$(detect_environment)
+    local wallpaper="$(pwd)/assets/wallpapers/evilpuccin.png"
 
-    print_substep "Generating hyprpaper.conf for $env_type environment..."
-    if [ "$env_type" = "vm" ]; then
-        cat > "$config_path" <<EOF
-preload = $wallpaper
-wallpaper = Virtual-1,$wallpaper
-splash = false
-EOF
-    else
-        cat > "$config_path" <<EOF
+    print_substep "Generating hyprpaper.conf for physical monitors..."
+    cat > "$config_path" <<EOF
 preload = $wallpaper
 wallpaper = DP-3,$wallpaper
 wallpaper = DP-1,$wallpaper
 wallpaper = HDMI-A-1,$wallpaper
 splash = false
 EOF
-    fi
     print_success "hyprpaper.conf generated"
 }
 

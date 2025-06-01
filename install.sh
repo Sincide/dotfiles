@@ -164,7 +164,7 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local PHYSICAL_PACKAGES="brightnessctl"
     
@@ -307,18 +307,27 @@ create_symlinks() {
                     print_substep "Setting up $base_name configuration..."
                     target_dir="$HOME/.config/$base_name"
                     
-                    # Check if symlink already exists and points to correct location
-                    if [ -L "$target_dir" ] && [ "$(readlink "$target_dir")" = "$dotfiles_dir/$dir" ]; then
-                        print_progress "$base_name configuration already symlinked correctly"
-                    elif [ -e "$target_dir" ]; then
-                        print_warning "$base_name configuration exists but is not a correct symlink. Skipping to prevent data loss."
-                        print_warning "Manual intervention required: Remove $target_dir and re-run if you want to symlink it."
-                    else
-                        print_progress "Creating symlink for $base_name configuration..."
-                        mkdir -p "$(dirname "$target_dir")"
-                        ln -sf "$dotfiles_dir/$dir" "$target_dir"
-                        verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
-                    fi
+                    # Special handling for directories that should contain mixed content
+                    case "$base_name" in
+                        "dynamic-theming"|"gtk-3.0"|"gtk-4.0")
+                            # These directories need to contain both symlinked and real files
+                            print_progress "$base_name configuration uses mixed content - managed individually"
+                            ;;
+                        *)
+                            # Check if symlink already exists and points to correct location
+                            if [ -L "$target_dir" ] && [ "$(readlink "$target_dir")" = "$dotfiles_dir/$dir" ]; then
+                                print_progress "$base_name configuration already symlinked correctly"
+                            elif [ -e "$target_dir" ]; then
+                                print_warning "$base_name configuration exists but is not a correct symlink. Skipping to prevent data loss."
+                                print_warning "Manual intervention required: Remove $target_dir and re-run if you want to symlink it."
+                            else
+                                print_progress "Creating symlink for $base_name configuration..."
+                                mkdir -p "$(dirname "$target_dir")"
+                                ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                                verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                            fi
+                            ;;
+                    esac
                     ;;
             esac
         fi
@@ -484,7 +493,7 @@ set_fish_shell() {
     print_substep "Ensuring ~/.local/bin is in fish PATH..."
     local fish_config="$HOME/.config/fish/config.fish"
     if [ -f "$fish_config" ]; then
-        if ! grep -q "set -gx PATH.*\.local/bin" "$fish_config"; then
+        if ! /bin/grep -q "set -gx PATH.*\.local/bin" "$fish_config"; then
             echo 'set -gx PATH $HOME/.local/bin $PATH' >> "$fish_config"
             print_success "Added ~/.local/bin to fish PATH"
         else
@@ -526,7 +535,7 @@ final_verification() {
     print_step "Performing final verification"
     missing_deps=0
     print_substep "Checking core dependencies..."
-    for cmd in hyprland waybar kitty fish fuzzel dunst jq bc ollama wl-copy wl-paste swaylock sensors radeontop ddcutil lf; do
+    for cmd in hyprland waybar kitty fish fuzzel dunst jq bc ollama wl-copy wl-paste sensors radeontop ddcutil lf; do
         if ! command -v "$cmd" &> /dev/null; then
             print_error "Required command '$cmd' not found after installation!"
             missing_deps=1
@@ -595,7 +604,7 @@ automount_external_drives() {
             device="/dev/$dev_name"
             print_progress "Found drive: $label ($device)"
             # Check if already in fstab
-            if ! grep -q "LABEL=$label" "$temp_fstab"; then
+            if ! /bin/grep -q "LABEL=$label" "$temp_fstab"; then
                 print_substep "Adding $label to /etc/fstab..."
                 sudo mkdir -p "$mountpoint"
                 echo "LABEL=$label $mountpoint auto nosuid,nodev,nofail,x-gvfs-show 0 0" >> "$temp_fstab"
@@ -703,6 +712,239 @@ ensure_gum() {
     fi
 }
 
+preflight_check() {
+    print_step "Analyzing current system state"
+    
+    local needs_packages=false
+    local needs_configs=false
+    local needs_ai_scripts=false
+    local needs_ai_system=false
+    local needs_fish=false
+    local needs_vm=false
+    local needs_wallpaper=false
+    local needs_fstab=false
+    local missing_count=0
+    local ai_missing_count=0
+    
+    # Check packages
+    print_substep "Checking installed packages..."
+    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
+    if [ "$(detect_environment)" = "physical" ]; then
+        ALL_PACKAGES="$ALL_PACKAGES brightnessctl"
+    fi
+    
+    for package in $ALL_PACKAGES; do
+        if ! yay -Q "$package" &>/dev/null; then
+            missing_count=$((missing_count + 1))
+        fi
+    done
+    
+    if [ $missing_count -gt 0 ]; then
+        needs_packages=true
+    fi
+    
+    # Check configurations
+    print_substep "Checking configuration symlinks..."
+    local dotfiles_dir="$(pwd)"
+    local config_missing=false
+    for dir in config/*; do
+        if [ -d "$dir" ]; then
+            base_name=$(basename "$dir")
+            case "$base_name" in
+                "applications")
+                    # Check if any application shortcuts are missing
+                    for file in "$dir"/*; do
+                        if [ -f "$file" ]; then
+                            target="$HOME/.local/share/applications/$(basename "$file")"
+                            if [ ! -L "$target" ] || [ "$(readlink "$target")" != "$dotfiles_dir/$file" ]; then
+                                config_missing=true
+                                break
+                            fi
+                        fi
+                    done
+                    ;;
+                *)
+                    target_dir="$HOME/.config/$base_name"
+                    if [ ! -L "$target_dir" ] || [ "$(readlink "$target_dir")" != "$dotfiles_dir/$dir" ]; then
+                        config_missing=true
+                    fi
+                    ;;
+            esac
+        fi
+    done
+    
+    if [ "$config_missing" = true ]; then
+        needs_configs=true
+    fi
+    
+    # Check AI scripts symlinks
+    print_substep "Checking AI script accessibility..."
+    if [ ! -L "$HOME/.local/bin/ai-config" ] || [ "$(readlink "$HOME/.local/bin/ai-config")" != "$dotfiles_dir/scripts/ai/ai-config.sh" ]; then
+        needs_ai_scripts=true
+    fi
+    if [ ! -L "$HOME/.config/dynamic-theming/scripts" ] || [ "$(readlink "$HOME/.config/dynamic-theming/scripts")" != "$dotfiles_dir/scripts/ai" ]; then
+        needs_ai_scripts=true
+    fi
+    
+    # Check AI system
+    print_substep "Checking AI system setup..."
+    if [ ! -f "$HOME/.config/dynamic-theming/ai-config.conf" ]; then
+        ai_missing_count=$((ai_missing_count + 1))
+    fi
+    if [ ! -d "$HOME/.cache/matugen" ]; then
+        ai_missing_count=$((ai_missing_count + 1))
+    fi
+    if command -v ollama &> /dev/null; then
+        if ! ollama list | grep -q llava; then
+            ai_missing_count=$((ai_missing_count + 1))
+        fi
+        if ! pgrep -x ollama >/dev/null; then
+            ai_missing_count=$((ai_missing_count + 1))
+        fi
+    else
+        ai_missing_count=$((ai_missing_count + 1))
+    fi
+    
+    if [ $ai_missing_count -gt 0 ]; then
+        needs_ai_system=true
+    fi
+    
+    # Check fish shell
+    print_substep "Checking shell configuration..."
+    local fish_path="$(command -v fish 2>/dev/null || echo "")"
+    if [ "$SHELL" != "$fish_path" ] || [ ! -f "$HOME/.config/fish/config.fish" ]; then
+        needs_fish=true
+    fi
+    
+    # Check wallpaper configuration
+    print_substep "Checking wallpaper configuration..."
+    if [ ! -f "$HOME/.config/hypr/hyprpaper.conf" ]; then
+        needs_wallpaper=true
+    else
+        # Check if the wallpaper file points to our dotfiles wallpapers (handle both absolute and $HOME paths)
+        local dotfiles_dir="$(pwd)"
+        local wallpaper_file="$HOME/.config/hypr/hyprpaper.conf"
+        # Use /bin/grep to avoid ripgrep alias issues and check for dotfiles wallpaper references
+        if /bin/grep -q "dotfiles/assets/wallpapers" "$wallpaper_file"; then
+            needs_wallpaper=false
+        else
+            needs_wallpaper=true
+        fi
+    fi
+    
+    # Check fstab automount setup (only for physical)
+    if [ "$(detect_environment)" = "physical" ]; then
+        print_substep "Checking external drive automounting..."
+        # Get list of external drives with labels and check if they're in fstab
+        # Use more robust parsing - only get lines where LABEL column has actual labels
+        # Filter out installation media and temporary drives
+        local external_drives=$(lsblk -o NAME,LABEL,TYPE,MOUNTPOINT | awk '$3 == "part" && $2 != "" && $2 != "-" && $2 !~ /ARCH/ && $2 !~ /ARCHISO/ && $2 !~ /EFI/ && ($4 == "" || $4 == "-") {print $2}')
+        
+        if [ -n "$external_drives" ]; then
+            local missing_drives=""
+            for label in $external_drives; do
+                if ! /bin/grep -q "LABEL=$label" /etc/fstab 2>/dev/null; then
+                    missing_drives="$missing_drives $label"
+                fi
+            done
+            
+            if [ -n "$missing_drives" ]; then
+                needs_fstab=true
+            fi
+        fi
+    fi
+    
+    # Check VM setup (only for physical)
+    if [ "$(detect_environment)" = "physical" ]; then
+        if [ ! -f "$HOME/.local/share/applications/win11-vm.desktop" ]; then
+            needs_vm=true
+        fi
+    fi
+    
+    # Display results
+    echo
+    print_step "System Analysis Results"
+    
+    if [ "$needs_packages" = false ] && [ "$needs_configs" = false ] && [ "$needs_ai_scripts" = false ] && [ "$needs_ai_system" = false ] && [ "$needs_fish" = false ] && [ "$needs_vm" = false ] && [ "$needs_wallpaper" = false ] && [ "$needs_fstab" = false ]; then
+        print_success "✅ System appears to be fully configured!"
+        print_message "All packages installed, configurations symlinked, AI system ready."
+        print_message "You can still run the installer to verify or update components."
+        echo
+        if gum_confirm "Everything looks good. Run full verification anyway?"; then
+            return 0  # Continue with installation
+        else
+            print_message "Installation skipped. Use './install.sh --force' to run anyway."
+            exit 0
+        fi
+    fi
+    
+    print_message "📋 Steps needed on this system:"
+    
+    if [ "$needs_packages" = true ]; then
+        print_substep "📦 Package Installation: $missing_count packages need to be installed"
+    else
+        print_substep "✅ Packages: All required packages already installed"
+    fi
+    
+    if [ "$needs_configs" = true ]; then
+        print_substep "🔗 Configuration Symlinks: Some config symlinks need to be created/updated"
+    else
+        print_substep "✅ Configurations: All symlinks properly configured"
+    fi
+    
+    if [ "$needs_ai_scripts" = true ]; then
+        print_substep "🧠 AI Script Access: ai-config command needs to be set up system-wide"
+    else
+        print_substep "✅ AI Scripts: System-wide access already configured"
+    fi
+    
+    if [ "$needs_ai_system" = true ]; then
+        print_substep "🤖 AI System Setup: $ai_missing_count AI components need configuration"
+    else
+        print_substep "✅ AI System: All AI components properly configured"
+    fi
+    
+    if [ "$needs_fish" = true ]; then
+        print_substep "🐚 Fish Shell: Shell configuration needs setup"
+    else
+        print_substep "✅ Fish Shell: Already configured as default shell"
+    fi
+    
+    if [ "$(detect_environment)" = "physical" ]; then
+        if [ "$needs_vm" = true ]; then
+            print_substep "💻 VM Setup: Windows 11 VM entry needs configuration"
+        else
+            print_substep "✅ VM Setup: Already configured"
+        fi
+    fi
+    
+    if [ "$needs_wallpaper" = true ]; then
+        print_substep "🖼️ Wallpaper Setup: hyprpaper.conf needs to be generated"
+    else
+        print_substep "✅ Wallpaper Setup: hyprpaper.conf already configured"
+    fi
+    
+    if [ "$(detect_environment)" = "physical" ]; then
+        if [ "$needs_fstab" = true ]; then
+            print_substep "💾 External Drives: fstab automounting needs setup"
+        else
+            print_substep "✅ External Drives: All drives already in fstab"
+        fi
+    fi
+    
+    echo
+    
+    # Set global flags for selective installation
+    SKIP_PACKAGES=$( [ "$needs_packages" = false ] && echo "true" || echo "false" )
+    SKIP_CONFIGS=$( [ "$needs_configs" = false ] && echo "true" || echo "false" )
+    SKIP_AI_SCRIPTS=$( [ "$needs_ai_scripts" = false ] && echo "true" || echo "false" )
+    SKIP_AI_SYSTEM=$( [ "$needs_ai_system" = false ] && echo "true" || echo "false" )
+    SKIP_FISH=$( [ "$needs_fish" = false ] && echo "true" || echo "false" )
+    SKIP_VM=$( [ "$needs_vm" = false ] && echo "true" || echo "false" )
+    SKIP_WALLPAPER=$( [ "$needs_wallpaper" = false ] && echo "true" || echo "false" )
+    SKIP_FSTAB=$( [ "$needs_fstab" = false ] && echo "true" || echo "false" )
+}
+
 main() {
     ensure_gum
     if [ "$EUID" -eq 0 ]; then
@@ -712,7 +954,7 @@ main() {
     
     gum_style --bold "Arch Linux Dotfiles Installer"
     print_message "This script will set up your system with the provided dotfiles."
-    print_message "Safe to re-run: Only missing packages will be installed, configs will be backed up."
+    print_message "Safe to re-run: Only missing components will be installed/configured."
     
     # Check and cache sudo privileges at the start
     check_sudo
@@ -724,46 +966,78 @@ main() {
     print_message "Detected environment: $ENV_TYPE"
     check_wayland_session
 
-    if gum_confirm "Do you want to install all required packages?"; then
-        install_yay
-        install_packages
+    # Run preflight check to determine what needs to be done
+    preflight_check
+
+    if [ "$SKIP_PACKAGES" = "false" ]; then
+        if gum_confirm "Do you want to install missing packages?"; then
+            install_yay
+            install_packages
+        fi
+    else
+        print_message "📦 Skipping package installation - all packages already installed"
     fi
 
-    if gum_confirm "Do you want to backup existing configs?"; then
-        backup_configs
-        rotate_backups
+    if [ "$SKIP_CONFIGS" = "false" ] || [ "$SKIP_AI_SCRIPTS" = "false" ]; then
+        if gum_confirm "Do you want to backup existing configs and create symlinks?"; then
+            if [ "$SKIP_CONFIGS" = "false" ]; then
+                backup_configs
+                rotate_backups
+                create_symlinks
+            fi
+            if [ "$SKIP_AI_SCRIPTS" = "false" ]; then
+                setup_ai_scripts
+            fi
+        fi
+    else
+        print_message "🔗 Skipping configuration setup - all symlinks already correct"
     fi
 
-    if gum_confirm "Do you want to create symlinks for configs?"; then
-        create_symlinks
-        setup_ai_scripts
-    fi
-
-    if gum_confirm "Do you want to set up wallpapers?"; then
-        set_hyprpaper_conf
+    if [ "$SKIP_WALLPAPER" = "false" ]; then
+        if gum_confirm "Do you want to set up wallpaper configuration?"; then
+            set_hyprpaper_conf
+        fi
+    else
+        print_message "🖼️ Skipping wallpaper setup - hyprpaper.conf already configured"
     fi
 
     set_permissions
     configure_env_specific
     
-    if gum_confirm "Do you want to set up the AI-Enhanced Dynamic Theming System?"; then
-        setup_ai_system
+    if [ "$SKIP_AI_SYSTEM" = "false" ]; then
+        if gum_confirm "Do you want to set up missing AI system components?"; then
+            setup_ai_system
+        fi
+    else
+        print_message "🧠 Skipping AI system setup - all components already configured"
     fi
     
     configure_defaults
 
-    if gum_confirm "Do you want to set fish as your default shell?"; then
-        set_fish_shell
+    if [ "$SKIP_FISH" = "false" ]; then
+        if gum_confirm "Do you want to set fish as your default shell?"; then
+            set_fish_shell
+        fi
+    else
+        print_message "🐚 Skipping fish shell setup - already configured"
     fi
 
     if [ "$ENV_TYPE" = "physical" ]; then
-        if gum_confirm "Do you want to set up the Windows 11 VM entry?"; then
-            install_win11_vm_entry
-            restore_vm
+        if [ "$SKIP_VM" = "false" ]; then
+            if gum_confirm "Do you want to set up the Windows 11 VM entry?"; then
+                install_win11_vm_entry
+                restore_vm
+            fi
+        else
+            print_message "💻 Skipping VM setup - already configured"
         fi
         
-        if gum_confirm "Would you like to automatically add external drives to /etc/fstab for automounting?"; then
-            automount_external_drives
+        if [ "$SKIP_FSTAB" = "false" ]; then
+            if gum_confirm "Would you like to automatically add external drives to /etc/fstab for automounting?"; then
+                automount_external_drives
+            fi
+        else
+            print_message "💾 Skipping external drive setup - all drives already in fstab"
         fi
     fi
 

@@ -1,0 +1,1 @@
+Phase 2 backup: backups/pre-ollama-vision-(date +%Y%m%d-%H%M%S)

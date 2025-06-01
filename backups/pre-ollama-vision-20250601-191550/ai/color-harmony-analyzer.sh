@@ -229,7 +229,6 @@ analyze_harmony() {
 # Main color analysis function
 analyze_color_palette() {
     local json_file="$1"
-    local output_file="$2"
     
     log_message "Starting color palette analysis"
     
@@ -291,7 +290,7 @@ analyze_color_palette() {
     fi
     
     # Generate analysis report
-    cat > "$output_file" << EOF
+    cat > "/tmp/color-harmony-analysis.json" << EOF
 {
   "analysis_timestamp": "$(date -Iseconds)",
   "input_colors": {
@@ -333,20 +332,18 @@ analyze_color_palette() {
 EOF
     
     log_message "Color harmony analysis complete. Palette score: $palette_score/100"
-    log_message "Analysis saved to: $output_file"
+    log_message "Analysis saved to: /tmp/color-harmony-analysis.json"
     
-    # Return the analysis file path
-    echo "$output_file"
+    # Output optimized colors (for now, return original colors - optimization logic can be added later)
+    echo "$json_file"  # Return path to original JSON for now
 }
 
 # Main function
 main() {
     local input_file="$1"
-    local output_file="${2:-/tmp/color-harmony-analysis.json}"
     
     log_message "Color Harmony Analyzer started"
     debug_log "Input file: $input_file"
-    debug_log "Output file: $output_file"
     
     # Validate input
     [[ ! -f "$input_file" ]] && error_exit "Input file not found: $input_file"
@@ -356,17 +353,17 @@ main() {
         jq empty "$input_file" 2>/dev/null || error_exit "Invalid JSON in input file"
     fi
     
-    # Analyze the color palette (pass output file)
-    local result=$(analyze_color_palette "$input_file" "$output_file")
+    # Analyze the color palette
+    local result=$(analyze_color_palette "$input_file")
     
     log_message "Color Harmony Analyzer completed successfully"
-    echo "$output_file"
+    echo "$result"
 }
 
 # Script usage
 show_usage() {
     cat << EOF
-Usage: $0 <matugen_json_file> [output_file]
+Usage: $0 <matugen_json_file>
 
 Color Harmony Analyzer - Phase 1 AI Enhancement
 
@@ -375,11 +372,9 @@ Provides optimization suggestions and scoring.
 
 Arguments:
   matugen_json_file    Path to JSON file from matugen
-  output_file          Optional: Path for analysis output (default: /tmp/color-harmony-analysis.json)
 
 Example:
   $0 /tmp/matugen_colors.json
-  $0 /tmp/matugen_colors.json /tmp/my-analysis.json
 
 Output:
   - Harmony analysis in /tmp/color-harmony-analysis.json
@@ -402,4 +397,4 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 # Run main function
-main "$1" "$2" 
+main "$1" 

@@ -43,9 +43,25 @@ cache/
 
 # AI color processing output files
 /tmp/ai-optimized-colors.json
+/tmp/ai-enhanced-result.json
+/tmp/ai-updated-colors.json
 /tmp/ai-baseline.log
 /tmp/color-harmony-*.json
 /tmp/accessibility-*.json
+/tmp/vision-*.json
+/tmp/enhanced-*.json
+/tmp/harmony-*.json
+/tmp/math-*.json
+/tmp/vision-analysis-enhanced.json
+/tmp/harmony-analysis-enhanced.json
+/tmp/accessibility-analysis-enhanced.json
+/tmp/test-matugen-colors.json
+/tmp/matugen_colors.json
+/tmp/vision-theme-recommendations.json
+/tmp/optimized-colors.json
+
+# AI configuration (preserve user config)
+!config/dynamic-theming/ai-config.conf
 
 # AI development and testing files
 ai-development/temp/

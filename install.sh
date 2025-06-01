@@ -164,7 +164,7 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local PHYSICAL_PACKAGES="brightnessctl"
     
@@ -331,6 +331,48 @@ create_symlinks() {
     print_success "Symlink setup completed"
 }
 
+setup_ai_scripts() {
+    print_step "Setting up AI scripts accessibility"
+    dotfiles_dir="$(pwd)"
+    
+    # Create ~/.local/bin if it doesn't exist
+    print_substep "Creating ~/.local/bin directory..."
+    mkdir -p "$HOME/.local/bin" || print_warning "Failed to create ~/.local/bin directory"
+    
+    # Symlink the main AI configuration script for system-wide access
+    if [ -f "$dotfiles_dir/scripts/ai/ai-config.sh" ]; then
+        print_substep "Making ai-config accessible system-wide..."
+        local ai_config_target="$HOME/.local/bin/ai-config"
+        if [ -L "$ai_config_target" ] && [ "$(readlink "$ai_config_target")" = "$dotfiles_dir/scripts/ai/ai-config.sh" ]; then
+            print_progress "ai-config already symlinked correctly"
+        else
+            ln -sf "$dotfiles_dir/scripts/ai/ai-config.sh" "$ai_config_target"
+            verify_symlink "$dotfiles_dir/scripts/ai/ai-config.sh" "$ai_config_target" || print_warning "Failed to verify ai-config symlink"
+            print_success "ai-config command available system-wide"
+        fi
+    else
+        print_warning "AI config script not found, skipping system-wide setup"
+    fi
+    
+    # Create a symlink for the entire AI scripts directory in ~/.config for easy access
+    print_substep "Creating AI scripts directory symlink..."
+    local ai_scripts_target="$HOME/.config/dynamic-theming/scripts"
+    if [ -d "$dotfiles_dir/scripts/ai" ]; then
+        if [ -L "$ai_scripts_target" ] && [ "$(readlink "$ai_scripts_target")" = "$dotfiles_dir/scripts/ai" ]; then
+            print_progress "AI scripts directory already symlinked correctly"
+        else
+            mkdir -p "$(dirname "$ai_scripts_target")"
+            ln -sf "$dotfiles_dir/scripts/ai" "$ai_scripts_target"
+            verify_symlink "$dotfiles_dir/scripts/ai" "$ai_scripts_target" || print_warning "Failed to verify AI scripts directory symlink"
+            print_success "AI scripts directory accessible at ~/.config/dynamic-theming/scripts"
+        fi
+    else
+        print_warning "AI scripts directory not found, skipping symlink"
+    fi
+    
+    print_success "AI scripts accessibility setup completed"
+}
+
 set_permissions() {
     print_step "Setting script permissions"
     print_substep "Setting lf script permissions..."
@@ -339,12 +381,76 @@ set_permissions() {
     find "$HOME/.config/hypr/scripts/" -type f -name "*.sh" -exec chmod +x {} \; || print_warning "Failed to set permissions for Hyprland scripts"
     print_substep "Setting Waybar script permissions..."
     find "$HOME/.config/waybar/scripts/" -type f -name "*.sh" -exec chmod +x {} \; || print_warning "Failed to set permissions for Waybar scripts"
+    print_substep "Setting AI script permissions..."
+    find "$(pwd)/scripts/ai/" -type f -name "*.sh" -exec chmod +x {} \; 2>/dev/null || print_warning "Failed to set permissions for AI scripts (may not exist yet)"
     print_success "All permissions set"
 }
 
 configure_env_specific() {
     print_step "Configuring environment-specific settings"
     print_success "Environment configuration completed"
+}
+
+setup_ai_system() {
+    print_step "Setting up AI-Enhanced Dynamic Theming System"
+    
+    # Create AI configuration directory
+    print_substep "Creating AI configuration directory..."
+    mkdir -p "$HOME/.config/dynamic-theming" || print_warning "Failed to create AI config directory"
+    
+    # Create matugen cache directory for AI processing
+    print_substep "Creating matugen cache directory..."
+    mkdir -p "$HOME/.cache/matugen" || print_warning "Failed to create matugen cache directory"
+    
+    # Initialize AI configuration if it doesn't exist
+    print_substep "Initializing AI configuration..."
+    if [ ! -f "$HOME/.config/dynamic-theming/ai-config.conf" ]; then
+        # Try to use the symlinked version first, then fall back to local
+        local ai_config_script=""
+        if [ -x "$HOME/.local/bin/ai-config" ]; then
+            ai_config_script="$HOME/.local/bin/ai-config"
+        elif [ -x "$(pwd)/scripts/ai/ai-config.sh" ]; then
+            ai_config_script="$(pwd)/scripts/ai/ai-config.sh"
+        fi
+        
+        if [ -n "$ai_config_script" ]; then
+            bash "$ai_config_script" init || print_warning "Failed to initialize AI config"
+            print_success "AI configuration initialized with default settings"
+        else
+            print_warning "AI config script not found, skipping initialization"
+        fi
+    else
+        print_message "AI configuration already exists"
+    fi
+    
+    # Set up ollama vision model if ollama is available
+    if command -v ollama &> /dev/null; then
+        print_substep "Setting up ollama vision model..."
+        if ollama list | grep -q llava; then
+            print_message "llava vision model already installed"
+        else
+            print_progress "Downloading llava vision model (this may take a few minutes)..."
+            if ollama pull llava; then
+                print_success "llava vision model installed successfully"
+            else
+                print_warning "Failed to install llava vision model. AI vision features will be disabled"
+            fi
+        fi
+        
+        # Start ollama service if not running
+        if ! pgrep -x ollama >/dev/null; then
+            print_substep "Starting ollama service..."
+            ollama serve &
+            sleep 2
+            print_success "ollama service started"
+        else
+            print_message "ollama service already running"
+        fi
+    else
+        print_warning "ollama not found. AI vision features will be unavailable"
+    fi
+    
+    print_success "AI system setup completed"
 }
 
 configure_defaults() {
@@ -372,6 +478,18 @@ set_fish_shell() {
         fi
     else
         print_message "Fish is already the default shell"
+    fi
+    
+    # Ensure ~/.local/bin is in PATH for fish
+    print_substep "Ensuring ~/.local/bin is in fish PATH..."
+    local fish_config="$HOME/.config/fish/config.fish"
+    if [ -f "$fish_config" ]; then
+        if ! grep -q "set -gx PATH.*\.local/bin" "$fish_config"; then
+            echo 'set -gx PATH $HOME/.local/bin $PATH' >> "$fish_config"
+            print_success "Added ~/.local/bin to fish PATH"
+        else
+            print_message "~/.local/bin already in fish PATH"
+        fi
     fi
 }
 
@@ -408,7 +526,7 @@ final_verification() {
     print_step "Performing final verification"
     missing_deps=0
     print_substep "Checking core dependencies..."
-    for cmd in hyprland waybar kitty fish fuzzel dunst jq wl-copy wl-paste swaylock sensors radeontop ddcutil lf; do
+    for cmd in hyprland waybar kitty fish fuzzel dunst jq bc ollama wl-copy wl-paste swaylock sensors radeontop ddcutil lf; do
         if ! command -v "$cmd" &> /dev/null; then
             print_error "Required command '$cmd' not found after installation!"
             missing_deps=1
@@ -529,6 +647,16 @@ print_theming_instructions() {
     print_message "  Set style to Kvantum in qt5ct/qt6ct, and use a matching Kvantum theme."
     print_message "See the README for more details."
     echo
+    
+    print_step "AI-Enhanced Dynamic Theming System"
+    print_message "🧠 Your system now includes the world's first AI-enhanced dynamic theming!"
+    print_message "  Press Super+B to select wallpapers with intelligent color optimization"
+    print_message "  AI analyzes content and optimizes colors for perfect harmony and accessibility"
+    print_message "  Configure AI settings: ai-config config (available system-wide)"
+    print_message "  Check AI status: ai-config status"
+    print_message "  All AI scripts accessible at: ~/.config/dynamic-theming/scripts/"
+    print_message "See AI_IMPLEMENTATION_GUIDE.md for complete documentation."
+    echo
 }
 
 # Gum-based UI functions
@@ -608,6 +736,7 @@ main() {
 
     if gum_confirm "Do you want to create symlinks for configs?"; then
         create_symlinks
+        setup_ai_scripts
     fi
 
     if gum_confirm "Do you want to set up wallpapers?"; then
@@ -616,6 +745,11 @@ main() {
 
     set_permissions
     configure_env_specific
+    
+    if gum_confirm "Do you want to set up the AI-Enhanced Dynamic Theming System?"; then
+        setup_ai_system
+    fi
+    
     configure_defaults
 
     if gum_confirm "Do you want to set fish as your default shell?"; then

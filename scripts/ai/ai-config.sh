@@ -1,0 +1,377 @@
+#!/bin/bash
+
+# =============================================================================
+# 🧠 AI-ENHANCED THEMING CONFIGURATION & CONTROL
+# =============================================================================
+# Easy configuration and control interface for AI theming modes
+# Usage: source this file or run directly for interactive configuration
+
+# Configuration file location
+AI_CONFIG_FILE="$HOME/.config/dynamic-theming/ai-config.conf"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Default AI configuration
+DEFAULT_AI_MODE="enhanced"  # Options: enhanced, vision, mathematical, disabled
+DEFAULT_VISION_AI="true"
+DEFAULT_MATHEMATICAL_AI="true"
+DEFAULT_PERFORMANCE_TARGET="fast"  # Options: fast (<2s), balanced (<4s), quality (<6s)
+
+# Create config directory
+mkdir -p "$(dirname "$AI_CONFIG_FILE")"
+
+# Initialize configuration file if it doesn't exist
+init_ai_config() {
+    if [[ ! -f "$AI_CONFIG_FILE" ]]; then
+        cat > "$AI_CONFIG_FILE" << EOF
+# AI-Enhanced Dynamic Theming Configuration
+# Generated: $(date)
+
+# AI Mode: enhanced, vision, mathematical, disabled
+AI_MODE="$DEFAULT_AI_MODE"
+
+# Individual AI Components
+ENABLE_VISION_AI="$DEFAULT_VISION_AI"
+ENABLE_MATHEMATICAL_AI="$DEFAULT_MATHEMATICAL_AI"
+
+# Performance Settings
+PERFORMANCE_TARGET="$DEFAULT_PERFORMANCE_TARGET"
+
+# Vision AI Settings
+VISION_WEIGHT="0.6"
+MATHEMATICAL_WEIGHT="0.4"
+
+# Fallback Behavior
+FALLBACK_TO_STANDARD="true"
+SHOW_AI_NOTIFICATIONS="true"
+
+# Debug and Logging
+AI_DEBUG="false"
+AI_LOG_LEVEL="INFO"  # DEBUG, INFO, WARN, ERROR
+EOF
+        echo "✅ AI configuration initialized: $AI_CONFIG_FILE"
+    fi
+}
+
+# Load current configuration
+load_ai_config() {
+    if [[ -f "$AI_CONFIG_FILE" ]]; then
+        source "$AI_CONFIG_FILE"
+    else
+        init_ai_config
+        source "$AI_CONFIG_FILE"
+    fi
+}
+
+# Save configuration
+save_ai_config() {
+    cat > "$AI_CONFIG_FILE" << EOF
+# AI-Enhanced Dynamic Theming Configuration
+# Updated: $(date)
+
+# AI Mode: enhanced, vision, mathematical, disabled
+AI_MODE="$AI_MODE"
+
+# Individual AI Components
+ENABLE_VISION_AI="$ENABLE_VISION_AI"
+ENABLE_MATHEMATICAL_AI="$ENABLE_MATHEMATICAL_AI"
+
+# Performance Settings
+PERFORMANCE_TARGET="$PERFORMANCE_TARGET"
+
+# Vision AI Settings
+VISION_WEIGHT="${VISION_WEIGHT:-0.6}"
+MATHEMATICAL_WEIGHT="${MATHEMATICAL_WEIGHT:-0.4}"
+
+# Fallback Behavior
+FALLBACK_TO_STANDARD="${FALLBACK_TO_STANDARD:-true}"
+SHOW_AI_NOTIFICATIONS="${SHOW_AI_NOTIFICATIONS:-true}"
+
+# Debug and Logging
+AI_DEBUG="${AI_DEBUG:-false}"
+AI_LOG_LEVEL="${AI_LOG_LEVEL:-INFO}"
+EOF
+    echo "✅ AI configuration saved to: $AI_CONFIG_FILE"
+}
+
+# Set AI mode with validation
+set_ai_mode() {
+    local mode="$1"
+    
+    case "$mode" in
+        "enhanced")
+            AI_MODE="enhanced"
+            ENABLE_VISION_AI="true"
+            ENABLE_MATHEMATICAL_AI="true"
+            echo "🧠 AI Mode: Enhanced Intelligence (Vision + Mathematical)"
+            ;;
+        "vision")
+            AI_MODE="vision"
+            ENABLE_VISION_AI="true"
+            ENABLE_MATHEMATICAL_AI="false"
+            echo "👁️ AI Mode: Vision Only (Content-aware theming)"
+            ;;
+        "mathematical")
+            AI_MODE="mathematical"
+            ENABLE_VISION_AI="false"
+            ENABLE_MATHEMATICAL_AI="true"
+            echo "🔢 AI Mode: Mathematical Only (Harmony + Accessibility)"
+            ;;
+        "disabled")
+            AI_MODE="disabled"
+            ENABLE_VISION_AI="false"
+            ENABLE_MATHEMATICAL_AI="false"
+            echo "❌ AI Mode: Disabled (Standard matugen only)"
+            ;;
+        *)
+            echo "❌ Invalid AI mode: $mode"
+            echo "Valid modes: enhanced, vision, mathematical, disabled"
+            return 1
+            ;;
+    esac
+    
+    save_ai_config
+}
+
+# Get current AI status
+get_ai_status() {
+    load_ai_config
+    
+    echo "=== 🧠 AI-Enhanced Theming Status ==="
+    echo "Mode: $AI_MODE"
+    echo "Vision AI: $ENABLE_VISION_AI"
+    echo "Mathematical AI: $ENABLE_MATHEMATICAL_AI"
+    echo "Performance Target: $PERFORMANCE_TARGET"
+    
+    case "$AI_MODE" in
+        "enhanced")
+            echo "🎯 Active: Full AI intelligence with content-aware strategy selection"
+            ;;
+        "vision")
+            echo "👁️ Active: Content analysis and mood-based theming"
+            ;;
+        "mathematical")
+            echo "🔢 Active: Color harmony optimization and accessibility enhancement"
+            ;;
+        "disabled")
+            echo "⚫ Inactive: Using standard matugen color extraction"
+            ;;
+    esac
+    
+    echo "Config file: $AI_CONFIG_FILE"
+}
+
+# Interactive configuration menu
+interactive_config() {
+    echo "=== 🛠️ AI-Enhanced Theming Configuration ==="
+    echo ""
+    echo "Current Status:"
+    get_ai_status
+    echo ""
+    echo "Available Options:"
+    echo "1) Enhanced Intelligence (Vision + Mathematical) - Recommended"
+    echo "2) Vision AI Only (Content-aware theming)"
+    echo "3) Mathematical AI Only (Harmony + Accessibility)"
+    echo "4) Disable AI (Standard theming)"
+    echo "5) Show detailed status"
+    echo "6) Test current configuration"
+    echo "7) Reset to defaults"
+    echo "8) Exit"
+    echo ""
+    
+    read -p "Select option (1-8): " choice
+    
+    case "$choice" in
+        1)
+            set_ai_mode "enhanced"
+            echo "🎉 Enhanced AI mode activated!"
+            ;;
+        2)
+            set_ai_mode "vision"
+            echo "👁️ Vision AI mode activated!"
+            ;;
+        3)
+            set_ai_mode "mathematical"
+            echo "🔢 Mathematical AI mode activated!"
+            ;;
+        4)
+            set_ai_mode "disabled"
+            echo "❌ AI disabled. Using standard theming."
+            ;;
+        5)
+            show_detailed_status
+            ;;
+        6)
+            test_ai_configuration
+            ;;
+        7)
+            rm -f "$AI_CONFIG_FILE"
+            init_ai_config
+            echo "🔄 Configuration reset to defaults"
+            ;;
+        8)
+            echo "👋 Goodbye!"
+            return 0
+            ;;
+        *)
+            echo "❌ Invalid option"
+            return 1
+            ;;
+    esac
+}
+
+# Show detailed status
+show_detailed_status() {
+    load_ai_config
+    
+    echo "=== 📊 Detailed AI Configuration ==="
+    echo ""
+    echo "🎯 Core Configuration:"
+    echo "  AI Mode: $AI_MODE"
+    echo "  Vision AI: $ENABLE_VISION_AI"
+    echo "  Mathematical AI: $ENABLE_MATHEMATICAL_AI"
+    echo ""
+    echo "⚡ Performance Settings:"
+    echo "  Target: $PERFORMANCE_TARGET"
+    echo "  Vision Weight: ${VISION_WEIGHT:-0.6}"
+    echo "  Mathematical Weight: ${MATHEMATICAL_WEIGHT:-0.4}"
+    echo ""
+    echo "🛡️ Behavior Settings:"
+    echo "  Fallback to Standard: ${FALLBACK_TO_STANDARD:-true}"
+    echo "  Show Notifications: ${SHOW_AI_NOTIFICATIONS:-true}"
+    echo ""
+    echo "🔧 Debug Settings:"
+    echo "  Debug Mode: ${AI_DEBUG:-false}"
+    echo "  Log Level: ${AI_LOG_LEVEL:-INFO}"
+    echo ""
+    echo "📁 Files:"
+    echo "  Config: $AI_CONFIG_FILE"
+    echo "  Enhanced Intelligence: $SCRIPT_DIR/enhanced-color-intelligence.sh"
+    echo "  Vision Analyzer: $SCRIPT_DIR/vision-analyzer.sh"
+    echo "  Mathematical AI: $SCRIPT_DIR/color-harmony-analyzer.sh"
+}
+
+# Test current AI configuration
+test_ai_configuration() {
+    load_ai_config
+    
+    echo "🧪 Testing AI configuration..."
+    echo "Mode: $AI_MODE"
+    
+    # Test with the numbers.jpg wallpaper if available
+    local test_wallpaper="/home/martin/dotfiles/assets/wallpapers/abstract/numbers.jpg"
+    local test_colors="/tmp/test-matugen-colors.json"
+    
+    if [[ ! -f "$test_wallpaper" ]]; then
+        echo "❌ Test wallpaper not found: $test_wallpaper"
+        return 1
+    fi
+    
+    if [[ ! -f "$test_colors" ]]; then
+        echo "❌ Test colors file not found: $test_colors"
+        echo "💡 Run a standard matugen extraction first"
+        return 1
+    fi
+    
+    case "$AI_MODE" in
+        "enhanced")
+            echo "Testing Enhanced Intelligence..."
+            if bash "$SCRIPT_DIR/enhanced-color-intelligence.sh" "$test_wallpaper" "$test_colors" "/tmp/ai-test-output.json"; then
+                echo "✅ Enhanced AI test successful!"
+                if [[ -f "/tmp/ai-test-output.json" ]]; then
+                    echo "Strategy: $(jq -r '.enhanced_intelligence.strategy' /tmp/ai-test-output.json)"
+                    echo "Confidence: $(jq -r '.enhanced_intelligence.confidence' /tmp/ai-test-output.json)"
+                fi
+            else
+                echo "❌ Enhanced AI test failed"
+            fi
+            ;;
+        "vision")
+            echo "Testing Vision AI..."
+            if bash "$SCRIPT_DIR/vision-analyzer.sh" "$test_wallpaper" "/tmp/vision-test-output.json"; then
+                echo "✅ Vision AI test successful!"
+                if [[ -f "/tmp/vision-test-output.json" ]]; then
+                    echo "Category: $(jq -r '.category' /tmp/vision-test-output.json)"
+                    echo "Mood: $(jq -r '.mood' /tmp/vision-test-output.json)"
+                fi
+            else
+                echo "❌ Vision AI test failed"
+            fi
+            ;;
+        "mathematical")
+            echo "Testing Mathematical AI..."
+            if bash "$SCRIPT_DIR/color-harmony-analyzer.sh" "$test_colors" "/tmp/math-test-output.json"; then
+                echo "✅ Mathematical AI test successful!"
+                if [[ -f "/tmp/math-test-output.json" ]]; then
+                    echo "Palette Score: $(jq -r '.palette_score' /tmp/math-test-output.json)"
+                fi
+            else
+                echo "❌ Mathematical AI test failed"
+            fi
+            ;;
+        "disabled")
+            echo "✅ AI disabled - no testing needed"
+            ;;
+    esac
+}
+
+# Quick mode switchers (for scripts/aliases)
+ai_enhanced() { set_ai_mode "enhanced"; }
+ai_vision() { set_ai_mode "vision"; }
+ai_mathematical() { set_ai_mode "mathematical"; }
+ai_disable() { set_ai_mode "disabled"; }
+ai_status() { get_ai_status; }
+ai_config() { interactive_config; }
+
+# Main entry point
+main() {
+    case "${1:-status}" in
+        "enhanced"|"vision"|"mathematical"|"disabled")
+            set_ai_mode "$1"
+            ;;
+        "status")
+            get_ai_status
+            ;;
+        "config"|"configure")
+            interactive_config
+            ;;
+        "test")
+            test_ai_configuration
+            ;;
+        "init")
+            init_ai_config
+            ;;
+        "--help"|"-h"|"help")
+            echo "AI-Enhanced Theming Control"
+            echo ""
+            echo "Usage: $0 [command]"
+            echo ""
+            echo "Commands:"
+            echo "  enhanced     - Enable full AI intelligence"
+            echo "  vision       - Enable vision AI only"
+            echo "  mathematical - Enable mathematical AI only"
+            echo "  disabled     - Disable AI theming"
+            echo "  status       - Show current status"
+            echo "  config       - Interactive configuration"
+            echo "  test         - Test current configuration"
+            echo "  init         - Initialize configuration"
+            echo ""
+            echo "Examples:"
+            echo "  $0 enhanced    # Enable full AI"
+            echo "  $0 status      # Check current mode"
+            echo "  $0 config      # Interactive setup"
+            ;;
+        *)
+            echo "❌ Unknown command: $1"
+            echo "Use '$0 help' for usage information"
+            return 1
+            ;;
+    esac
+}
+
+# Auto-initialize on source/load
+init_ai_config >/dev/null 2>&1
+
+# Run main if called directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi 

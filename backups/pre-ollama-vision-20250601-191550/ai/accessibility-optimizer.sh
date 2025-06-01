@@ -227,7 +227,6 @@ optimize_contrast() {
 optimize_palette() {
     local harmony_analysis_file="$1"
     local original_colors_file="$2"
-    local output_file="$3"
     
     log_message "Starting palette optimization"
     
@@ -283,7 +282,7 @@ optimize_palette() {
     
     # Generate optimized color JSON
     local optimization_timestamp=$(date -Iseconds)
-    local optimized_file="$output_file"
+    local optimized_file="/tmp/optimized-colors.json"
     
     # Create optimized JSON based on original structure
     if command -v jq >/dev/null 2>&1; then
@@ -310,8 +309,7 @@ optimize_palette() {
     fi
     
     # Generate optimization report
-    local report_file="${output_file%.*}-report.json"
-    cat > "$report_file" << EOF
+    cat > "/tmp/accessibility-optimization-report.json" << EOF
 {
   "optimization_timestamp": "$optimization_timestamp",
   "original_colors": {
@@ -345,7 +343,7 @@ EOF
     fi
     
     log_message "Optimized colors saved to: $optimized_file"
-    log_message "Optimization report saved to: $report_file"
+    log_message "Optimization report saved to: /tmp/accessibility-optimization-report.json"
     
     echo "$optimized_file"
 }
@@ -354,12 +352,10 @@ EOF
 main() {
     local harmony_analysis_file="$1"
     local original_colors_file="$2"
-    local output_file="${3:-/tmp/optimized-colors.json}"
     
     log_message "Accessibility Optimizer started"
     debug_log "Harmony analysis: $harmony_analysis_file"
     debug_log "Original colors: $original_colors_file"
-    debug_log "Output file: $output_file"
     
     # Validate inputs
     [[ ! -f "$harmony_analysis_file" ]] && error_exit "Harmony analysis file not found: $harmony_analysis_file"
@@ -374,7 +370,7 @@ main() {
     fi
     
     # Optimize the color palette
-    local result=$(optimize_palette "$harmony_analysis_file" "$original_colors_file" "$output_file")
+    local result=$(optimize_palette "$harmony_analysis_file" "$original_colors_file")
     
     log_message "Accessibility Optimizer completed successfully"
     echo "$result"
@@ -383,7 +379,7 @@ main() {
 # Script usage
 show_usage() {
     cat << EOF
-Usage: $0 <harmony_analysis_file> <original_colors_file> [output_file]
+Usage: $0 <harmony_analysis_file> <original_colors_file>
 
 Accessibility Optimizer - Phase 1B AI Enhancement
 
@@ -393,11 +389,9 @@ Targets WCAG AAA compliance (7.0+ contrast ratio).
 Arguments:
   harmony_analysis_file    Path to color harmony analysis JSON
   original_colors_file     Path to original matugen JSON colors
-  output_file              Optional: Path for optimized colors (default: /tmp/optimized-colors.json)
 
 Example:
   $0 /tmp/color-harmony-analysis.json /tmp/test-colors.json
-  $0 /tmp/harmony.json /tmp/colors.json /tmp/my-optimized.json
 
 Output:
   - Optimized color palette in /tmp/optimized-colors.json
@@ -420,4 +414,4 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 fi
 
 # Run main function
-main "$1" "$2" "$3" 
+main "$1" "$2" 

@@ -1,0 +1,70 @@
+@import "colors.css";
+
+/* Force dynamic colors to override theme */
+* {
+    background-color: @window_bg_color;
+    color: @window_fg_color;
+}
+
+window {
+    background-color: @window_bg_color;
+    color: @window_fg_color;
+}
+
+headerbar {
+    background-color: @headerbar_bg_color;
+    color: @headerbar_fg_color;
+}
+
+.titlebar {
+    background-color: @headerbar_bg_color;
+    color: @headerbar_fg_color;
+}
+
+/* Thunar specific */
+.thunar .sidebar {
+    background-color: @sidebar_bg_color;
+    color: @sidebar_fg_color;
+}
+
+.thunar .view {
+    background-color: @view_bg_color;
+    color: @view_fg_color;
+}
+
+/* General elements */
+entry {
+    background-color: @view_bg_color;
+    color: @view_fg_color;
+}
+
+button {
+    background-color: @view_bg_color;
+    color: @view_fg_color;
+}
+
+button:hover {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+
+treeview {
+    background-color: @view_bg_color;
+    color: @view_fg_color;
+}
+
+scrolledwindow {
+    background-color: @view_bg_color;
+}
+
+/* Popover and menus */
+popover {
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+}
+
+menu {
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+}
+

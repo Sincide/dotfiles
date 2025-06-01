@@ -1,0 +1,10 @@
+[Icon Theme]
+Name=Material You Dynamic
+Comment=Dynamically generated icon theme based on wallpaper colors
+Inherits=Papirus-Dark,Papirus,Adwaita
+Directories=48x48/apps
+
+[48x48/apps]
+Size=48
+Context=Applications
+Type=Fixed

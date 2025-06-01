@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Kill existing portal instances
+killall xdg-desktop-portal-hyprland
+killall xdg-desktop-portal-wlr
+killall xdg-desktop-portal-gnome
+killall xdg-desktop-portal
+
+# Wait for processes to shutdown
+sleep 1
+
+# Start portals in correct order
+/usr/lib/xdg-desktop-portal-hyprland &
+sleep 2
+/usr/lib/xdg-desktop-portal &
+
+# Apply GTK theme
+# gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-blue-standard+default"
+gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
+gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
+gsettings set org.gnome.desktop.interface font-name "Noto Sans 11"
+
+# Update GTK cache
+gtk-update-icon-cache -f /usr/share/icons/Papirus-Dark
+gtk-update-icon-cache -f /usr/share/icons/Adwaita
+
+# Reload Waybar
+killall waybar
+waybar &
+waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css & 

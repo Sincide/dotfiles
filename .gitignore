@@ -67,7 +67,9 @@ config/waybar/style-dynamic.css
 config/waybar/style-bottom-dynamic.css
 config/dunst/dunstrc-dynamic
 config/kitty/current-theme.conf
+config/kitty/theme-dynamic.conf
 config/fuzzel/config-dynamic
+config/hypr/conf/colors.conf
 
 # Keep templates but ignore generated content in backups
 backups/*/config/
@@ -81,6 +83,7 @@ config/dynamic-theming/wallpaper-cache/
 # Generated icon themes
 .local/share/icons/MaterialYou-*/
 experiments/material-you-icons/icon-themes/MaterialYou-*/
+experiments/material-you-icons/icon-themes/MaterialYou-*/**/*.svg
 
 # Material You icon generation temporary files
 experiments/material-you-icons/temp-icons/

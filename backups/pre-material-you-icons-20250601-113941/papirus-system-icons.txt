@@ -1,0 +1,68 @@
+/usr/share/icons/Papirus:
+drwxr-xr-x    - root 14 May 19:52 8x8
+drwxr-xr-x    - root 14 May 19:52 16x16
+lrwxrwxrwx    - root  5 May 06:22 16x16@2x -> 16x16
+drwxr-xr-x    - root 14 May 19:52 18x18
+lrwxrwxrwx    - root  5 May 06:22 18x18@2x -> 18x18
+drwxr-xr-x    - root 14 May 19:52 22x22
+lrwxrwxrwx    - root  5 May 06:22 22x22@2x -> 22x22
+drwxr-xr-x    - root 14 May 19:52 24x24
+lrwxrwxrwx    - root  5 May 06:22 24x24@2x -> 24x24
+drwxr-xr-x    - root 14 May 19:52 32x32
+lrwxrwxrwx    - root  5 May 06:22 32x32@2x -> 32x32
+drwxr-xr-x    - root 14 May 19:52 42x42
+drwxr-xr-x    - root 14 May 19:52 48x48
+lrwxrwxrwx    - root  5 May 06:22 48x48@2x -> 48x48
+drwxr-xr-x    - root 14 May 19:52 64x64
+lrwxrwxrwx    - root  5 May 06:22 64x64@2x -> 64x64
+drwxr-xr-x    - root 14 May 19:52 84x84
+drwxr-xr-x    - root 14 May 19:52 96x96
+drwxr-xr-x    - root 14 May 19:52 128x128
+.rw-r--r-- 3.1M root 14 May 19:52 icon-theme.cache
+.rw-r--r--  16k root  5 May 06:22 index.theme
+
+/usr/share/icons/Papirus-Dark:
+lrwxrwxrwx    - root  5 May 06:22 8x8 -> ../Papirus/8x8
+drwxr-xr-x    - root 14 May 19:52 16x16
+lrwxrwxrwx    - root  5 May 06:22 16x16@2x -> 16x16
+drwxr-xr-x    - root 14 May 19:52 18x18
+lrwxrwxrwx    - root  5 May 06:22 18x18@2x -> 18x18
+drwxr-xr-x    - root 14 May 19:52 22x22
+lrwxrwxrwx    - root  5 May 06:22 22x22@2x -> 22x22
+drwxr-xr-x    - root 14 May 19:52 24x24
+lrwxrwxrwx    - root  5 May 06:22 24x24@2x -> 24x24
+lrwxrwxrwx    - root  5 May 06:22 32x32 -> ../Papirus/32x32
+lrwxrwxrwx    - root  5 May 06:22 32x32@2x -> 32x32
+lrwxrwxrwx    - root  5 May 06:22 42x42 -> ../Papirus/42x42
+lrwxrwxrwx    - root  5 May 06:22 48x48 -> ../Papirus/48x48
+lrwxrwxrwx    - root  5 May 06:22 48x48@2x -> 48x48
+lrwxrwxrwx    - root  5 May 06:22 64x64 -> ../Papirus/64x64
+lrwxrwxrwx    - root  5 May 06:22 64x64@2x -> 64x64
+lrwxrwxrwx    - root  5 May 06:22 84x84 -> ../Papirus/84x84
+lrwxrwxrwx    - root  5 May 06:22 96x96 -> ../Papirus/96x96
+lrwxrwxrwx    - root  5 May 06:22 128x128 -> ../Papirus/128x128
+.rw-r--r-- 3.1M root 14 May 19:52 icon-theme.cache
+.rw-r--r--  16k root  5 May 06:22 index.theme
+
+/usr/share/icons/Papirus-Light:
+lrwxrwxrwx    - root  5 May 06:22 8x8 -> ../Papirus/8x8
+drwxr-xr-x    - root 14 May 19:52 16x16
+lrwxrwxrwx    - root  5 May 06:22 16x16@2x -> 16x16
+lrwxrwxrwx    - root  5 May 06:22 18x18 -> ../Papirus/18x18
+lrwxrwxrwx    - root  5 May 06:22 18x18@2x -> 18x18
+drwxr-xr-x    - root 14 May 19:52 22x22
+lrwxrwxrwx    - root  5 May 06:22 22x22@2x -> 22x22
+drwxr-xr-x    - root 14 May 19:52 24x24
+lrwxrwxrwx    - root  5 May 06:22 24x24@2x -> 24x24
+lrwxrwxrwx    - root  5 May 06:22 32x32 -> ../Papirus/32x32
+lrwxrwxrwx    - root  5 May 06:22 32x32@2x -> 32x32
+lrwxrwxrwx    - root  5 May 06:22 42x42 -> ../Papirus/42x42
+lrwxrwxrwx    - root  5 May 06:22 48x48 -> ../Papirus/48x48
+lrwxrwxrwx    - root  5 May 06:22 48x48@2x -> 48x48
+lrwxrwxrwx    - root  5 May 06:22 64x64 -> ../Papirus/64x64
+lrwxrwxrwx    - root  5 May 06:22 64x64@2x -> 64x64
+lrwxrwxrwx    - root  5 May 06:22 84x84 -> ../Papirus/84x84
+lrwxrwxrwx    - root  5 May 06:22 96x96 -> ../Papirus/96x96
+lrwxrwxrwx    - root  5 May 06:22 128x128 -> ../Papirus/128x128
+.rw-r--r-- 3.1M root 14 May 19:52 icon-theme.cache
+.rw-r--r--  16k root  5 May 06:22 index.theme

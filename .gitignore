@@ -33,10 +33,19 @@ cache/
 # AI processing temporary files
 /tmp/ai-*.log
 /tmp/ai-*.json
+/tmp/ai-pipeline*
 /tmp/matugen*.log
 /tmp/wallpaper-*.log
 /tmp/color-*.log
 /tmp/material-you-*.log
+/tmp/harmony-*.log
+/tmp/accessibility-*.log
+
+# AI color processing output files
+/tmp/ai-optimized-colors.json
+/tmp/ai-baseline.log
+/tmp/color-harmony-*.json
+/tmp/accessibility-*.json
 
 # AI development and testing files
 ai-development/temp/
@@ -73,6 +82,21 @@ config/dynamic-theming/wallpaper-cache/
 .local/share/icons/MaterialYou-*/
 experiments/material-you-icons/icon-themes/MaterialYou-*/
 
+# Material You icon generation temporary files
+experiments/material-you-icons/temp-icons/
+experiments/material-you-icons/scripts/temp-*
+experiments/material-you-icons/*.svg
+experiments/material-you-icons/*.png
+experiments/material-you-icons/test-output/
+
+# Icon and theme cache files
+~/.cache/icon-theme.cache
+~/.cache/gtk-*
+~/.cache/qt*
+.cache/fontconfig/
+.cache/mesa_shader_cache/
+.cache/thumbnails/
+
 # ================================
 # SYSTEM BACKUPS & LARGE FILES
 # ================================
@@ -101,6 +125,19 @@ benchmark-*.json
 .swww/
 .wallpaper-cache/
 
+# Hyprland generated files
+config/hypr/.hyprland.lock
+config/hypr/hyprland.log
+
+# swww daemon files
+.config/swww/
+swww.log
+
+# Wallpaper and transition state
+config/dynamic-theming/transition-*.log
+config/dynamic-theming/performance-*.log
+config/dynamic-theming/cache/
+
 # ================================
 # DEVELOPMENT & TESTING
 # ================================
@@ -109,6 +146,16 @@ benchmark-*.json
 test-*.sh
 temp-*.sh
 debug-*.sh
+
+# Script execution logs and timing
+scripts/*/timing-*.log
+scripts/*/performance-*.log
+scripts/*/debug-*.log
+
+# AI script development files
+scripts/ai/temp-*
+scripts/ai/test-*
+scripts/ai/backup-*
 
 # IDE and editor files
 .vscode/

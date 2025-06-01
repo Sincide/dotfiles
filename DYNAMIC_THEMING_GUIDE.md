@@ -402,7 +402,7 @@ bind = $mainMod, B, exec, ~/dotfiles/scripts/wallpaper-selector.sh
 ```bash
 exec-once = waybar -s ~/.config/waybar/style-dynamic.css
 exec-once = waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom-dynamic.css
-exec-once = swww init && swww img ~/dotfiles/assets/wallpapers/evilpuccin.png
+exec-once = swww-daemon && sleep 1 && swww img ~/dotfiles/assets/wallpapers/evilpuccin.png
 exec-once = dunst
 ```
 
@@ -494,20 +494,186 @@ decoration {
 }
 ```
 
+## 🎨 Enhanced Transition System
+
+### How Transitions Work
+
+The wallpaper system now includes a sophisticated transition engine that creates beautiful, varied effects when changing wallpapers.
+
+### Transition Flow Diagram
+
+
+```
+                    WHAT USER SEES:                    WHAT HAPPENS BEHIND THE SCENES:
+
+┌─────────────────────┐                              ┌─────────────────────────────┐
+│ User presses Super+B │                              │ Pre-configured in:          │
+└──────────┬──────────┘                              │ config/dynamic-theming/     │
+           │                                         │ transitions.conf            │
+           ▼                                         │                             │
+┌─────────────────────┐                              │ TRANSITION_MODE="random"    │
+│ Category Menu:      │                              │ (or category/smart/fixed)   │
+│ • All Wallpapers(4) │                              └─────────────────────────────┘
+│ • abstract (1)      │
+│ • dark (2)          │
+│ • gaming (1)        │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ Wallpaper Menu:     │
+│ • evilpuccin.png    │
+│ • dark_birds.png    │
+│ • ...               │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐                              ┌─────────────────────────────┐
+│ Wallpaper changes   │ ◄──────────────────────────► │ transition-engine.sh        │
+│ with transition!    │                              │ reads config file and       │
+└─────────────────────┘                              │ automatically picks:        │
+                                                     │                             │
+                                                     │ IF mode = "random":         │
+                                                     │   • Pick random effect      │
+                                                     │   • Add special effects     │
+                                                     │                             │
+                                                     │ IF mode = "category":       │
+                                                     │   • dark folder = fade      │
+                                                     │   • gaming folder = left    │
+                                                     │   • abstract folder = wave  │
+                                                     │                             │
+                                                     │ IF mode = "fixed":          │
+                                                     │   • Always same transition  │
+                                                     │                             │
+                                                     │ Generates command like:     │
+                                                     │ swww img wallpaper.png      │
+                                                     │ --transition-type wave      │
+                                                     │ --transition-angle 127      │
+                                                     │ --transition-duration 3     │
+                                                     └─────────────────────────────┘
+
+USER WORKFLOW:                          CONFIGURATION (one-time setup):
+1. Press Super+B                        1. Edit transitions.conf 
+2. Pick category                         2. Set TRANSITION_MODE="random"
+3. Pick wallpaper                        3. Enjoy automatic variety!
+4. Enjoy transition!
+
+NO MODE SELECTION IN UI - IT'S PRE-CONFIGURED!
+```
+
+### Transition Modes Explained
+
+#### 🎲 **Random Mode** (Default)
+- **What it does**: Picks a different transition effect each time
+- **Special effects**: Random angles, positions, and curves for maximum variety
+- **Best for**: Users who want visual surprise and variety
+- **Example**: Wave → Growing circle → Angled wipe → Dramatic fade
+
+#### 📁 **Category Mode**
+- **What it does**: Consistent transition per wallpaper category
+- **Logic**: 
+  - Dark wallpapers = smooth fades
+  - Gaming wallpapers = left slide
+  - Abstract wallpapers = wave effects
+  - Nature wallpapers = growing circles
+- **Best for**: Users who want themed consistency
+
+#### 🧠 **Smart Mode**  
+- **What it does**: Context-aware transition selection
+- **Logic**:
+  - Startup = gentle fade
+  - Category browsing = standard wipe
+  - Quick changes = instant simple
+- **Best for**: Users who want appropriate transitions for different situations
+
+#### 🔒 **Fixed Mode**
+- **What it does**: Always the same transition
+- **Customizable**: Set your favorite transition type, duration, and angle
+- **Best for**: Users who found their perfect transition and want consistency
+
+### Available Transition Effects
+
+| Effect | Description | Special Options |
+|--------|-------------|-----------------|
+| **fade** | Smooth fade in/out | Bezier curves for easing |
+| **wipe** | Angled sweep across screen | Custom angle (0-360°) |
+| **wave** | Wavy sweeping line | Wave width/height |
+| **grow** | Growing circle | Position (center, corners, random) |
+| **outer** | Shrinking circle | Position options |
+| **left/right/top/bottom** | Directional slide | - |
+| **center** | Growing from center | - |
+| **any** | Growing from random spot | - |
+| **simple** | Basic fade | Fast and clean |
+| **none** | Instant change | No animation |
+
+### Configuration Made Simple
+
+Edit `config/dynamic-theming/transitions.conf`:
+
+```bash
+# Change this line to switch modes:
+TRANSITION_MODE="random"    # For variety
+# TRANSITION_MODE="category" # For consistency  
+# TRANSITION_MODE="smart"    # For context-aware
+# TRANSITION_MODE="fixed"    # For same every time
+
+# For random mode, pick your favorites:
+RANDOM_TRANSITIONS="fade wipe wave grow center"
+
+# For fixed mode, set your preference:
+FIXED_TRANSITION_TYPE="wave"
+FIXED_TRANSITION_DURATION="2"
+```
+
+### Quick Setup Guide
+
+#### Want Maximum Variety?
+```bash
+TRANSITION_MODE="random"
+RANDOM_TRANSITIONS="fade left right wipe wave grow center any outer"
+ENABLE_SPECIAL_EFFECTS="true"
+```
+
+#### Want Consistency?
+```bash
+TRANSITION_MODE="fixed"
+FIXED_TRANSITION_TYPE="fade"
+FIXED_TRANSITION_DURATION="2"
+```
+
+#### Want Category-Based Themes?
+```bash
+TRANSITION_MODE="category"
+TRANSITION_DARK="fade"
+TRANSITION_GAMING="left"
+TRANSITION_NATURE="grow"
+```
+
 ## 🔧 Scripts Overview
 
 ### `wallpaper-selector.sh`
 - Main interface triggered by Super+B
 - Shows fuzzel menu with wallpaper names
-- Sets wallpaper with swww transitions
+- **NEW**: Uses transition engine for dynamic effects
 - Calls theme script automatically
 - Provides user notifications
+
+### `transition-engine.sh` (NEW)
+- Generates dynamic transition parameters
+- Reads configuration preferences
+- Handles random effects and special parameters
+- Logs all transition decisions
 
 ### `wallpaper-theme-changer.sh`
 - Generates colors with matugen
 - Restarts applications with new themes
 - Handles both manual and automatic calls
 - Comprehensive error handling and logging
+
+### `restore-wallpaper.sh`
+- Restores last wallpaper on startup
+- **NEW**: Uses gentle startup transitions
+- Handles missing wallpaper fallbacks
 
 ## 📊 Supported Applications
 

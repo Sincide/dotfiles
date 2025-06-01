@@ -60,15 +60,15 @@
     per_monitor_dpi = false
 
 [urgency_low]
-    background = "#151218"
-    foreground = "#e8e0e8"
-    frame_color = "#4a454e"
+    background = "#161217"
+    foreground = "#e9e0e7"
+    frame_color = "#4c444d"
     timeout = 10
 
 [urgency_normal]
-    background = "#4a454e"
-    foreground = "#ccc4cf"
-    frame_color = "#d8bafa"
+    background = "#4c444d"
+    foreground = "#cec3cd"
+    frame_color = "#e5b6f2"
     timeout = 10
 
 [urgency_critical]

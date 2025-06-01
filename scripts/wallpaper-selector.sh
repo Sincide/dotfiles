@@ -1,15 +1,31 @@
 #!/bin/bash
 
-# Enhanced Wallpaper Selector with Categories and Dynamic Theming
-# Uses fuzzel for selection, swww for wallpaper, and matugen for theming
+# Enhanced Wallpaper Selector with Categories and Dynamic Theming + AI Integration
+# Uses fuzzel for selection, swww for wallpaper, and matugen/AI for theming
 
 WALLPAPERS_DIR="$HOME/dotfiles/assets/wallpapers"
 # Use absolute path to avoid issues when running from different contexts
 SCRIPT_DIR="$HOME/dotfiles/scripts"
+DOTFILES_DIR="$HOME/dotfiles"
 THEME_SCRIPT="$SCRIPT_DIR/wallpaper-theme-changer-optimized.sh"
 TRANSITION_ENGINE="$SCRIPT_DIR/transition-engine.sh"
 # State file to remember last wallpaper
 LAST_WALLPAPER_FILE="$HOME/.config/dynamic-theming/last-wallpaper"
+
+# Load AI configuration if available
+AI_CONFIG_FILE="$DOTFILES_DIR/config/dynamic-theming/ai-config.conf"
+if [ -f "$AI_CONFIG_FILE" ]; then
+    source "$AI_CONFIG_FILE"
+    log_message "AI configuration loaded from: $AI_CONFIG_FILE"
+    log_message "AI Enhancement enabled: ${ENABLE_AI_OPTIMIZATION:-false}"
+else
+    # Default values if config file doesn't exist
+    ENABLE_AI_OPTIMIZATION=false
+    log_message "AI configuration file not found, using defaults"
+fi
+
+# Export AI settings for the theme script
+export ENABLE_AI_OPTIMIZATION
 
 # Function to log messages
 log_message() {

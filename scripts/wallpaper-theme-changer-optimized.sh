@@ -1,13 +1,17 @@
 #!/bin/bash
 
-# Optimized Dynamic Wallpaper Theme Changer
-# Target: Sub-2 second theme changes with parallel processing
-# Version: Performance-Optimized
+# Optimized Dynamic Wallpaper Theme Changer with AI Integration
+# Target: Sub-2 second theme changes with parallel processing + optional AI enhancement
+# Version: Performance-Optimized + AI-Enhanced
 
 WALLPAPER_PATH="$1"
 FORCE_REGENERATION="$2"  # Add force flag for manual wallpaper changes
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
+
+# AI Enhancement Configuration
+ENABLE_AI_OPTIMIZATION="${ENABLE_AI_OPTIMIZATION:-false}"  # Default disabled for stability
+AI_PIPELINE_SCRIPT="$DOTFILES_DIR/scripts/ai/ai-color-pipeline.sh"
 
 # Performance tracking
 START_TIME=$(date +%s.%N)
@@ -17,6 +21,69 @@ log_message() {
     local current_time=$(date +%s.%N)
     local elapsed=$(echo "$current_time - $START_TIME" | bc -l)
     printf "[%.3f] %s - %s\n" "$elapsed" "$(date '+%H:%M:%S')" "$1" >> /tmp/wallpaper-theme-optimized.log
+}
+
+# Function to run AI-enhanced color generation
+generate_ai_enhanced_colors() {
+    local wallpaper="$1"
+    
+    log_message "🧠 AI Enhancement: Starting intelligent color optimization..."
+    
+    # Check if AI pipeline exists
+    if [ ! -f "$AI_PIPELINE_SCRIPT" ]; then
+        log_message "⚠️  AI pipeline not found: $AI_PIPELINE_SCRIPT"
+        log_message "🔄 Falling back to standard matugen..."
+        return 1
+    fi
+    
+    # Run AI pipeline
+    local ai_start_time=$(date +%s.%N)
+    if "$AI_PIPELINE_SCRIPT" "$wallpaper" > /tmp/ai-optimized-colors.json 2>/tmp/ai-pipeline-error.log; then
+        local ai_end_time=$(date +%s.%N)
+        local ai_duration=$(echo "$ai_end_time - $ai_start_time" | bc -l)
+        
+        log_message "🎨 AI Enhancement: Color optimization completed in ${ai_duration}s"
+        log_message "📊 AI results saved to: /tmp/ai-optimized-colors.json"
+        
+        # Verify AI output was generated
+        if [ -f "/tmp/ai-optimized-colors.json" ] && [ -s "/tmp/ai-optimized-colors.json" ]; then
+            # The AI pipeline handles the matugen integration internally
+            # and generates all necessary theme files
+            log_message "✅ AI-optimized theme files generated successfully"
+            return 0
+        else
+            log_message "⚠️  AI output file missing or empty"
+            return 1
+        fi
+    else
+        local ai_end_time=$(date +%s.%N)
+        local ai_duration=$(echo "$ai_end_time - $ai_start_time" | bc -l)
+        
+        log_message "❌ AI Enhancement failed after ${ai_duration}s"
+        log_message "📋 Error details: $(tail -1 /tmp/ai-pipeline-error.log 2>/dev/null || echo 'No error details')"
+        return 1
+    fi
+}
+
+# Function to run standard matugen color generation
+generate_standard_colors() {
+    local wallpaper="$1"
+    
+    log_message "🎨 Standard: Running matugen color extraction..."
+    
+    if command -v matugen > /dev/null; then
+        # Use matugen with the config from ~/.config/matugen/
+        if matugen image "$wallpaper" --config ~/.config/matugen/config.toml > /tmp/matugen-optimized.log 2>&1; then
+            log_message "✅ Standard: Matugen extraction complete"
+            return 0
+        else
+            log_message "❌ Standard: Matugen failed. Check /tmp/matugen-optimized.log"
+            return 1
+        fi
+    else
+        log_message "❌ Error: Matugen not found"
+        return 1
+    fi
 }
 
 # Function to reload applications in parallel (PERFORMANCE OPTIMIZATION)
@@ -210,7 +277,7 @@ set_wallpaper_optimized() {
     fi
 }
 
-# Optimized theme generation
+# Optimized theme generation with AI integration
 generate_theme_optimized() {
     local wallpaper="$1"
     
@@ -229,27 +296,42 @@ generate_theme_optimized() {
     
     # Step 2: Check if theme regeneration is needed (caching optimization)
     if [ "$FORCE_REGENERATION" != "force" ] && ! needs_theme_regeneration "$wallpaper"; then
-        log_message "Skipping matugen - using cached theme"
+        log_message "Skipping color generation - using cached theme"
         reload_applications_parallel
         return 0
     elif [ "$FORCE_REGENERATION" = "force" ]; then
         log_message "Force regeneration requested - bypassing cache"
     fi
     
-    # Step 3: Run matugen (already fast at ~50ms)
-    if command -v matugen > /dev/null; then
-        log_message "Running matugen color extraction..."
-        # Use matugen with the config from ~/.config/matugen/
-        if matugen image "$wallpaper" --config ~/.config/matugen/config.toml > /tmp/matugen-optimized.log 2>&1; then
-            log_message "Matugen extraction complete"
-            reload_applications_parallel
-            return 0
+    # Step 3: AI-Enhanced or Standard Color Generation
+    local color_generation_success=false
+    
+    if [ "$ENABLE_AI_OPTIMIZATION" = "true" ]; then
+        log_message "🧠 AI Enhancement enabled - attempting intelligent color optimization"
+        
+        if generate_ai_enhanced_colors "$wallpaper"; then
+            log_message "🎉 AI Enhancement successful - using AI-optimized colors"
+            color_generation_success=true
         else
-            log_message "Error: Matugen failed. Check /tmp/matugen-optimized.log"
-            return 1
+            log_message "⚠️  AI Enhancement failed - falling back to standard colors"
+            if generate_standard_colors "$wallpaper"; then
+                color_generation_success=true
+            fi
         fi
     else
-        log_message "Error: Matugen not found"
+        log_message "🎨 AI Enhancement disabled - using standard color generation"
+        if generate_standard_colors "$wallpaper"; then
+            color_generation_success=true
+        fi
+    fi
+    
+    # Step 4: Apply theme if color generation succeeded
+    if [ "$color_generation_success" = true ]; then
+        log_message "✅ Color generation successful - applying theme"
+        reload_applications_parallel
+        return 0
+    else
+        log_message "❌ Color generation failed"
         return 1
     fi
 }
@@ -272,10 +354,11 @@ create_optimized_dunst_config() {
     fi
 }
 
-# Main optimized execution
+# Main optimized execution with AI integration
 main() {
-    log_message "=== OPTIMIZED Wallpaper Theme Changer Started ==="
-    log_message "Target: Sub-2 second theme changes"
+    log_message "=== OPTIMIZED Wallpaper Theme Changer with AI Integration Started ==="
+    log_message "🎯 Target: Sub-2 second theme changes"
+    log_message "🧠 AI Enhancement: ${ENABLE_AI_OPTIMIZATION}"
     
     # If no wallpaper provided, try to detect current wallpaper
     if [ -z "$WALLPAPER_PATH" ]; then
@@ -298,14 +381,19 @@ main() {
         local end_time=$(date +%s.%N)
         local total_time=$(echo "$end_time - $START_TIME" | bc -l)
         
-        log_message "OPTIMIZATION SUCCESS - Total time: ${total_time}s"
+        local enhancement_status="⚡ Standard"
+        if [ "$ENABLE_AI_OPTIMIZATION" = "true" ]; then
+            enhancement_status="🧠 AI-Enhanced"
+        fi
         
-        # Send success notification
+        log_message "🎉 OPTIMIZATION SUCCESS - Total time: ${total_time}s"
+        
+        # Send success notification with AI status
         if command -v notify-send > /dev/null; then
-            notify-send "⚡ Fast Theme Update" "Completed in ${total_time}s" -i "$WALLPAPER_PATH"
+            notify-send "$enhancement_status Theme Update" "Completed in ${total_time}s" -i "$WALLPAPER_PATH"
         fi
     else
-        log_message "OPTIMIZATION FAILED"
+        log_message "💥 OPTIMIZATION FAILED"
         
         if command -v notify-send > /dev/null; then
             notify-send "Theme Update Failed" "Check logs for details" -u critical

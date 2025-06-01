@@ -1,0 +1,32 @@
+[config]
+reload_apps = true
+set_wallpaper = false  # Waypaper handles wallpaper setting
+prefix = ""
+
+[templates.hyprland]
+input_path = "~/.config/matugen/templates/hyprland-colors.conf"
+output_path = "~/.config/hypr/conf/colors.conf"
+
+[templates.waybar]
+input_path = "~/.config/matugen/templates/waybar-style.css"  
+output_path = "~/.config/waybar/style-dynamic.css"
+
+[templates.waybar-bottom]
+input_path = "~/.config/matugen/templates/waybar-style-bottom.css"  
+output_path = "~/.config/waybar/style-bottom-dynamic.css"
+
+[templates.kitty]
+input_path = "~/.config/matugen/templates/kitty.conf"
+output_path = "~/.config/kitty/theme-dynamic.conf"
+
+[templates.dunst]
+input_path = "~/.config/matugen/templates/dunst.conf"
+output_path = "~/.config/dunst/dunstrc-dynamic"
+
+[templates.fuzzel]
+input_path = "~/.config/matugen/templates/fuzzel.ini"
+output_path = "~/.config/fuzzel/fuzzel-dynamic.ini"
+
+[templates.test]
+input_path = "~/.config/matugen/templates/test-simple.css"
+output_path = "/tmp/test-simple.css" 

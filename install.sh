@@ -164,7 +164,7 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq swaylock-effects vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local PHYSICAL_PACKAGES="brightnessctl"
     
@@ -293,18 +293,32 @@ create_symlinks() {
                     for file in "$dir"/*; do
                         if [ -f "$file" ]; then
                             target="$HOME/.local/share/applications/$(basename "$file")"
-                            print_progress "Creating shortcut for $(basename "$file")..."
-                            ln -sf "$dotfiles_dir/$file" "$target"
-                            verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
+                            if [ -L "$target" ] && [ "$(readlink "$target")" = "$dotfiles_dir/$file" ]; then
+                                print_progress "Shortcut for $(basename "$file") already exists and is correct"
+                            else
+                                print_progress "Creating shortcut for $(basename "$file")..."
+                                ln -sf "$dotfiles_dir/$file" "$target"
+                                verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
+                            fi
                         fi
                     done
                     ;;
                 *)
                     print_substep "Setting up $base_name configuration..."
                     target_dir="$HOME/.config/$base_name"
-                    mkdir -p "$(dirname "$target_dir")"
-                    ln -sf "$dotfiles_dir/$dir" "$target_dir"
-                    verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                    
+                    # Check if symlink already exists and points to correct location
+                    if [ -L "$target_dir" ] && [ "$(readlink "$target_dir")" = "$dotfiles_dir/$dir" ]; then
+                        print_progress "$base_name configuration already symlinked correctly"
+                    elif [ -e "$target_dir" ]; then
+                        print_warning "$base_name configuration exists but is not a correct symlink. Skipping to prevent data loss."
+                        print_warning "Manual intervention required: Remove $target_dir and re-run if you want to symlink it."
+                    else
+                        print_progress "Creating symlink for $base_name configuration..."
+                        mkdir -p "$(dirname "$target_dir")"
+                        ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                        verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                    fi
                     ;;
             esac
         fi
@@ -314,7 +328,7 @@ create_symlinks() {
         show_progress_bar $count $total $elapsed "$dir"
     done
     if [ $total -gt 0 ]; then echo; fi
-    print_success "All symlinks created"
+    print_success "Symlink setup completed"
 }
 
 set_permissions() {
@@ -570,6 +584,7 @@ main() {
     
     gum_style --bold "Arch Linux Dotfiles Installer"
     print_message "This script will set up your system with the provided dotfiles."
+    print_message "Safe to re-run: Only missing packages will be installed, configs will be backed up."
     
     # Check and cache sudo privileges at the start
     check_sudo

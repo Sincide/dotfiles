@@ -20,7 +20,7 @@ def clean_question_text(text):
             continue
         if l.lower() in ("correct", "incorrect"):
             continue
-        if re.match(r'^[a-d](,\s*[a-d])* is correct$', l.lower()):
+        if re.match(r'^[a-f](,\s*[a-f])* is correct$', l.lower()):
             continue
         if re.match(r'^\d+ of \d+$', l.lower()):
             continue
@@ -78,12 +78,15 @@ def parse_quiz(text):
             m = re.search(r'([A-F](?:,\s*[A-F])*) is correct', block)
             if m:
                 correct = [a.strip() for a in m.group(1).split(',')]
+        if len(correct) == 1:
+            correct_answer = correct[0]
+        else:
+            correct_answer = correct
         questions.append({
-            "number": qnum,
-            "question": question_text,
-            "choices": choices,
-            "correct": correct,
-            "explanation": explanation
+            "question_number": qnum,
+            "question_text": question_text,
+            "options": choices,
+            "correct_answer": correct_answer
         })
         qnum += 1
     return questions

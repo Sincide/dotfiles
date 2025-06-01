@@ -1,3 +1,4 @@
+/* Dracula Theme - Complete */
 * {
     border: none;
     border-radius: 0;
@@ -9,27 +10,13 @@
     transition: all 0.3s ease;
 }
 
-@keyframes launcher_gradient {
-    0% { color: #89b4fa; }
-    20% { color: #94e2d5; }
-    40% { color: #a6e3a1; }
-    60% { color: #f9e2af; }
-    80% { color: #f38ba8; }
-    100% { color: #89b4fa; }
-}
-
-@keyframes fade {
-    0% { opacity: 0.7; }
-    50% { opacity: 1; }
-    100% { opacity: 0.7; }
-}
-
 window#waybar {
-    background: rgba(30, 30, 46, 0.95);
+    background: rgba(40, 42, 54, 0.95);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition-property: background-color, box-shadow;
     transition-duration: 0.5s;
+    color: #f8f8f2;
 }
 
 window#waybar.hidden {
@@ -37,14 +24,14 @@ window#waybar.hidden {
 }
 
 tooltip {
-    background: rgba(30, 30, 46, 0.95);
+    background: rgba(40, 42, 54, 0.95);
     border-radius: 8px;
-    border: 1px solid rgba(137, 180, 250, 0.2);
+    border: 1px solid rgba(139, 233, 253, 0.3);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 tooltip label {
-    color: #cdd6f4;
+    color: #f8f8f2;
     padding: 6px;
 }
 
@@ -64,10 +51,11 @@ tooltip label {
 #custom-quick-settings,
 #custom-system-menu,
 #custom-power {
-    background: rgba(49, 50, 68, 0.4);
+    background: rgba(68, 71, 90, 0.7);
     border-radius: 10px;
     margin: 4px;
     padding: 0 10px;
+    color: #f8f8f2;
 }
 
 /* Hover effect for all modules */
@@ -81,46 +69,46 @@ tooltip label {
 #custom-dotfiles:hover,
 #custom-updates:hover,
 #custom-weather:hover {
-    background: rgba(49, 50, 68, 0.6);
-    box-shadow: inset 0 0 0 1px rgba(205, 214, 244, 0.2);
+    background: rgba(98, 114, 164, 0.6);
+    box-shadow: inset 0 0 0 1px rgba(139, 233, 253, 0.4);
 }
 
 #custom-launcher {
-    color: #89b4fa;
+    color: #bd93f9;
     font-size: 20px;
     padding: 0 16px;
-    animation: launcher_gradient 10s ease infinite;
     min-width: 30px;
     padding: 0 5px;
 }
 
 #custom-launcher:hover {
     font-size: 22px;
+    color: #ff79c6;
 }
 
 #custom-separator {
-    color: #6c7086;
+    color: #6272a4;
     font-size: 16px;
     padding: 0 8px;
     margin: 0 2px;
 }
 
 #custom-notification {
-    color: #f9e2af;
+    color: #f1fa8c;
     padding: 0 12px;
     min-width: 30px;
     padding: 0 5px;
 }
 
 #workspaces {
-    background: rgba(49, 50, 68, 0.4);
+    background: rgba(68, 71, 90, 0.7);
     border-radius: 10px;
     margin: 5px;
     padding: 0 5px;
 }
 
 #workspaces button {
-    color: #bac2de;
+    color: #f8f8f2;
     padding: 0 5px;
     background: transparent;
     border-radius: 8px;
@@ -129,70 +117,100 @@ tooltip label {
 }
 
 #workspaces button.active {
-    color: #89b4fa;
-    border-bottom: 2px solid #89b4fa;
-    border-radius: 0;
-    padding-bottom: 2px;
+    color: #282a36;
+    background: rgba(139, 233, 253, 0.8);
+    border-top: 2px solid #8be9fd;
+    border-radius: 0 0 8px 8px;
+    padding-top: 2px;
 }
 
 #workspaces button:hover {
-    color: #94e2d5;
-    border-bottom: 2px solid #94e2d5;
-    border-radius: 0;
-    padding-bottom: 2px;
-    background: rgba(148, 226, 213, 0.1);
+    color: #282a36;
+    background: rgba(255, 121, 198, 0.6);
+    border-top: 2px solid #ff79c6;
+    border-radius: 0 0 8px 8px;
+    padding-top: 2px;
 }
 
 #workspaces button.urgent {
-    color: #f38ba8;
-    border-bottom: 2px solid #f38ba8;
-    border-radius: 0;
-    padding-bottom: 2px;
-    animation: fade 1s infinite;
+    color: #f8f8f2;
+    background: rgba(255, 85, 85, 0.6);
+    border-top: 2px solid #ff5555;
+    border-radius: 0 0 8px 8px;
+    padding-top: 2px;
 }
 
 #window {
-    color: #cdd6f4;
+    color: #f8f8f2;
     min-width: 100px;
     padding: 2px 12px;
-    background: rgba(49, 50, 68, 0.7);
-    border-bottom: 2px solid #89b4fa;
+    background: rgba(68, 71, 90, 0.8);
+    border-top: 2px solid #bd93f9;
 }
 
-/* System stats modules with consistent colors */
+/* System stats modules with Dracula colors */
 #clock {
-    color: #f9e2af;
+    color: #f1fa8c;
     min-width: 210px;
 }
 
 #network {
-    color: #a6e3a1;
+    color: #50fa7b;
     min-width: 140px;
     font-family: "JetBrainsMono Nerd Font Mono";
 }
 
 #network.disconnected {
-    color: #f38ba8;
-    background: rgba(243, 139, 168, 0.15);
+    color: #ff5555;
+    background: rgba(255, 85, 85, 0.2);
 }
 
 #pulseaudio, #wireplumber {
-    color: #89b4fa;
+    color: #8be9fd;
     min-width: 80px;
 }
 
 #pulseaudio.muted, #wireplumber.muted {
-    color: #f38ba8;
+    color: #ff5555;
 }
 
 #cpu {
-    color: #a6e3a1;
+    color: #50fa7b;
     min-width: 70px;
 }
 
+#cpu.warning {
+    color: #f1fa8c;
+}
+
+#cpu.critical {
+    color: #ff5555;
+}
+
 #memory {
-    color: #cba6f7;
+    color: #bd93f9;
     min-width: 70px;
+}
+
+#memory.warning {
+    color: #f1fa8c;
+}
+
+#memory.critical {
+    color: #ff5555;
+}
+
+#battery {
+    color: #50fa7b;
+    min-width: 80px;
+}
+
+#battery.warning {
+    color: #f1fa8c;
+}
+
+#battery.critical {
+    color: #ff5555;
 }
 
 #tray {
@@ -208,48 +226,48 @@ tooltip label {
 }
 
 #custom-gpu-temp {
-    color: #fab387;
+    color: #ffb86c;
     min-width: 70px;
 }
 
 #custom-gpu-temp.error {
-    color: #f38ba8;
-    background: rgba(243, 139, 168, 0.15);
+    color: #ff5555;
+    background: rgba(255, 85, 85, 0.2);
 }
 
 #custom-dotfiles {
-    color: #cdd6f4;
+    color: #f8f8f2;
     min-width: 30px;
 }
 
 #custom-dotfiles.modified {
-    color: #fab387;  /* Orange for modified files */
+    color: #ffb86c;
 }
 
 #custom-dotfiles.unpushed {
-    color: #a6e3a1;  /* Green for unpushed changes */
+    color: #50fa7b;
 }
 
 #custom-dotfiles.unpulled {
-    color: #89b4fa;  /* Blue for unpulled changes */
+    color: #8be9fd;
 }
 
 #custom-updates {
-    color: #cdd6f4;
+    color: #f8f8f2;
     min-width: 30px;
 }
 
 #custom-updates.has-updates {
-    color: #f9e2af;  /* Yellow for available updates */
+    color: #f1fa8c;
 }
 
 #custom-updates.error {
-    color: #f38ba8;  /* Red for errors */
+    color: #ff5555;
 }
 
 #custom-keybinds {
-    color: #cba6f7;
-    background: rgba(49, 50, 68, 0.4);
+    color: #bd93f9;
+    background: rgba(68, 71, 90, 0.7);
     border-radius: 10px;
     margin: 4px;
     padding: 2px 12px;
@@ -257,13 +275,13 @@ tooltip label {
 }
 
 #custom-keybinds:hover {
-    background: rgba(49, 50, 68, 0.6);
+    background: rgba(98, 114, 164, 0.6);
 }
 
 /* Menu modules */
 #custom-quick-settings,
 #custom-system-menu {
-    color: #cba6f7;
+    color: #bd93f9;
     font-size: 16px;
     min-width: 16px;
     padding: 2px 10px;
@@ -272,14 +290,14 @@ tooltip label {
 
 #custom-quick-settings:hover,
 #custom-system-menu:hover {
-    background: rgba(203, 166, 247, 0.2);
-    color: #f5c2e7;
+    background: rgba(189, 147, 249, 0.3);
+    color: #f8f8f2;
     border-radius: 12px;
-    box-shadow: 0 0 5px rgba(203, 166, 247, 0.3);
+    box-shadow: 0 0 5px rgba(189, 147, 249, 0.4);
 }
 
 #custom-power {
-    color: #f38ba8;
+    color: #ff5555;
     margin-right: 6px;
     font-size: 16px;
     min-width: 16px;
@@ -287,19 +305,162 @@ tooltip label {
 }
 
 #custom-power:hover {
-    background: rgba(243, 139, 168, 0.2);
-    color: #f38ba8;
+    background: rgba(255, 85, 85, 0.3);
+    color: #f8f8f2;
     border-radius: 12px;
-    box-shadow: 0 0 5px rgba(243, 139, 168, 0.3);
+    box-shadow: 0 0 5px rgba(255, 85, 85, 0.4);
 }
 
 /* Weather Module */
 #custom-weather {
-    color: #89dceb;
+    color: #8be9fd;
     min-width: 100px;
 }
 
 #custom-weather:hover {
-    background: rgba(49, 50, 68, 0.6);
-    box-shadow: inset 0 0 0 1px rgba(137, 220, 235, 0.2);
-} 
+    background: rgba(98, 114, 164, 0.6);
+    box-shadow: inset 0 0 0 1px rgba(139, 233, 253, 0.4);
+}
+
+/* GPU Info states */
+#custom-gpu-info.gpu-ok { 
+    color: #50fa7b; 
+}
+
+#custom-gpu-info.gpu-warm { 
+    color: #f1fa8c; 
+}
+
+#custom-gpu-info.gpu-hot { 
+    color: #ff5555; 
+}
+
+#custom-gpu-info.gpu-unknown { 
+    color: #f8f8f2; 
+}
+
+/* Hyprland specific modules */
+#hyprland-workspaces button {
+    color: #f8f8f2;
+    background: transparent;
+    border-radius: 8px;
+    margin: 3px 0;
+    transition: all 0.3s ease;
+}
+
+#hyprland-workspaces button.active {
+    color: #282a36;
+    background: rgba(139, 233, 253, 0.8);
+    border-top: 2px solid #8be9fd;
+    border-radius: 0 0 8px 8px;
+}
+
+#hyprland-workspaces button:hover {
+    color: #282a36;
+    background: rgba(255, 121, 198, 0.6);
+    border-top: 2px solid #ff79c6;
+    border-radius: 0 0 8px 8px;
+}
+
+#hyprland-workspaces button.urgent {
+    color: #f8f8f2;
+    background: rgba(255, 85, 85, 0.6);
+    border-top: 2px solid #ff5555;
+    border-radius: 0 0 8px 8px;
+}
+
+#hyprland-window {
+    color: #f8f8f2;
+    min-width: 100px;
+    padding: 2px 12px;
+    background: rgba(68, 71, 90, 0.8);
+    border-top: 2px solid #bd93f9;
+}
+
+#hyprland-language {
+    color: #8be9fd;
+    min-width: 50px;
+}
+
+/* Additional states for better visual feedback */
+#backlight {
+    color: #f1fa8c;
+    min-width: 70px;
+}
+
+#bluetooth {
+    color: #8be9fd;
+    min-width: 50px;
+}
+
+#bluetooth.disconnected {
+    color: #6272a4;
+}
+
+#bluetooth.connected {
+    color: #8be9fd;
+}
+
+#idle_inhibitor {
+    color: #ffb86c;
+    min-width: 30px;
+}
+
+#idle_inhibitor.activated {
+    color: #ff5555;
+    background: rgba(255, 85, 85, 0.2);
+}
+
+#privacy {
+    color: #ff5555;
+    min-width: 50px;
+}
+
+/* Temperature states */
+#temperature {
+    color: #8be9fd;
+    min-width: 70px;
+}
+
+#temperature.critical {
+    color: #ff5555;
+    background: rgba(255, 85, 85, 0.2);
+}
+
+/* Disk usage */
+#disk {
+    color: #bd93f9;
+    min-width: 70px;
+}
+
+#disk.warning {
+    color: #f1fa8c;
+}
+
+#disk.critical {
+    color: #ff5555;
+}
+
+/* Taskbar for bottom bar */
+#wlr-taskbar button {
+    color: #f8f8f2;
+    background: rgba(68, 71, 90, 0.5);
+    border-radius: 8px;
+    margin: 2px;
+    padding: 2px 8px;
+    transition: all 0.3s ease;
+}
+
+#wlr-taskbar button:hover {
+    background: rgba(98, 114, 164, 0.6);
+    border-top: 2px solid #ff79c6;
+}
+
+#wlr-taskbar button.active {
+    background: rgba(139, 233, 253, 0.3);
+    border-top: 2px solid #8be9fd;
+}
+
+#wlr-taskbar button.minimized {
+    color: #6272a4;
+}

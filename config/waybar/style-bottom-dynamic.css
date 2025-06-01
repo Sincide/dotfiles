@@ -11,12 +11,12 @@
 }
 
 window#waybar {
-    background: rgba(22, 18, 23, 1.0);
+    background: rgba(14, 21, 19, 1.0);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition-property: background-color, box-shadow;
     transition-duration: 0.5s;
-    color: #e9e0e7;
+    color: #dde4e1;
 }
 
 window#waybar.hidden {
@@ -24,14 +24,14 @@ window#waybar.hidden {
 }
 
 tooltip {
-    background: rgba(22, 18, 23, 1.0);
+    background: rgba(14, 21, 19, 1.0);
     border-radius: 8px;
-    border: 1px solid #e5b6f2;
+    border: 1px solid #82d5c7;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 tooltip label {
-    color: #e9e0e7;
+    color: #dde4e1;
     padding: 6px;
 }
 
@@ -41,11 +41,11 @@ tooltip label {
 #custom-disk-usage,
 #custom-uptime,
 #clock {
-    background: rgba(76, 68, 77, 1.0);
+    background: rgba(63, 73, 70, 1.0);
     border-radius: 10px;
     margin: 4px;
     padding: 0 10px;
-    color: #cec3cd;
+    color: #bec9c5;
     min-width: 80px;
 }
 
@@ -55,34 +55,34 @@ tooltip label {
 #custom-disk-usage:hover,
 #custom-uptime:hover,
 #clock:hover {
-    background: rgba(93, 56, 107, 1.0);
-    box-shadow: inset 0 0 0 1px #e5b6f266;
+    background: rgba(0, 80, 71, 1.0);
+    box-shadow: inset 0 0 0 1px #82d5c766;
 }
 
 /* GPU Info module - primary focus of bottom bar */
 #custom-gpu-info {
-    color: #f5b7b4;
+    color: #adcae5;
     min-width: 200px;
     font-family: "JetBrainsMono Nerd Font Mono";
     font-weight: 500;
 }
 
 #custom-gpu-info:hover {
-    background: rgba(102, 59, 57, 1.0);
-    color: #ffdad8;
-    box-shadow: inset 0 0 0 1px #f5b7b466;
+    background: rgba(45, 74, 96, 1.0);
+    color: #cbe6ff;
+    box-shadow: inset 0 0 0 1px #adcae566;
 }
 
 /* GPU Temperature module */
 #custom-gpu-temp {
-    color: #d4c0d7;
+    color: #b1ccc6;
     min-width: 100px;
     font-family: "JetBrainsMono Nerd Font Mono";
 }
 
 #custom-gpu-temp.warning {
-    color: #f5b7b4;
-    background: rgba(102, 59, 57, 1.0);
+    color: #adcae5;
+    background: rgba(45, 74, 96, 1.0);
 }
 
 #custom-gpu-temp.critical {
@@ -92,14 +92,14 @@ tooltip label {
 
 /* Disk usage module */
 #custom-disk-usage {
-    color: #e5b6f2;
+    color: #82d5c7;
     min-width: 120px;
     font-family: "JetBrainsMono Nerd Font Mono";
 }
 
 #custom-disk-usage.warning {
-    color: #f5b7b4;
-    background: rgba(102, 59, 57, 1.0);
+    color: #adcae5;
+    background: rgba(45, 74, 96, 1.0);
 }
 
 #custom-disk-usage.critical {
@@ -109,21 +109,21 @@ tooltip label {
 
 /* Uptime module */
 #custom-uptime {
-    color: #d4c0d7;
+    color: #b1ccc6;
     min-width: 140px;
     font-family: "JetBrainsMono Nerd Font Mono";
 }
 
 /* Clock on bottom bar */
 #clock {
-    color: #f5b7b4;
+    color: #adcae5;
     min-width: 180px;
     font-weight: 500;
 }
 
 /* System information separator */
 #custom-separator {
-    color: #988e97;
+    color: #899390;
     font-size: 16px;
     padding: 0 8px;
     margin: 0 2px;

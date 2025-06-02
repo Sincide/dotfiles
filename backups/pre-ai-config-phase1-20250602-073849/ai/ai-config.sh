@@ -10,30 +10,6 @@
 AI_CONFIG_FILE="$HOME/.config/dynamic-theming/ai-config.conf"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
-
-# Ensure gum is available
-ensure_gum() {
-    if ! command -v gum &>/dev/null; then
-        echo -e "${YELLOW}Installing gum for better UI...${NC}"
-        if command -v yay &>/dev/null; then
-            yay -S --noconfirm gum
-        elif command -v pacman &>/dev/null; then
-            sudo pacman -Sy --noconfirm gum
-        else
-            echo -e "${RED}Error: Neither yay nor pacman found. Please install gum manually.${NC}"
-            return 1
-        fi
-    fi
-}
-
 # Default AI configuration
 DEFAULT_AI_MODE="enhanced"  # Options: enhanced, vision, mathematical, disabled
 DEFAULT_VISION_AI="true"
@@ -191,25 +167,18 @@ interactive_config() {
     echo "Current Status:"
     get_ai_status
     echo ""
+    echo "Available Options:"
+    echo "1) Enhanced Intelligence (Vision + Mathematical) - Recommended"
+    echo "2) Vision AI Only (Content-aware theming)"
+    echo "3) Mathematical AI Only (Harmony + Accessibility)"
+    echo "4) Disable AI (Standard theming)"
+    echo "5) Show detailed status"
+    echo "6) Test current configuration"
+    echo "7) Reset to defaults"
+    echo "8) Exit"
+    echo ""
     
-    # Ensure gum is available
-    ensure_gum
-    
-    # Use gum for selection
-    local choice_desc
-    choice_desc=$(printf '%s\n' \
-        "1) Enhanced Intelligence (Vision + Mathematical) - Recommended" \
-        "2) Vision AI Only (Content-aware theming)" \
-        "3) Mathematical AI Only (Harmony + Accessibility)" \
-        "4) Disable AI (Standard theming)" \
-        "5) Show detailed status" \
-        "6) Test current configuration" \
-        "7) Reset to defaults" \
-        "8) Exit" | \
-        gum choose --height 10 --header "🛠️ AI Configuration Options")
-    
-    # Extract number from choice
-    local choice=$(echo "$choice_desc" | cut -d')' -f1)
+    read -p "Select option (1-8): " choice
     
     case "$choice" in
         1)
@@ -352,7 +321,6 @@ ai_mathematical() { set_ai_mode "mathematical"; }
 ai_disable() { set_ai_mode "disabled"; }
 ai_status() { get_ai_status; }
 ai_config() { interactive_config; }
-
 
 # Main entry point
 main() {

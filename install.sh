@@ -77,7 +77,97 @@ print_progress() {
 
 handle_error() {
     print_error "$1"
-    exit 1
+    echo
+    print_message "❌ An error occurred. What would you like to do?"
+    echo
+    local choice=$(gum_choose "What would you like to do?" \
+        "Continue anyway (ignore this error)" \
+        "Retry the last operation" \
+        "Open debug shell (for manual fixing)" \
+        "View install log" \
+        "Abort installation")
+    
+    case "$choice" in
+        "Continue anyway (ignore this error)")
+            print_warning "Continuing despite error..."
+            return 0
+            ;;
+        "Retry the last operation")
+            print_message "You chose to retry. The calling function should handle this."
+            return 2  # Special return code for retry
+            ;;
+        "Open debug shell (for manual fixing)")
+            print_message "Opening debug shell. Type 'exit' when you're done fixing the issue."
+            print_message "Current directory: $(pwd)"
+            print_message "Error was: $1"
+            bash
+            print_message "Continuing after debug session..."
+            return 0
+            ;;
+        "View install log")
+            if [ -f "$LOGFILE" ]; then
+                print_message "Last 50 lines of install log:"
+                tail -n 50 "$LOGFILE"
+            else
+                print_message "No log file found at $LOGFILE"
+            fi
+            # Ask again after showing log
+            handle_error "$1"
+            ;;
+        "Abort installation")
+            print_error "Installation aborted by user."
+            exit 1
+            ;;
+        *)
+            print_error "Invalid choice. Aborting."
+            exit 1
+            ;;
+    esac
+}
+
+handle_warning() {
+    print_warning "$1"
+    echo
+    print_message "⚠️  A warning/inconsistency was detected. What would you like to do?"
+    echo
+    local choice=$(gum_choose "How should we proceed?" \
+        "Continue (ignore warning)" \
+        "Investigate (debug shell)" \
+        "View details (show log)" \
+        "Abort installation")
+    
+    case "$choice" in
+        "Continue (ignore warning)")
+            print_message "Continuing despite warning..."
+            return 0
+            ;;
+        "Investigate (debug shell)")
+            print_message "Opening debug shell for investigation. Type 'exit' when done."
+            print_message "Warning was: $1"
+            bash
+            print_message "Continuing after investigation..."
+            return 0
+            ;;
+        "View details (show log)")
+            if [ -f "$LOGFILE" ]; then
+                print_message "Last 30 lines of install log:"
+                tail -n 30 "$LOGFILE"
+            else
+                print_message "No log file available"
+            fi
+            echo
+            # Ask again after showing details
+            handle_warning "$1"
+            ;;
+        "Abort installation")
+            print_error "Installation aborted by user due to warning."
+            exit 1
+            ;;
+        *)
+            print_error "Invalid choice. Aborting."
+            exit 1
+            ;;
+    esac
 }
 
 check_command() {
@@ -190,9 +280,9 @@ install_packages() {
         # Update system and refresh package database
         print_substep "Updating system and refreshing package database..."
         gum_spin "Updating system packages..."
-        sudo pacman -Syu --noconfirm || print_warning "Failed to update system packages"
+        sudo pacman -Syu --noconfirm || handle_warning "Failed to update system packages - this could cause package conflicts"
         gum_spin "Refreshing package database..."
-        run_yay -Syy --noconfirm || print_warning "Failed to refresh package database"
+        run_yay -Syy --noconfirm || handle_warning "Failed to refresh package database - package installation may fail"
         
         # Refresh sudo timestamp to avoid password prompt during suppressed output
         sudo -v
@@ -229,9 +319,11 @@ install_packages() {
         fi
         
         if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
-            print_warning "Failed to install ${#FAILED_PACKAGES[@]} packages:"
+            echo
+            print_error "Failed to install ${#FAILED_PACKAGES[@]} packages:"
             printf '%s\n' "${FAILED_PACKAGES[@]}" | sort | sed 's/^/  - /'
             FAILED_PACKAGES_SUMMARY="$(printf '%s\n' "${FAILED_PACKAGES[@]}")"
+            handle_warning "Some packages failed to install - this may cause missing functionality"
         fi
     else
         print_success "All required packages are already installed"
@@ -293,6 +385,8 @@ create_symlinks() {
                             if [ -L "$target" ] && [ "$(readlink "$target")" = "$dotfiles_dir/$file" ]; then
                                 print_progress "Shortcut for $(basename "$file") already exists and is correct"
                             else
+                                # Remove existing file/link if it exists
+                                [ -e "$target" ] && rm -f "$target"
                                 print_progress "Creating shortcut for $(basename "$file")..."
                                 ln -sf "$dotfiles_dir/$file" "$target"
                                 verify_symlink "$dotfiles_dir/$file" "$target" || print_warning "Failed to verify symlink for $(basename "$file")"
@@ -304,24 +398,30 @@ create_symlinks() {
                     print_substep "Setting up $base_name configuration..."
                     target_dir="$HOME/.config/$base_name"
                     
-                    # Special handling for directories that should contain mixed content
+                    # Most configs can be fully symlinked
                     case "$base_name" in
-                        "dynamic-theming"|"gtk-3.0"|"gtk-4.0")
-                            # These directories need to contain both symlinked and real files
-                            print_progress "$base_name configuration uses mixed content - managed individually"
-                            ;;
                         *)
                     # Check if symlink already exists and points to correct location
                     if [ -L "$target_dir" ] && [ "$(readlink "$target_dir")" = "$dotfiles_dir/$dir" ]; then
                         print_progress "$base_name configuration already symlinked correctly"
                     elif [ -e "$target_dir" ]; then
-                        print_warning "$base_name configuration exists but is not a correct symlink. Skipping to prevent data loss."
-                        print_warning "Manual intervention required: Remove $target_dir and re-run if you want to symlink it."
+                        # Check if it's a small default config that can be safely replaced
+                        local dir_size=$(du -sb "$target_dir" 2>/dev/null | cut -f1)
+                        if [ "$dir_size" -lt 50000 ]; then  # Less than 50KB = likely default configs
+                            print_progress "Replacing default $base_name configuration with dotfiles..."
+                            rm -rf "$target_dir"
+                            mkdir -p "$(dirname "$target_dir")"
+                            ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                            verify_symlink "$dotfiles_dir/$dir" "$target_dir" || handle_warning "Failed to verify symlink for $base_name - configuration may not work properly"
+                        else
+                            print_warning "$base_name configuration exists and seems customized. Skipping to prevent data loss."
+                            print_warning "Manual intervention required: Remove $target_dir and re-run if you want to symlink it."
+                        fi
                     else
                         print_progress "Creating symlink for $base_name configuration..."
                         mkdir -p "$(dirname "$target_dir")"
                         ln -sf "$dotfiles_dir/$dir" "$target_dir"
-                        verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                        verify_symlink "$dotfiles_dir/$dir" "$target_dir" || handle_warning "Failed to verify symlink for $base_name - configuration may not work properly"
                     fi
                             ;;
                     esac

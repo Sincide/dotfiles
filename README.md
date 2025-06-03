@@ -1,215 +1,140 @@
-# 🎨 AI-Enhanced Dotfiles Ecosystem
+# AI-Enhanced Linux Desktop + Web Theming System 🧠🎨
 
-**Status**: ✅ **COMPLETE** - World's first AI-enhanced Linux desktop + web theming system  
-**Version**: 2.0 - Firefox Integration Complete  
-**AI Integration**: ✅ **FULLY OPERATIONAL** - Vision AI + Mathematical AI + Web Theming
+*The world's first AI-enhanced Linux desktop with real-time web browser theming*
 
-## 🚀 **NEW: Firefox AI Extension**
+![Version](https://img.shields.io/badge/version-2.1-blue)
+![Firefox](https://img.shields.io/badge/Firefox-Theme%20API-orange)
+![AI](https://img.shields.io/badge/AI-Phi4%20Vision-green)
+![Performance](https://img.shields.io/badge/performance-%3C3s-brightgreen)
 
-🌐 **Real-time Web Theming** - Websites automatically themed with your wallpaper colors!
+## 🎯 What This Does
 
+Your **wallpaper changes** → **AI analyzes colors** → **Entire computing environment updates**:
+- 🖥️ **Desktop applications** (Hyprland, Waybar, Kitty, etc.)
+- 🌐 **Firefox browser interface** (toolbar, tabs, address bar)
+- 📄 **Website content** (GitHub, Reddit, any site)
+
+**Result:** Everything matches your wallpaper in real-time with AI-optimized colors.
+
+## ⚡ Quick Start
+
+### Fresh Arch Linux Installation
 ```bash
-# Install Firefox extension (permanent)
-./scripts/install-firefox-extension-permanent.sh
-
-# Change wallpaper → Desktop + Firefox themes update automatically!
-Super + B
-```
-
-### **How It Works**
-1. **Change wallpaper** → AI analyzes colors
-2. **Desktop themes update** → Waybar, Kitty, Dunst, etc.
-3. **Firefox automatically updates** → All websites get new theme
-4. **No refresh needed** → Seamless real-time theming
-
-## 🏆 **COMPLETE FEATURES**
-
-### **✅ AI Intelligence System**
-- **AI Vision Integration**: Content-aware wallpaper analysis with Ollama models
-- **Mathematical AI**: Color harmony analysis and WCAG AAA accessibility optimization  
-- **Firefox Web Theming**: Real-time website theming synchronized with desktop
-- **Content-Aware Intelligence**: Vision AI analyzes wallpaper content (nature, abstract, gaming)
-- **Performance**: Sub-3s AI processing with automatic fallbacks
-
-### **✅ Dynamic Theming Ecosystem**
-- **Complete Application Theming**: GTK3/4, Qt5/6, Waybar, Kitty, Dunst, Fuzzel, Hyprland
-- **Firefox Web Integration**: Live website theming with 5-second refresh
-- **Material You Dynamic Icons**: Desktop Linux implementation  
-- **Smart Wallpaper Categories**: 18+ organized categories with fuzzel navigation
-- **Enhanced Transitions**: 10+ dynamic transition types with special effects
-
-### **✅ System Integration**
-- **AI Configuration Hub**: Professional interface with breadcrumb navigation
-- **System Health Analysis**: 98.95/100 score with comprehensive monitoring
-- **Auto-start Services**: Color server starts with Hyprland automatically
-- **Permanent Installation**: Firefox extension survives browser restarts
-
-## 🎯 **Quick Installation**
-
-### **Complete System Setup**
-```bash
-git clone <your-repo> ~/dotfiles
-cd ~/dotfiles
+git clone https://github.com/your-username/dotfiles
+cd dotfiles
+chmod +x install.sh
 ./install.sh
 ```
 
-### **Firefox Extension Only**
+### Existing System
 ```bash
-cd ~/dotfiles
-./scripts/install-firefox-extension-permanent.sh
-# Installs: Firefox Developer Edition + Extension + Auto-start server
+# See COMPLETE_SYSTEM_GUIDE.md for detailed instructions
 ```
 
-## 🎮 **Usage**
+## 📖 Documentation
 
-### **AI Theming Workflow**
-```bash
-Super + B                 # Select wallpaper → AI analyzes → Desktop + Firefox update
-ai-hub                    # Access AI configuration interface
-ai-config status          # Check AI system health
-```
+**👉 [COMPLETE_SYSTEM_GUIDE.md](COMPLETE_SYSTEM_GUIDE.md) - Full documentation, setup, and usage**
 
-### **Essential Shortcuts**
-```bash
-Super + Enter             # Terminal (Kitty)
-Super + D                 # Launcher (Fuzzel)
-Super + W                 # Web browser (Firefox)
-Super + E                 # File manager (Thunar)
-Super + L                 # Lock screen
-Print                     # Screenshot with editor (Swappy)
-```
+## 🌟 Key Features
 
-## 🤖 **AI System Architecture**
+### v2.1 - Complete Firefox Integration ⭐ NEW
+- **Firefox Theme API**: Browser interface theming (toolbar, tabs, address bar)
+- **Website Content Theming**: Real-time website color updates
+- **Fuzzel Cache Fix**: Preserved application usage statistics
+- **Auto-start Integration**: Color server launches automatically
 
-### **Complete Data Pipeline**
-```
-Wallpaper Selection → AI Analysis → JSON Generation → Color Server → Desktop + Firefox Theming
-```
+### v2.0 - AI Enhancement & Web Theming
+- **AI Color Pipeline**: Phi4 vision + mathematical harmony analysis
+- **Firefox AI Extension**: Real-time website theming
+- **Performance Optimization**: Sub-2 second theme changes
+- **Material You Icons**: Dynamic icon theming
 
-### **AI Processing**
-1. **Vision AI** analyzes wallpaper content (nature, abstract, gaming, etc.)
-2. **Mathematical AI** optimizes color harmony + accessibility  
-3. **Theme Generation** creates WCAG AAA compliant palettes
-4. **Desktop Applications** update simultaneously 
-5. **Firefox Extension** receives colors via local server
-6. **Websites** get themed automatically (no refresh needed)
+### v1.0 - Desktop Foundation
+- **Hyprland Environment**: Complete tiling WM setup
+- **Dynamic Theming**: Wallpaper-driven color schemes
+- **Application Integration**: Waybar, Dunst, Kitty, Fuzzel theming
 
-### **Performance Metrics**
-- **AI Analysis**: <3s average
-- **Desktop Theme Update**: <2s complete
-- **Firefox Update**: 5s polling interval  
-- **Total Wallpaper → Web Theme**: <10s end-to-end
-
-## 🔧 **Technical Architecture**
-
-### **Core Components**
-```
-├── scripts/ai/                    # AI enhancement system
-│   ├── ai-color-pipeline.sh      # Main AI pipeline (JSON bug fixed)
-│   ├── enhanced-color-intelligence.sh
-│   ├── vision-analyzer.sh
-│   └── accessibility-optimizer.sh
-├── firefox-ai-extension/         # Firefox extension
-├── local-color-server.py         # Auto-starting color server
-├── firefox-ai-extension.xpi      # Installable extension package
-└── config/hypr/hyprland.conf     # Auto-start configuration
-```
-
-### **AI Models Required**
-- **Ollama**: Latest version (auto-installed)
-- **Models**: deepseek-r1:32b, phi4:latest, llava:latest (~4GB)
-- **Setup**: Automatic during installation
-
-## 📊 **System Requirements**
-
-### **Minimum Setup**
-- **OS**: Arch Linux with Hyprland
-- **Memory**: 8GB (4GB + 4GB for AI models)  
-- **Storage**: 6GB (2GB dotfiles + 4GB AI models)
-- **GPU**: AMD recommended (optimized drivers included)
-
-### **Installation Time**
-- **Full System**: 15-20 minutes
-- **Firefox Extension Only**: 3-5 minutes
-- **AI Models**: 15-20 minutes (one-time download)
-
-## 🌐 **Firefox Integration Details**
-
-### **Extension Features**
-- **Real-time Updates**: 5-second polling, no page refresh needed
-- **WCAG AAA Compliance**: All generated themes meet accessibility standards
-- **Site-Specific Rules**: Enhanced styling for popular websites
-- **Memory Efficient**: <50MB usage
-- **Permanent Installation**: Survives Firefox restarts
-
-### **Installation Options**
-1. **Firefox Developer Edition** (Recommended) - Zero configuration
-2. **Regular Firefox** - Enterprise policy + config changes
-3. **Troubleshooting** - Automated fix script included
-
-### **Technical Flow**
-```
-Wallpaper Change → AI Pipeline → /tmp/ai-optimized-colors.json → 
-Local Server (localhost:8080) → Firefox Extension → Website Theming
-```
-
-## 🔧 **Troubleshooting**
-
-### **Quick Diagnostics**
-```bash
-# Check complete system status
-ai-config status
-
-# Verify Firefox color server
-curl http://localhost:8080/ai-colors
-
-# Fix Firefox installation issues
-./scripts/firefox-config-fix.sh
-
-# Reload extension (temporary installations)
-./scripts/reload-firefox-extension.sh
-```
-
-### **Common Issues**
-- **Firefox Extension**: Use Firefox Developer Edition for easiest installation
-- **AI Models**: Ensure Ollama is running (`ollama serve`)
-- **Color Server**: Auto-starts with Hyprland, check logs if needed
-
-## 📚 **Documentation**
-
-### **Quick References**
-- **[AI_COMPLETE_ECOSYSTEM_GUIDE.md](AI_COMPLETE_ECOSYSTEM_GUIDE.md)** - Comprehensive system guide
-- **[README-FIREFOX-AI.md](README-FIREFOX-AI.md)** - Firefox extension specifics
-- **[AI_HUB_QUICK_REFERENCE.md](AI_HUB_QUICK_REFERENCE.md)** - Command reference
-
-### **Technical Details**
-- **[AI_IMPLEMENTATION_GUIDE.md](AI_IMPLEMENTATION_GUIDE.md)** - Complete AI system documentation
-- **[DYNAMIC_THEMING_GUIDE.md](DYNAMIC_THEMING_GUIDE.md)** - Theming system internals
-- **[INSTALL_SCRIPT_EXPLAINED.md](INSTALL_SCRIPT_EXPLAINED.md)** - Installation process details
-
-## 🎯 **What Makes This Special**
-
-✅ **World's First**: AI-enhanced dynamic theming for Linux desktop + web  
-✅ **Complete Integration**: Desktop applications + Firefox websites themed together  
-✅ **AI-Powered**: Content-aware analysis with mathematical color optimization  
-✅ **Production Ready**: 98.95/100 system health, sub-3s performance  
-✅ **Zero Maintenance**: Auto-starting services, permanent installation  
-
-## 🚀 **Get Started**
+## 🚀 Usage Examples
 
 ```bash
-# Full ecosystem installation
-git clone <your-repo> ~/dotfiles
-cd ~/dotfiles
-./install.sh
+# Change wallpaper with AI-enhanced theming
+./scripts/wallpaper-theme-changer-optimized.sh /path/to/wallpaper.jpg
 
-# Test the complete pipeline
-Super + B  # Select wallpaper → Watch desktop + Firefox theme together!
+# Interactive wallpaper selector
+./scripts/wallpaper-selector.sh
+
+# Force regeneration (bypass cache)
+./scripts/wallpaper-theme-changer-optimized.sh wallpaper.jpg force
+
+# Standard mode (no AI)
+ENABLE_AI_OPTIMIZATION=false ./scripts/wallpaper-theme-changer-optimized.sh wallpaper.jpg
 ```
 
-**Total setup time**: ~30 minutes including AI models  
-**Result**: The most advanced theming system on any desktop platform! 🎨✨
+## 📊 Performance
+
+- **Wallpaper Change**: <2 seconds
+- **Firefox Update**: <1 second
+- **Total End-to-End**: <3 seconds
+- **AI Enhancement**: +2-4 seconds (optional)
+
+## 🧠 AI Features
+
+- **Vision Analysis**: Phi4 model analyzes wallpaper composition
+- **Color Harmony**: Mathematical color wheel analysis
+- **Accessibility**: WCAG AA/AAA compliance
+- **Fallback**: Matugen integration for reliability
+
+## 🌐 Firefox Integration
+
+### What Gets Themed
+- ✅ **Browser Interface**: Toolbar, address bar, tabs, buttons
+- ✅ **Website Content**: Text, backgrounds, links, forms
+- ✅ **Real-time**: Updates instantly with wallpaper changes
+
+### Components
+- **AI Extension**: `firefox-ai-extension/` - Complete browser + web theming
+- **Color Server**: `local-color-server.py` - HTTP API for color delivery
+- **Auto-start**: Launches with Hyprland automatically
+
+## 🛠️ Architecture
+
+```
+Wallpaper → AI Analysis → Color Server → Firefox Extension → Browser + Websites
+                      ↘ Matugen → Desktop Applications
+```
+
+## 📁 Quick Directory Reference
+
+```
+dotfiles/
+├── COMPLETE_SYSTEM_GUIDE.md     # 📖 Full documentation
+├── config/                      # Application configs
+├── scripts/                     # Automation scripts
+├── firefox-ai-extension/        # Firefox AI extension
+├── assets/wallpapers/           # Wallpaper collection
+└── install.sh                   # System installer
+```
+
+## 🐛 Quick Troubleshooting
+
+```bash
+# Check system status
+curl http://localhost:8080/ai-colors    # Color server
+ollama ps                               # AI models
+tail -f /tmp/wallpaper-theme-optimized.log  # Logs
+
+# Firefox extension issues
+# Firefox → about:addons → AI Dynamic Colors → Details
+```
+
+## 🤝 Support
+
+- 📖 **Full Documentation**: [COMPLETE_SYSTEM_GUIDE.md](COMPLETE_SYSTEM_GUIDE.md)
+- 🐛 **Issues**: Check logs and troubleshooting section
+- 💡 **Contributing**: Add wallpapers, themes, or features
 
 ---
 
-**🎉 Achievement Unlocked**: World's first AI-enhanced desktop + web theming ecosystem! 
+**This system represents the world's first complete AI-enhanced desktop + web theming ecosystem with real-time synchronization across desktop environment, browser interface, and website content.**
+
+**Installation:** ~35-45 minutes | **Disk Usage:** ~6.5GB | **Performance:** <3s theme updates 

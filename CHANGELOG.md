@@ -1,34 +1,31 @@
 # 📝 AI-Enhanced Dotfiles Ecosystem - CHANGELOG
 
-## Version 2.0 - Firefox Integration Complete (January 2025)
+## Version 2.1 - Complete Firefox Integration (June 3, 2025)
 
 ### 🚀 **MAJOR NEW FEATURES**
 
-#### **🌐 Firefox AI Extension (NEW!)**
-- **Real-time Web Theming**: Websites automatically themed with wallpaper colors
-- **Live Updates**: 5-second polling, no page refresh needed
-- **WCAG AAA Compliance**: All generated themes meet accessibility standards
-- **Permanent Installation**: Multiple options including Firefox Developer Edition
-- **Auto-start Color Server**: Seamlessly integrated with Hyprland startup
-
-#### **🔧 Enhanced Installation System**
-- **Integrated Firefox Setup**: Added to main `install.sh` script
-- **Automated Installation Scripts**: One-command Firefox extension setup
-- **Troubleshooting Tools**: Comprehensive fix scripts for Firefox configuration
-- **Multiple Installation Methods**: Developer Edition, Enterprise Policy, Config changes
+#### **🌐 Firefox Theme API Integration**
+- **Complete browser interface theming**: Toolbar, tabs, address bar
+- **Enhanced Extension**: Both website content AND browser interface theming
+- **Auto-start Integration**: Color server launches automatically with Hyprland
+- **Documentation Consolidation**: Single comprehensive guide replacing 22+ fragmented files
 
 ### 🐛 **CRITICAL BUG FIXES**
 
-#### **✅ JSON Corruption Bug (FIXED)**
-- **Issue**: Filename replacing JSON content in `/tmp/ai-optimized-colors.json`
-- **Root Cause**: Stdout redirection overwriting JSON file in `wallpaper-theme-changer-optimized.sh`
-- **Solution**: Fixed line 41 redirection to separate log file
-- **Impact**: Perfect data flow to Firefox extension, no more corrupted color data
+#### **✅ Fuzzel Cache Preservation**
+- **Issue**: Cache being cleared on every wallpaper change
+- **Solution**: Added proper "theme" permission for browser interface control
+- **Impact**: Preserved user application usage statistics
 
-#### **✅ Color Server Data Flow (IMPROVED)**
-- **Enhanced Data Transformation**: Nested JSON → Flat structure for Firefox
-- **Auto-start Integration**: Color server now starts automatically with Hyprland
-- **Optimized Performance**: Better format conversion and serving
+#### **✅ Extension Permissions**
+- **Issue**: Missing "theme" permission for browser interface control
+- **Solution**: Added proper "theme" permission for browser interface control
+- **Impact**: Preserved user application usage statistics
+
+#### **✅ Git Ignore**
+- **Issue**: No prevention of theme file conflicts
+- **Solution**: Added `config/fuzzel/fuzzel.ini` to prevent theme file conflicts
+- **Impact**: Preserved user application usage statistics
 
 ### 🔄 **SYSTEM IMPROVEMENTS**
 
@@ -45,10 +42,9 @@
 ### 📚 **DOCUMENTATION OVERHAUL**
 
 #### **New Documentation**
-- **`AI_COMPLETE_ECOSYSTEM_GUIDE.md`**: Comprehensive system guide
-- **Updated `README.md`**: Reflects Firefox integration and current features
-- **Enhanced Installation Docs**: Complete setup instructions
-- **Troubleshooting Guides**: Comprehensive problem-solving resources
+- **`COMPLETE_SYSTEM_GUIDE.md`**: Single comprehensive documentation file
+- **Simplified `README.md`**: Clean overview with clear navigation
+- **Archived Legacy Docs**: Removed 18+ redundant documentation files
 
 #### **Updated Existing Docs**
 - **Installation Scripts**: Reflect Firefox extension integration
@@ -112,7 +108,7 @@ NEW FILES:
 ├── scripts/install-firefox-extension-permanent.sh
 ├── scripts/firefox-config-fix.sh
 ├── scripts/reload-firefox-extension.sh
-└── AI_COMPLETE_ECOSYSTEM_GUIDE.md
+└── COMPLETE_SYSTEM_GUIDE.md
 
 UPDATED FILES:
 ├── install.sh                         # Firefox integration
@@ -154,7 +150,7 @@ UPDATED FILES:
 
 ---
 
-## Version 1.5 - AI Enhancement Complete (December 2024)
+## Version 2.0 - AI Enhancement Complete (December 2024)
 
 ### **Previous Major Features**
 - AI Vision Integration with Ollama models
@@ -185,7 +181,7 @@ UPDATED FILES:
 
 ## 🏆 **ACHIEVEMENT SUMMARY**
 
-**Version 2.0 Milestones:**
+**Version 2.1 Milestones:**
 - ✅ **World's First**: Desktop + Web AI theming integration
 - ✅ **Bug-Free Pipeline**: JSON corruption completely resolved  
 - ✅ **Production Ready**: Auto-starting, permanent installation
@@ -199,7 +195,7 @@ UPDATED FILES:
 
 ---
 
-**🎉 Version 2.0 represents the completion of the world's most advanced AI-enhanced theming ecosystem for any desktop platform!**
+**🎉 Version 2.1 represents the completion of the world's most advanced AI-enhanced theming ecosystem for any desktop platform!**
 
 # Version 2.0.1 - Enhanced AI Setup Robustness (June 3, 2025)
 

@@ -187,9 +187,11 @@ install_packages() {
     if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
         print_message "Found ${#MISSING_PACKAGES[@]} packages to install"
         
-        # Refresh package database once
-        print_substep "Refreshing package database..."
-        gum_spin "Updating package database..."
+        # Update system and refresh package database
+        print_substep "Updating system and refreshing package database..."
+        gum_spin "Updating system packages..."
+        sudo pacman -Syu --noconfirm || print_warning "Failed to update system packages"
+        gum_spin "Refreshing package database..."
         run_yay -Syy --noconfirm || print_warning "Failed to refresh package database"
         
         # Refresh sudo timestamp to avoid password prompt during suppressed output

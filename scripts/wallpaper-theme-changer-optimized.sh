@@ -171,9 +171,7 @@ except Exception as e:
             log_message "Dynamic fuzzel config not found"
         fi
         
-        # Clear cache
-        rm -rf ~/.cache/fuzzel 2>/dev/null || true
-        log_message "Fuzzel cache cleared"
+        # Note: Preserving fuzzel usage cache for better app sorting
     ) &
     local fuzzel_pid=$!
     

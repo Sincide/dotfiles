@@ -314,18 +314,18 @@ create_symlinks() {
                             print_progress "$base_name configuration uses mixed content - managed individually"
                             ;;
                         *)
-                            # Check if symlink already exists and points to correct location
-                            if [ -L "$target_dir" ] && [ "$(readlink "$target_dir")" = "$dotfiles_dir/$dir" ]; then
-                                print_progress "$base_name configuration already symlinked correctly"
-                            elif [ -e "$target_dir" ]; then
-                                print_warning "$base_name configuration exists but is not a correct symlink. Skipping to prevent data loss."
-                                print_warning "Manual intervention required: Remove $target_dir and re-run if you want to symlink it."
-                            else
-                                print_progress "Creating symlink for $base_name configuration..."
-                                mkdir -p "$(dirname "$target_dir")"
-                                ln -sf "$dotfiles_dir/$dir" "$target_dir"
-                                verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
-                            fi
+                    # Check if symlink already exists and points to correct location
+                    if [ -L "$target_dir" ] && [ "$(readlink "$target_dir")" = "$dotfiles_dir/$dir" ]; then
+                        print_progress "$base_name configuration already symlinked correctly"
+                    elif [ -e "$target_dir" ]; then
+                        print_warning "$base_name configuration exists but is not a correct symlink. Skipping to prevent data loss."
+                        print_warning "Manual intervention required: Remove $target_dir and re-run if you want to symlink it."
+                    else
+                        print_progress "Creating symlink for $base_name configuration..."
+                        mkdir -p "$(dirname "$target_dir")"
+                        ln -sf "$dotfiles_dir/$dir" "$target_dir"
+                        verify_symlink "$dotfiles_dir/$dir" "$target_dir" || print_warning "Failed to verify symlink for $base_name"
+                    fi
                             ;;
                     esac
                     ;;
@@ -971,9 +971,9 @@ main() {
 
     if [ "$SKIP_PACKAGES" = "false" ]; then
         if gum_confirm "Do you want to install missing packages?"; then
-            install_yay
-            install_packages
-        fi
+        install_yay
+        install_packages
+    fi
     else
         print_message "📦 Skipping package installation - all packages already installed"
     fi
@@ -981,10 +981,10 @@ main() {
     if [ "$SKIP_CONFIGS" = "false" ] || [ "$SKIP_AI_SCRIPTS" = "false" ]; then
         if gum_confirm "Do you want to backup existing configs and create symlinks?"; then
             if [ "$SKIP_CONFIGS" = "false" ]; then
-                backup_configs
-                rotate_backups
-                create_symlinks
-            fi
+        backup_configs
+        rotate_backups
+        create_symlinks
+    fi
             if [ "$SKIP_AI_SCRIPTS" = "false" ]; then
                 setup_ai_scripts
             fi
@@ -995,7 +995,7 @@ main() {
 
     if [ "$SKIP_WALLPAPER" = "false" ]; then
         if gum_confirm "Do you want to set up wallpaper configuration?"; then
-            set_hyprpaper_conf
+        set_hyprpaper_conf
         fi
     else
         print_message "🖼️ Skipping wallpaper setup - hyprpaper.conf already configured"
@@ -1015,8 +1015,8 @@ main() {
     configure_defaults
 
     if [ "$SKIP_FISH" = "false" ]; then
-        if gum_confirm "Do you want to set fish as your default shell?"; then
-            set_fish_shell
+    if gum_confirm "Do you want to set fish as your default shell?"; then
+        set_fish_shell
         fi
     else
         print_message "🐚 Skipping fish shell setup - already configured"
@@ -1024,17 +1024,17 @@ main() {
 
     if [ "$ENV_TYPE" = "physical" ]; then
         if [ "$SKIP_VM" = "false" ]; then
-            if gum_confirm "Do you want to set up the Windows 11 VM entry?"; then
-                install_win11_vm_entry
-                restore_vm
+        if gum_confirm "Do you want to set up the Windows 11 VM entry?"; then
+            install_win11_vm_entry
+            restore_vm
             fi
         else
             print_message "💻 Skipping VM setup - already configured"
         fi
         
         if [ "$SKIP_FSTAB" = "false" ]; then
-            if gum_confirm "Would you like to automatically add external drives to /etc/fstab for automounting?"; then
-                automount_external_drives
+        if gum_confirm "Would you like to automatically add external drives to /etc/fstab for automounting?"; then
+            automount_external_drives
             fi
         else
             print_message "💾 Skipping external drive setup - all drives already in fstab"

@@ -184,70 +184,191 @@ get_ai_status() {
     echo "Config file: $AI_CONFIG_FILE"
 }
 
-# Interactive configuration menu
-interactive_config() {
-    echo "=== 🛠️ AI-Enhanced Theming Configuration ==="
+# Configure advanced AI settings
+configure_advanced_settings() {
+    load_ai_config
+    echo "=== ⚙️ Advanced AI Settings ==="
     echo ""
-    echo "Current Status:"
-    get_ai_status
+    echo "Current Settings:"
+    echo "  Vision Weight: ${VISION_WEIGHT:-0.6}"
+    echo "  Mathematical Weight: ${MATHEMATICAL_WEIGHT:-0.4}"
+    echo "  Performance Target: ${PERFORMANCE_TARGET:-fast}"
+    echo "  Show Notifications: ${SHOW_AI_NOTIFICATIONS:-true}"
     echo ""
     
     # Ensure gum is available
     ensure_gum
     
-    # Use gum for selection
     local choice_desc
     choice_desc=$(printf '%s\n' \
-        "1) Enhanced Intelligence (Vision + Mathematical) - Recommended" \
-        "2) Vision AI Only (Content-aware theming)" \
-        "3) Mathematical AI Only (Harmony + Accessibility)" \
-        "4) Disable AI (Standard theming)" \
-        "5) Show detailed status" \
-        "6) Test current configuration" \
-        "7) Reset to defaults" \
-        "8) Exit" | \
-        gum choose --height 10 --header "🛠️ AI Configuration Options")
+        "1) Set Vision Weight (${VISION_WEIGHT:-0.6})" \
+        "2) Set Mathematical Weight (${MATHEMATICAL_WEIGHT:-0.4})" \
+        "3) Set Performance Target (${PERFORMANCE_TARGET:-fast})" \
+        "4) Toggle AI Notifications (${SHOW_AI_NOTIFICATIONS:-true})" \
+        "5) Back to main menu" | \
+        gum choose --height 8 --header "⚙️ Advanced Settings")
     
-    # Extract number from choice
     local choice=$(echo "$choice_desc" | cut -d')' -f1)
     
     case "$choice" in
         1)
-            set_ai_mode "enhanced"
-            echo "🎉 Enhanced AI mode activated!"
+            echo "Current Vision Weight: ${VISION_WEIGHT:-0.6}"
+            echo "Controls how much weight Vision AI has in color decisions (0.0-1.0)"
+            local new_weight
+            new_weight=$(gum input --placeholder "0.6" --prompt "Vision Weight: ")
+            if [[ "$new_weight" =~ ^0\.[0-9]+$ ]] || [[ "$new_weight" =~ ^1\.0+$ ]]; then
+                VISION_WEIGHT="$new_weight"
+                MATHEMATICAL_WEIGHT=$(echo "1.0 - $VISION_WEIGHT" | bc -l | xargs printf "%.1f")
+                save_ai_config
+                echo "✅ Vision Weight set to $VISION_WEIGHT, Mathematical Weight adjusted to $MATHEMATICAL_WEIGHT"
+            else
+                echo "❌ Invalid weight. Must be between 0.0 and 1.0"
+            fi
             ;;
         2)
-            set_ai_mode "vision"
-            echo "👁️ Vision AI mode activated!"
+            echo "Current Mathematical Weight: ${MATHEMATICAL_WEIGHT:-0.4}"
+            echo "Controls how much weight Mathematical AI has in color decisions (0.0-1.0)"
+            local new_weight
+            new_weight=$(gum input --placeholder "0.4" --prompt "Mathematical Weight: ")
+            if [[ "$new_weight" =~ ^0\.[0-9]+$ ]] || [[ "$new_weight" =~ ^1\.0+$ ]]; then
+                MATHEMATICAL_WEIGHT="$new_weight"
+                VISION_WEIGHT=$(echo "1.0 - $MATHEMATICAL_WEIGHT" | bc -l | xargs printf "%.1f")
+                save_ai_config
+                echo "✅ Mathematical Weight set to $MATHEMATICAL_WEIGHT, Vision Weight adjusted to $VISION_WEIGHT"
+            else
+                echo "❌ Invalid weight. Must be between 0.0 and 1.0"
+            fi
             ;;
         3)
-            set_ai_mode "mathematical"
-            echo "🔢 Mathematical AI mode activated!"
+            echo "Current Performance Target: ${PERFORMANCE_TARGET:-fast}"
+            local target_choice
+            target_choice=$(printf '%s\n' \
+                "fast - Prioritize speed (<2s)" \
+                "balanced - Balance speed/quality (<4s)" \
+                "quality - Prioritize quality (<6s)" | \
+                gum choose --height 5 --header "Performance Target")
+            
+            local target=$(echo "$target_choice" | cut -d' ' -f1)
+            if [[ -n "$target" ]]; then
+                PERFORMANCE_TARGET="$target"
+                save_ai_config
+                echo "✅ Performance Target set to $target"
+            fi
             ;;
         4)
-            set_ai_mode "disabled"
-            echo "❌ AI disabled. Using standard theming."
+            if [[ "${SHOW_AI_NOTIFICATIONS:-true}" == "true" ]]; then
+                SHOW_AI_NOTIFICATIONS="false"
+                echo "🔕 AI notifications disabled"
+            else
+                SHOW_AI_NOTIFICATIONS="true"
+                echo "🔔 AI notifications enabled"
+            fi
+            save_ai_config
             ;;
         5)
-            show_detailed_status
-            ;;
-        6)
-            test_ai_configuration
-            ;;
-        7)
-            rm -f "$AI_CONFIG_FILE"
-            init_ai_config
-            echo "🔄 Configuration reset to defaults"
-            ;;
-        8)
-            echo "👋 Goodbye!"
             return 0
             ;;
         *)
             echo "❌ Invalid option"
-            return 1
             ;;
     esac
+    
+    # Show updated configuration after change
+    echo ""
+    echo "Updated Settings:"
+    echo "  Vision Weight: ${VISION_WEIGHT}"
+    echo "  Mathematical Weight: ${MATHEMATICAL_WEIGHT}"
+    echo "  Performance Target: ${PERFORMANCE_TARGET}"
+    echo "  Show Notifications: ${SHOW_AI_NOTIFICATIONS}"
+    echo ""
+    read -p "Press Enter to continue..."
+}
+
+# Interactive configuration menu
+interactive_config() {
+    while true; do
+        echo "=== 🛠️ AI-Enhanced Theming Configuration ==="
+        echo ""
+        echo "Current Status:"
+        get_ai_status
+        echo ""
+        
+        # Ensure gum is available
+        ensure_gum
+        
+        # Use gum for selection
+        local choice_desc
+        choice_desc=$(printf '%s\n' \
+            "1) Enhanced Intelligence (Vision + Mathematical) - Recommended" \
+            "2) Vision AI Only (Content-aware theming)" \
+            "3) Mathematical AI Only (Harmony + Accessibility)" \
+            "4) Disable AI (Standard theming)" \
+            "5) Advanced Settings (Weights, Performance Target)" \
+            "6) Show detailed status" \
+            "7) Test current configuration" \
+            "8) Reset to defaults" \
+            "9) Exit" | \
+            gum choose --height 12 --header "🛠️ AI Configuration Options")
+        
+        # Check if user cancelled
+        if [ -z "$choice_desc" ]; then
+            echo "👋 Configuration cancelled!"
+            return 0
+        fi
+        
+        # Extract number from choice
+        local choice=$(echo "$choice_desc" | cut -d')' -f1)
+        
+        case "$choice" in
+            1)
+                set_ai_mode "enhanced"
+                echo "🎉 Enhanced AI mode activated!"
+                sleep 2
+                ;;
+            2)
+                set_ai_mode "vision"
+                echo "👁️ Vision AI mode activated!"
+                sleep 2
+                ;;
+            3)
+                set_ai_mode "mathematical"
+                echo "🔢 Mathematical AI mode activated!"
+                sleep 2
+                ;;
+            4)
+                set_ai_mode "disabled"
+                echo "❌ AI disabled. Using standard theming."
+                sleep 2
+                ;;
+            5)
+                configure_advanced_settings
+                ;;
+            6)
+                show_detailed_status
+                read -p "Press Enter to continue..."
+                ;;
+            7)
+                test_ai_configuration
+                read -p "Press Enter to continue..."
+                ;;
+            8)
+                rm -f "$AI_CONFIG_FILE"
+                init_ai_config
+                echo "🔄 Configuration reset to defaults"
+                sleep 2
+                ;;
+            9)
+                return 0
+                ;;
+            *)
+                echo "❌ Invalid option"
+                sleep 1
+                ;;
+        esac
+        
+        # Clear screen for next iteration
+        clear
+    done
 }
 
 # Show detailed status

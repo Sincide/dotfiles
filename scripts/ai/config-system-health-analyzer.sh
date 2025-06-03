@@ -755,7 +755,8 @@ main() {
     log_health "INFO" "Target system: AMD Ryzen 7 3700X + RX 7900 XT + Arch Linux"
     
     # Check if we should use LLM-powered analyzer instead
-    if check_llm_analyzer_preference; then
+    # PREVENT INFINITE RECURSION: Don't call smart optimizer if we're already being called by it
+    if [[ "${CALLED_FROM_OPTIMIZER:-}" != "1" ]] && check_llm_analyzer_preference; then
         log_health "INFO" "Using LLM-powered intelligent analyzer for superior analysis"
         echo ""
         echo "🤖 AI-Enhanced Analysis Mode Enabled"
@@ -766,11 +767,14 @@ main() {
         
         # Run the smart optimizer which includes comprehensive analysis
         if [[ -f "$SCRIPT_DIR/config-smart-optimizer.sh" ]]; then
+            export CALLED_FROM_HEALTH_ANALYZER=1
             bash "$SCRIPT_DIR/config-smart-optimizer.sh"
         else
             log_health "WARN" "LLM analyzer not found - falling back to rule-based analysis"
         fi
         return $?
+    elif [[ "${CALLED_FROM_OPTIMIZER:-}" == "1" ]]; then
+        log_health "INFO" "Running rule-based analysis (called from optimizer - preventing recursion)"
     fi
     
     start_timer

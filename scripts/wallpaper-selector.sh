@@ -12,6 +12,11 @@ TRANSITION_ENGINE="$SCRIPT_DIR/transition-engine.sh"
 # State file to remember last wallpaper
 LAST_WALLPAPER_FILE="$HOME/.config/dynamic-theming/last-wallpaper"
 
+# Function to log messages
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> /tmp/wallpaper-selector.log
+}
+
 # Load AI configuration if available
 AI_CONFIG_FILE="$DOTFILES_DIR/config/dynamic-theming/ai-config.conf"
 if [ -f "$AI_CONFIG_FILE" ]; then
@@ -26,11 +31,6 @@ fi
 
 # Export AI settings for the theme script
 export ENABLE_AI_OPTIMIZATION
-
-# Function to log messages
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> /tmp/wallpaper-selector.log
-}
 
 # Function to save last wallpaper for startup restoration
 save_last_wallpaper() {

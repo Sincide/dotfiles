@@ -29,11 +29,11 @@
 
 ## 🎯 Quick Start
 
-```bash
+   ```bash
 git clone <repository-url> dotfiles
 cd dotfiles
-./install.sh
-```
+   ./install.sh
+   ```
 
 **That's it!** The script handles everything:
 - Package installation (yay, Hyprland, AI tools, etc.)

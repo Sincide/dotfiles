@@ -48,6 +48,47 @@ ensure_swww_daemon() {
     fi
 }
 
+# Function to ensure dynamic CSS files exist with proper colors
+ensure_dynamic_css() {
+    local main_css="$HOME/.config/waybar/style-dynamic.css"
+    local bottom_css="$HOME/.config/waybar/style-bottom-dynamic.css"
+    
+    log_message "🎨 Ensuring dynamic CSS files are ready..."
+    
+    # Check if files exist and contain actual colors (not template placeholders)
+    if [ -f "$main_css" ] && [ -f "$bottom_css" ]; then
+        # Check if they contain real colors (not {{}} templates)
+        if grep -q "rgba(" "$main_css" && grep -q "#" "$main_css" && ! grep -q "{{" "$main_css"; then
+            log_message "✅ Dynamic CSS files already contain proper colors"
+            return 0
+        fi
+    fi
+    
+    log_message "⚠️  Dynamic CSS missing or contains templates, regenerating..."
+    
+    # Generate fresh CSS by applying current wallpaper theme
+    if [ -f "$LAST_WALLPAPER_FILE" ]; then
+        local current_wallpaper
+        current_wallpaper=$(cat "$LAST_WALLPAPER_FILE")
+        if [ -f "$current_wallpaper" ]; then
+            log_message "📄 Regenerating from current wallpaper: $current_wallpaper"
+            "$SCRIPT_DIR/wallpaper-theme-changer-optimized.sh" "$current_wallpaper" --force
+            return $?
+        fi
+    fi
+    
+    # Fallback: use default wallpaper 
+    log_message "🎨 Using default wallpaper for initial theme"
+    local default_wallpaper="$HOME/dotfiles/assets/wallpapers/evilpuccin.png"
+    if [ -f "$default_wallpaper" ]; then
+        "$SCRIPT_DIR/wallpaper-theme-changer-optimized.sh" "$default_wallpaper" --force
+        return $?
+    else
+        log_message "❌ No wallpaper available for theme generation"
+        return 1
+    fi
+}
+
 # Main restoration function
 restore_wallpaper() {
     log_message "=== Wallpaper + Theme Restoration Started ==="
@@ -82,6 +123,14 @@ restore_wallpaper() {
         export ENABLE_AI_OPTIMIZATION
     fi
     
+    # CRITICAL: Ensure dynamic CSS is ready BEFORE any application starts
+    ensure_dynamic_css
+    
+    # Kill any existing waybar instances that might have started with bad CSS
+    log_message "🔧 Ensuring clean waybar state..."
+    pkill -x waybar 2>/dev/null || true
+    sleep 0.5
+    
     # Apply wallpaper AND full theme using the optimized theme changer
     log_message "Applying wallpaper and theme using optimized changer..."
     
@@ -109,8 +158,8 @@ restore_wallpaper() {
         log_message "Attempting simple wallpaper restoration..."
         if swww img "$target_wallpaper" --transition-type fade --transition-duration 1; then
             log_message "Simple wallpaper restored successfully: $(basename "$target_wallpaper")"
-        else
-            log_message "Error: Failed to restore wallpaper"
+    else
+        log_message "Error: Failed to restore wallpaper"
         fi
     fi
     

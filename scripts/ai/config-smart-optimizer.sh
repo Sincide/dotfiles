@@ -138,13 +138,19 @@ analyze_current_issues() {
     # Load latest health analysis
     if [[ ! -f "$ANALYSIS_CACHE" ]]; then
         echo -e "${YELLOW}⚠️  No recent analysis found. Running health check...${NC}"
+        export CALLED_FROM_OPTIMIZER=1
         bash "$SCRIPT_DIR/config-analyzer.sh" analyze health > /dev/null
     fi
     
-    # Extract issues
-    local boot_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"boot":' | grep '"score":' | awk '{print $2}' | sed 's/,//')
-    local package_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"packages":' | grep '"score":' | awk '{print $2}' | sed 's/,//')
-    local overall_score=$(cat "$ANALYSIS_CACHE" | grep '"overall_score":' | awk '{print $2}' | sed 's/,//')
+    # Extract issues with defaults for empty values
+    local boot_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"boot":' | grep '"score":' | awk '{print $2}' | sed 's/,//' || echo "100")
+    local package_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"packages":' | grep '"score":' | awk '{print $2}' | sed 's/,//' || echo "100")
+    local overall_score=$(cat "$ANALYSIS_CACHE" | grep '"overall_score":' | awk '{print $2}' | sed 's/,//' || echo "100")
+    
+    # Ensure scores are valid integers
+    boot_score=${boot_score:-100}
+    package_score=${package_score:-100}
+    overall_score=${overall_score:-100}
     
     echo -e "${BLUE}📊 Current System Health: $overall_score/100${NC}"
     echo ""
@@ -178,7 +184,9 @@ generate_optimization_plan() {
     echo -e "${PURPLE}🧠 Generating Intelligent Optimization Plan...${NC}"
     
     # Check current system state to avoid duplicate recommendations
-    local boot_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"boot":' | grep '"score":' | awk '{print $2}' | sed 's/,//')
+    local boot_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"boot":' | grep '"score":' | awk '{print $2}' | sed 's/,//' || echo "100")
+    boot_score=${boot_score:-100}  # Ensure it's not empty
+    
     local mandb_optimized=false
     if ! systemctl is-enabled man-db.timer &>/dev/null; then
         mandb_optimized=true
@@ -215,8 +223,8 @@ generate_optimization_plan() {
     
     local recommendation_count=1
     
-    # Boot Performance Optimization (only if not already applied)
-    if [ "$mandb_optimized" = false ] && (( $(echo "$boot_score < 80" | bc -l) )); then
+    # Boot Performance Optimization (only show if there's an actual problem)
+    if [ "$mandb_optimized" = false ] && [ "$boot_score" -lt 80 ]; then
         echo ""
         echo -e "${YELLOW}🚀 $recommendation_count. BOOT PERFORMANCE OPTIMIZATION${NC}"
         echo "   Issue: man-db.service consuming 14+ seconds"
@@ -228,17 +236,20 @@ generate_optimization_plan() {
         echo "   └─ sudo systemctl disable man-db.timer"
         echo "   └─ sudo systemctl stop man-db.timer"
         ((recommendation_count++))
-    elif [ "$mandb_optimized" = true ]; then
+    elif [ "$mandb_optimized" = true ] && [ "$boot_score" -lt 90 ]; then
+        # Only show if optimization exists but hasn't taken effect yet (needs reboot)
         echo ""
-        echo -e "${GREEN}✅ $recommendation_count. BOOT OPTIMIZATION ALREADY APPLIED${NC}"
-        echo "   Status: man-db.timer successfully disabled"
-        echo "   Impact: Reboot to see full 55% boot time improvement"
-        echo "   Next: Boot score will improve from $boot_score/100 to ~95/100 after reboot"
+        echo -e "${YELLOW}🔄 $recommendation_count. BOOT OPTIMIZATION PENDING REBOOT${NC}"
+        echo "   Status: man-db.timer disabled but reboot required"
+        echo "   Action: Reboot to see full 55% boot time improvement"
+        echo "   Expected: Boot score will improve from $boot_score/100 to ~95/100"
         ((recommendation_count++))
     fi
+    # If boot_score >= 90 and optimized = true: Don't show anything (it's working perfectly)
     
     # Package Cache Cleanup
     local cache_cleanup=$(paccache -d 2>/dev/null | grep "candidates" | wc -l || echo "0")
+    cache_cleanup=${cache_cleanup:-0}  # Ensure it's not empty
     if (( cache_cleanup > 0 )); then
         echo ""
         echo -e "${YELLOW}🧹 $recommendation_count. PACKAGE CACHE CLEANUP${NC}"
@@ -259,15 +270,14 @@ generate_optimization_plan() {
         echo "$llm_analysis" | sed 's/^/   /'
     fi
     
-    # If no major recommendations, show system status
-    if [ "$mandb_optimized" = true ] && (( cache_cleanup == 0 )); then
+    # Show status only if no recommendations were shown
+    if [ "$recommendation_count" -eq 1 ]; then
         echo ""
-        echo -e "${GREEN}🎉 SYSTEM ALREADY WELL OPTIMIZED!${NC}"
-        echo "   ✅ Boot optimization applied"
-        echo "   ✅ Package cache clean"
+        echo -e "${GREEN}🎉 SYSTEM PERFECTLY OPTIMIZED!${NC}"
         echo "   📊 Overall health score: $(cat "$ANALYSIS_CACHE" | grep '"overall_score":' | awk '{print $2}' | sed 's/,//')/100"
+        echo "   ✅ All optimizations are working perfectly!"
         echo ""
-        echo "   🔄 Recommendation: Reboot to see full boot time improvement"
+        echo "   🔍 No improvements needed at this time"
     fi
     
     echo ""
@@ -384,51 +394,62 @@ main() {
             mandb_optimized=true
         fi
         
+        # Get scores with defaults for menu logic
+        local boot_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"boot":' | grep '"score":' | awk '{print $2}' | sed 's/,//' || echo "100")
+        boot_score=${boot_score:-100}
+        
+        local cache_cleanup=$(paccache -d 2>/dev/null | grep "candidates" | wc -l || echo "0")
+        cache_cleanup=${cache_cleanup:-0}
+        
         # Ensure gum is available for beautiful menus
         ensure_gum
         
-        # Build menu options
+        # Build menu options - only show items that need attention
         local menu_options=()
-        if [ "$mandb_optimized" = true ]; then
-            menu_options+=("1) ✅ Boot Optimization (ALREADY APPLIED - reboot for full effect)")
-        else
-            menu_options+=("1) 🚀 Boot Performance (PRIORITY - 55% improvement)")
+        local option_count=1
+        
+        # Boot optimization (only show if there's a problem)
+        if [ "$mandb_optimized" = false ] && [ "$boot_score" -lt 80 ]; then
+            menu_options+=("$option_count) 🚀 Boot Performance (PRIORITY - 55% improvement)")
+            ((option_count++))
+        elif [ "$mandb_optimized" = true ] && [ "$boot_score" -lt 90 ]; then
+            menu_options+=("$option_count) 🔄 Boot Optimization (Reboot needed for full effect)")
+            ((option_count++))
         fi
-        menu_options+=("2) 🧹 Package Cache Cleanup (Minor disk space)")
-        menu_options+=("3) 📊 Re-analyze system first")
-        menu_options+=("4) ⚡ Quick optimize (skip AI analysis)")
-        menu_options+=("5) 🚪 Exit")
+        # If boot is optimized and working (score >= 90): don't show it
+        
+        # Package cleanup (only if needed)
+        if (( cache_cleanup > 0 )); then
+            menu_options+=("$option_count) 🧹 Package Cache Cleanup (Minor disk space)")
+            ((option_count++))
+        fi
+        
+        # Always available options
+        menu_options+=("$option_count) 📊 Re-analyze system")
+        ((option_count++))
+        menu_options+=("$option_count) 🚪 Exit")
         
         # Use gum for selection
         local choice_desc
         choice_desc=$(printf '%s\n' "${menu_options[@]}" | gum choose --height 8 --header "🧠 Smart Optimization Menu")
         
-        # Extract number from choice
-        local choice=$(echo "$choice_desc" | cut -d')' -f1)
-        
-        case "$choice" in
-            1)
-                execute_optimization "boot_performance"
-                ;;
-            2)
-                execute_optimization "package_cleanup"
-                ;;
-            3)
-                echo -e "${CYAN}🔄 Running fresh system analysis...${NC}"
-                bash "$SCRIPT_DIR/config-analyzer.sh" analyze health
-                ;;
-            4)
-                echo -e "${CYAN}⚡ Quick Boot Optimization (Skip AI Analysis)${NC}"
-                execute_optimization "boot_performance"
-                ;;
-            5)
-                echo -e "${BLUE}👋 Optimizer exited by user${NC}"
-                ;;
-            *)
-                echo -e "${RED}❌ Invalid option${NC}"
-                return 1
-                ;;
-        esac
+        # Handle the user's choice based on the actual option text
+        if [[ "$choice_desc" == *"Boot Performance"* ]]; then
+            execute_optimization "boot_performance"
+        elif [[ "$choice_desc" == *"Boot Optimization"* ]]; then
+            execute_optimization "boot_performance" 
+        elif [[ "$choice_desc" == *"Package Cache Cleanup"* ]]; then
+            execute_optimization "package_cleanup"
+        elif [[ "$choice_desc" == *"Re-analyze system"* ]]; then
+            echo -e "${CYAN}🔄 Running fresh system analysis...${NC}"
+            export CALLED_FROM_OPTIMIZER=1
+            bash "$SCRIPT_DIR/config-analyzer.sh" analyze health
+        elif [[ "$choice_desc" == *"Exit"* ]]; then
+            echo -e "${BLUE}👋 Optimizer exited by user${NC}"
+        else
+            echo -e "${RED}❌ Invalid option${NC}"
+            return 1
+        fi
     else
         echo ""
         echo -e "${GREEN}🎉 System is already well optimized!${NC}"
@@ -439,6 +460,7 @@ main() {
         read -p "❓ Run fresh analysis anyway? (y/N): " -n 1 -r
         echo ""
         if [[ $REPLY =~ ^[Yy]$ ]]; then
+            export CALLED_FROM_OPTIMIZER=1
             bash "$SCRIPT_DIR/config-analyzer.sh" analyze health
         fi
     fi

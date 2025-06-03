@@ -14,17 +14,6 @@ sleep 1
 sleep 2
 /usr/lib/xdg-desktop-portal &
 
-# Apply GTK theme
-# gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-blue-standard+default"
-gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark"
-gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
-gsettings set org.gnome.desktop.interface font-name "Noto Sans 11"
-
-# Update GTK cache
-gtk-update-icon-cache -f /usr/share/icons/Papirus-Dark
-gtk-update-icon-cache -f /usr/share/icons/Adwaita
-
-# Reload Waybar
-killall waybar
-waybar &
-waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css & 
+# NOTE: Theming (GTK, icons, waybar) is handled by the dynamic theming system
+# in ~/dotfiles/scripts/restore-wallpaper.sh and wallpaper-theme-changer-optimized.sh
+# This prevents conflicts with Material You dynamic theming 

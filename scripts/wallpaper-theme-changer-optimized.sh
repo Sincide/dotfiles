@@ -10,7 +10,7 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
 # AI Enhancement Configuration
-ENABLE_AI_OPTIMIZATION="${ENABLE_AI_OPTIMIZATION:-false}"  # Default disabled for stability
+ENABLE_AI_OPTIMIZATION="${ENABLE_AI_OPTIMIZATION:-true}"   # AI features enabled - vision + mathematical analysis
 AI_PIPELINE_SCRIPT="$DOTFILES_DIR/scripts/ai/ai-color-pipeline.sh"
 
 # Performance tracking
@@ -133,8 +133,45 @@ reload_applications_parallel() {
     local kitty_pid=$!
     
     (
-        # Fuzzel cache clear (instant)
-        log_message "Clearing Fuzzel cache..."
+        # Fuzzel theme update and cache clear
+        log_message "Updating Fuzzel colors..."
+        
+        # Update Fuzzel colors (copy from generated dynamic config)
+        if [ -f ~/.config/fuzzel/fuzzel-dynamic.ini ]; then
+            # Extract colors section from dynamic config and update main config
+            python3 -c "
+import re
+import sys
+
+# Read both files
+try:
+    with open('$HOME/.config/fuzzel/fuzzel.ini', 'r') as f:
+        main_config = f.read()
+    with open('$HOME/.config/fuzzel/fuzzel-dynamic.ini', 'r') as f:
+        dynamic_config = f.read()
+    
+    # Extract colors section from dynamic config
+    colors_match = re.search(r'\[colors\].*?(?=\n\[|\Z)', dynamic_config, re.DOTALL)
+    if colors_match:
+        new_colors = colors_match.group(0)
+        # Replace colors section in main config
+        main_config = re.sub(r'\[colors\].*?(?=\n\[|\Z)', new_colors, main_config, flags=re.DOTALL)
+        
+        # Write back to main config
+        with open('$HOME/.config/fuzzel/fuzzel.ini', 'w') as f:
+            f.write(main_config)
+        print('Fuzzel colors updated successfully')
+    else:
+        print('No colors section found in dynamic config')
+except Exception as e:
+    print(f'Error updating fuzzel colors: {e}')
+"
+            log_message "Fuzzel colors updated from dynamic config"
+        else
+            log_message "Dynamic fuzzel config not found"
+        fi
+        
+        # Clear cache
         rm -rf ~/.cache/fuzzel 2>/dev/null || true
         log_message "Fuzzel cache cleared"
     ) &

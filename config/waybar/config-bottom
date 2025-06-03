@@ -13,6 +13,7 @@
     "hide_on_fullscreen": false,
     
     "modules-left": [
+        "custom/ai-dashboard"
     ],
     
     "modules-center": [
@@ -30,6 +31,15 @@
         "interval": 2,
         "tooltip": true,
         "on-click": "kitty --class floating -e btop"
+    },
+
+    "custom/ai-dashboard": {
+        "format": "{text}",
+        "exec": "~/.config/waybar/scripts/ai-dashboard.sh",
+        "return-type": "json",
+        "interval": 5,
+        "tooltip": true,
+        "on-click": "kitty --class floating -e bash -c 'cd ~/dotfiles && scripts/ai/dashboard'"
     },
 
     "clock": {

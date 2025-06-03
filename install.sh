@@ -251,7 +251,7 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all packages (simplified - no environment detection)
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip go python-rich"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local OPTIONAL_PACKAGES="brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
     
@@ -639,8 +639,8 @@ setup_ai_system() {
     if command -v ollama &> /dev/null; then
         # Wait for ollama service to be ready
         if wait_for_ollama_service; then
-            # Download vision model (llava)
-            download_ollama_model "llava" "LLAVA vision"
+            # Download vision model (llava-llama3)
+            download_ollama_model "llava-llama3:8b" "LLAVA-Llama3 vision"
             
             # Download text model (phi4) 
             download_ollama_model "phi4" "Phi4 text"
@@ -654,6 +654,41 @@ setup_ai_system() {
         print_message "You can install ollama later and run this setup again"
     fi
     
+    # Build AI Dashboard (Go)
+    print_substep "Building AI Performance Dashboard..."
+    if command -v go &> /dev/null; then
+        local dashboard_dir="$(pwd)/scripts/ai"
+        if [ -f "$dashboard_dir/dashboard.go" ]; then
+            print_progress "Compiling Go dashboard..."
+            cd "$dashboard_dir" || {
+                print_warning "Failed to change to AI scripts directory"
+                cd "$(pwd)"  # Return to original directory
+                return 1
+            }
+            
+            # Initialize go module if needed
+            if [ ! -f "go.mod" ]; then
+                print_progress "Initializing Go module..."
+                go mod init ai-dashboard || print_warning "Failed to initialize Go module"
+                go mod tidy || print_warning "Failed to tidy Go dependencies"
+            fi
+            
+            # Build the dashboard
+            if go build -o dashboard dashboard.go; then
+                print_success "AI Performance Dashboard built successfully"
+                chmod +x dashboard
+            else
+                print_warning "Failed to build AI dashboard - manual compilation may be needed"
+            fi
+            
+            cd - > /dev/null || true  # Return to original directory
+        else
+            print_warning "AI dashboard source not found at $dashboard_dir/dashboard.go"
+        fi
+    else
+        print_warning "Go not installed - AI dashboard will not be built"
+    fi
+
     print_success "AI system setup completed"
 }
 
@@ -971,7 +1006,7 @@ preflight_check() {
     
     # Check packages
     print_substep "Checking installed packages..."
-    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip lf bat file mediainfo chafa atool ffmpegthumbnailer poppler brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
+    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip go python-rich lf bat file mediainfo chafa atool ffmpegthumbnailer poppler brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
     
     for package in $ALL_PACKAGES; do
         if ! yay -Q "$package" &>/dev/null; then

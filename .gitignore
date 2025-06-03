@@ -177,6 +177,10 @@ scripts/ai/temp-*
 scripts/ai/test-*
 scripts/ai/backup-*
 
+# Go build outputs
+scripts/ai/dashboard
+scripts/ai/go.sum
+
 # IDE and editor files
 .vscode/
 .idea/

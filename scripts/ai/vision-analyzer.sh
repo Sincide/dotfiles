@@ -15,7 +15,7 @@ VISION_LOG="/tmp/vision-analyzer.log"
 PERFORMANCE_LOG="/tmp/vision-performance.log"
 
 # Vision analysis configuration
-VISION_MODEL="llava"
+VISION_MODEL="llava-llama3:8b"
 VISION_TIMEOUT="10"
 MAX_RETRIES="2"
 

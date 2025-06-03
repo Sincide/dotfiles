@@ -37,10 +37,14 @@ chmod +x install.sh
 
 ## 🌟 Key Features
 
-### v2.1 - Complete Firefox Integration ⭐ NEW
+### v2.1 - Complete Firefox Integration + Performance Dashboard ⭐ NEW
 - **Firefox Theme API**: Browser interface theming (toolbar, tabs, address bar)
 - **Website Content Theming**: Real-time website color updates
-- **Fuzzel Cache Fix**: Preserved application usage statistics
+- **Go Performance Dashboard**: Professional htop-style monitoring (`ai-perf` command)
+- **Waybar Integration**: Live AI status in bottom bar with rich tooltips
+- **Gaming Optimized**: Freed 18GB+ RAM by optimizing AI models (llava-llama3:8b + phi4)
+- **Fuzzel Cache Fix**: Application usage statistics fully preserved (separate cache files for wallpaper vs app selection)
+- **Smart Error Handling**: Comprehensive error states with visual indicators
 - **Auto-start Integration**: Color server launches automatically
 
 ### v2.0 - AI Enhancement & Web Theming
@@ -62,6 +66,10 @@ chmod +x install.sh
 
 # Interactive wallpaper selector
 ./scripts/wallpaper-selector.sh
+
+# Monitor system performance (NEW!)
+ai-perf                                    # Full dashboard interface
+scripts/ai/dashboard --waybar            # Waybar JSON output
 
 # Force regeneration (bypass cache)
 ./scripts/wallpaper-theme-changer-optimized.sh wallpaper.jpg force
@@ -101,6 +109,7 @@ ENABLE_AI_OPTIMIZATION=false ./scripts/wallpaper-theme-changer-optimized.sh wall
 ```
 Wallpaper → AI Analysis → Color Server → Firefox Extension → Browser + Websites
                       ↘ Matugen → Desktop Applications
+                      ↘ Dashboard → Waybar Integration → Status Monitoring
 ```
 
 ## 📁 Quick Directory Reference
@@ -119,9 +128,13 @@ dotfiles/
 
 ```bash
 # Check system status
+ai-perf                                 # Full dashboard with all metrics
 curl http://localhost:8080/ai-colors    # Color server
 ollama ps                               # AI models
 tail -f /tmp/wallpaper-theme-optimized.log  # Logs
+
+# Waybar integration
+config/waybar/scripts/ai-dashboard.sh   # Test waybar output
 
 # Firefox extension issues
 # Firefox → about:addons → AI Dynamic Colors → Details

@@ -94,7 +94,7 @@ show_category_menu() {
 $categories"
     
     # Show fuzzel with categories
-    selected_category=$(echo "$category_options" | fuzzel --dmenu --prompt="Select Category: ")
+    selected_category=$(echo "$category_options" | fuzzel --dmenu --prompt="Select Category: " --cache=/tmp/fuzzel-wallpaper-cache)
     
     if [ -z "$selected_category" ]; then
         log_message "No category selected, exiting"
@@ -127,7 +127,7 @@ show_wallpaper_menu() {
     fi
     
     # Show fuzzel with wallpaper names
-    selected_name=$(echo "$wallpaper_list" | format_for_display | fuzzel --dmenu --prompt="Select Wallpaper from $category: ")
+        selected_name=$(echo "$wallpaper_list" | format_for_display | fuzzel --dmenu --prompt="Select Wallpaper from $category: " --cache=/tmp/fuzzel-wallpaper-cache)
     
     if [ -z "$selected_name" ]; then
         log_message "No wallpaper selected, exiting"

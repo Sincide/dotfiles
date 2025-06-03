@@ -1,0 +1,253 @@
+// Firefox AI Colors Extension - Background Script
+console.log('🤖 AI Colors Extension starting...');
+
+class AIColorManager {
+  constructor() {
+    this.currentColors = {};
+    this.isEnabled = true;
+    this.lastUpdate = 0;
+    this.monitoringInterval = 3000;
+    this.localServer = 'http://localhost:8080';
+    
+    this.initializeExtension();
+  }
+  
+  async initializeExtension() {
+    console.log('🚀 Initializing AI Color Manager...');
+    
+    const result = await chrome.storage.sync.get({
+      enabled: true,
+      aggressiveMode: false,
+      monitoringInterval: 3000,
+      localServer: 'http://localhost:8080'
+    });
+    
+    this.isEnabled = result.enabled;
+    this.aggressiveMode = result.aggressiveMode;
+    this.monitoringInterval = result.monitoringInterval;
+    this.localServer = result.localServer;
+    
+    this.setupMessageListeners();
+    this.setupStorageListeners();
+    await this.loadInitialColors();
+    this.startColorMonitoring();
+    
+    console.log('✅ AI Color Manager ready!');
+  }
+  
+  setupMessageListeners() {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      switch (request.action) {
+        case 'getColors':
+          sendResponse({ colors: this.currentColors, enabled: this.isEnabled });
+          break;
+        case 'updateColors':
+          this.updateColors(request.colors);
+          sendResponse({ success: true });
+          break;
+        case 'toggleEnabled':
+          this.toggleEnabled();
+          sendResponse({ enabled: this.isEnabled });
+          break;
+        case 'getStatus':
+          sendResponse({
+            enabled: this.isEnabled,
+            lastUpdate: this.lastUpdate,
+            colorsCount: Object.keys(this.currentColors).length,
+            aggressiveMode: this.aggressiveMode
+          });
+          break;
+        case 'forceRefresh':
+          this.fetchLatestColors(true);
+          sendResponse({ success: true });
+          break;
+      }
+      return true;
+    });
+  }
+  
+  setupStorageListeners() {
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      if (namespace === 'sync') {
+        if (changes.enabled) {
+          this.isEnabled = changes.enabled.newValue;
+          this.notifyContentScripts({ action: 'enabledChanged', enabled: this.isEnabled });
+        }
+        
+        if (changes.aggressiveMode) {
+          this.aggressiveMode = changes.aggressiveMode.newValue;
+          this.notifyContentScripts({ action: 'modeChanged', aggressive: this.aggressiveMode });
+        }
+      }
+    });
+  }
+  
+  async loadInitialColors() {
+    const stored = await chrome.storage.local.get(['aiColors']);
+    if (stored.aiColors) {
+      this.currentColors = stored.aiColors;
+      console.log('📂 Loaded colors from storage');
+    }
+    
+    await this.fetchLatestColors();
+  }
+  
+  async startColorMonitoring() {
+    console.log('🔄 Starting color monitoring...');
+    
+    const monitorColors = async () => {
+      try {
+        await this.fetchLatestColors();
+      } catch (error) {
+        console.log('⚠️ Color monitoring error:', error.message);
+      }
+      
+      setTimeout(monitorColors, this.monitoringInterval);
+    };
+    
+    monitorColors();
+  }
+  
+  async fetchLatestColors(force = false) {
+    try {
+      const endpoints = ['/ai-colors', '/api/colors', '/colors.json'];
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(`${this.localServer}${endpoint}`);
+          if (response.ok) {
+            const colors = await response.json();
+            await this.updateColors(colors);
+            return;
+          }
+        } catch (e) {
+          // Try next endpoint
+        }
+      }
+      
+      await this.loadDemoColors();
+      
+    } catch (error) {
+      console.log('❌ Failed to fetch colors:', error);
+      if (Object.keys(this.currentColors).length === 0) {
+        await this.loadDemoColors();
+      }
+    }
+  }
+  
+  async loadDemoColors() {
+    const demoColors = {
+      primary: '#6366f1',
+      surface: '#1e1e2e',
+      onSurface: '#cdd6f4',
+      secondary: '#a6adc8',
+      onPrimary: '#ffffff',
+      accent: '#f38ba8',
+      warning: '#fab387',
+      success: '#a6e3a1',
+      error: '#f38ba8',
+      aiMetadata: {
+        harmonyScore: 87,
+        accessibilityLevel: 'WCAG_AAA',
+        timestamp: new Date().toISOString(),
+        source: 'demo',
+        harmonyType: 'complementary'
+      }
+    };
+    
+    await this.updateColors(demoColors);
+    console.log('🎨 Loaded demo colors');
+  }
+  
+  async updateColors(colors) {
+    const newColors = {
+      ...colors,
+      lastUpdate: Date.now()
+    };
+    
+    const colorKeys = ['primary', 'surface', 'onSurface', 'secondary', 'accent'];
+    const hasChanged = colorKeys.some(key => 
+      this.currentColors[key] !== newColors[key]
+    );
+    
+    if (!hasChanged && !colors.forceUpdate) {
+      return;
+    }
+    
+    this.currentColors = newColors;
+    this.lastUpdate = Date.now();
+    
+    console.log('🎨 Colors updated:', {
+      primary: newColors.primary,
+      harmony: newColors.aiMetadata?.harmonyScore,
+      accessibility: newColors.aiMetadata?.accessibilityLevel
+    });
+    
+    await chrome.storage.local.set({ aiColors: this.currentColors });
+    
+    await this.notifyContentScripts({
+      action: 'colorsUpdated',
+      colors: this.currentColors
+    });
+    
+    this.updateBadge();
+  }
+  
+  async notifyContentScripts(message) {
+    try {
+      const tabs = await chrome.tabs.query({});
+      
+      for (const tab of tabs) {
+        try {
+          await chrome.tabs.sendMessage(tab.id, message);
+        } catch (error) {
+          // Tab might not have content script injected
+        }
+      }
+    } catch (error) {
+      console.log('Failed to notify content scripts:', error);
+    }
+  }
+  
+  updateBadge() {
+    if (this.isEnabled && Object.keys(this.currentColors).length > 0) {
+      chrome.action.setBadgeText({ text: '🤖' });
+      chrome.action.setBadgeBackgroundColor({ 
+        color: this.currentColors.primary || '#6366f1' 
+      });
+      
+      const harmonyScore = this.currentColors.aiMetadata?.harmonyScore || 0;
+      chrome.action.setTitle({ 
+        title: `AI Colors (${harmonyScore}/100 harmony)` 
+      });
+    } else {
+      chrome.action.setBadgeText({ text: '' });
+      chrome.action.setTitle({ title: 'AI Dynamic Colors' });
+    }
+  }
+  
+  toggleEnabled() {
+    this.isEnabled = !this.isEnabled;
+    chrome.storage.sync.set({ enabled: this.isEnabled });
+    this.updateBadge();
+    
+    this.notifyContentScripts({
+      action: 'enabledChanged',
+      enabled: this.isEnabled
+    });
+    
+    console.log(`AI Colors ${this.isEnabled ? 'enabled' : 'disabled'}`);
+  }
+}
+
+const aiColorManager = new AIColorManager();
+
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('🎉 AI Colors Extension installed/updated:', details.reason);
+  
+  if (details.reason === 'install') {
+    chrome.tabs.create({ 
+      url: chrome.runtime.getURL('options.html') 
+    });
+  }
+});

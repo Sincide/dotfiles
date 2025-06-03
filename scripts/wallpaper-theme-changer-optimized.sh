@@ -38,7 +38,7 @@ generate_ai_enhanced_colors() {
     
     # Run AI pipeline
     local ai_start_time=$(date +%s.%N)
-    if "$AI_PIPELINE_SCRIPT" "$wallpaper" > /tmp/ai-optimized-colors.json 2>/tmp/ai-pipeline-error.log; then
+    if "$AI_PIPELINE_SCRIPT" "$wallpaper" > /tmp/ai-pipeline-output.log 2>/tmp/ai-pipeline-error.log; then
         local ai_end_time=$(date +%s.%N)
         local ai_duration=$(echo "$ai_end_time - $ai_start_time" | bc -l)
         
@@ -243,6 +243,8 @@ except Exception as e:
         
     ) &
     local icons_pid=$!
+    
+
     
     # Wait for all parallel operations to complete
     log_message "Waiting for parallel reloads to complete..."

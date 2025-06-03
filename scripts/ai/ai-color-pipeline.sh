@@ -184,6 +184,9 @@ if [[ -f "$MATUGEN_OUTPUT" ]]; then
     fi
     
     log_pipeline "INFO" "AI-optimized colors saved to: /tmp/ai-optimized-colors.json"
+    
+
+    
 else
     log_pipeline "ERROR" "No color output generated"
     exit 1

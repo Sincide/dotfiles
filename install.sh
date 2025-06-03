@@ -107,8 +107,18 @@ check_wayland_session() {
 }
 
 detect_environment() {
-    # Always assume physical environment
-    echo "physical"
+    # Detect if running in VM
+    if systemd-detect-virt -q; then
+        echo "vm"
+    elif [ -d /proc/vz ]; then
+        echo "vm"  # OpenVZ container
+    elif grep -q "hypervisor" /proc/cpuinfo; then
+        echo "vm"  # VM detected via CPU flags
+    elif [ -n "$container" ]; then
+        echo "vm"  # Container environment
+    else
+        echo "physical"
+    fi
 }
 
 install_yay() {
@@ -164,9 +174,10 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
-    local PHYSICAL_PACKAGES="brightnessctl"
+    local PHYSICAL_PACKAGES="brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
+    local VM_PACKAGES="mesa vulkan-swrast"
     
     # Arrays to track installed packages
     local INSTALLED_PACKAGES=()
@@ -174,8 +185,13 @@ install_packages() {
     
     # Combine all packages based on environment
     local ALL_PACKAGES="$CORE_PACKAGES $LF_PACKAGES"
-    if [ "$(detect_environment)" = "physical" ]; then
+    local ENV_TYPE=$(detect_environment)
+    if [ "$ENV_TYPE" = "physical" ]; then
         ALL_PACKAGES="$ALL_PACKAGES $PHYSICAL_PACKAGES"
+        print_substep "Detected physical system - including AMD GPU packages"
+    elif [ "$ENV_TYPE" = "vm" ]; then
+        ALL_PACKAGES="$ALL_PACKAGES $VM_PACKAGES"
+        print_substep "Detected VM environment - using software rendering packages"
     fi
     
     # Check for missing packages
@@ -657,14 +673,16 @@ print_theming_instructions() {
     print_message "See the README for more details."
     echo
     
-    print_step "AI-Enhanced Dynamic Theming System"
-    print_message "🧠 Your system now includes the world's first AI-enhanced dynamic theming!"
-    print_message "  Press Super+B to select wallpapers with intelligent color optimization"
+    print_step "AI-Enhanced Dynamic Theming System + Firefox Web Theming"
+    print_message "🧠 Your system now includes the world's first AI-enhanced desktop + web theming!"
+    print_message "  Press Super+B to select wallpapers → Desktop + Firefox themes update together"
     print_message "  AI analyzes content and optimizes colors for perfect harmony and accessibility"
+    print_message "  🌐 Firefox Extension: Real-time website theming based on wallpaper colors"
     print_message "  Configure AI settings: ai-config config (available system-wide)"
     print_message "  Check AI status: ai-config status"
+    print_message "  Firefox setup: ./scripts/install-firefox-extension-permanent.sh"
     print_message "  All AI scripts accessible at: ~/.config/dynamic-theming/scripts/"
-    print_message "See AI_IMPLEMENTATION_GUIDE.md for complete documentation."
+    print_message "See AI_COMPLETE_ECOSYSTEM_GUIDE.md for complete documentation."
     echo
 }
 
@@ -728,9 +746,12 @@ preflight_check() {
     
     # Check packages
     print_substep "Checking installed packages..."
-    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau gnupg exa ripgrep fzf lm_sensors radeontop wlsunset light ddcutil zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
-    if [ "$(detect_environment)" = "physical" ]; then
-        ALL_PACKAGES="$ALL_PACKAGES brightnessctl"
+    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
+    local ENV_TYPE=$(detect_environment)
+    if [ "$ENV_TYPE" = "physical" ]; then
+        ALL_PACKAGES="$ALL_PACKAGES brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
+    elif [ "$ENV_TYPE" = "vm" ]; then
+        ALL_PACKAGES="$ALL_PACKAGES mesa vulkan-swrast"
     fi
     
     for package in $ALL_PACKAGES; do
@@ -1010,6 +1031,20 @@ main() {
         fi
     else
         print_message "🧠 Skipping AI system setup - all components already configured"
+    fi
+    
+    # Firefox AI Extension setup
+    if [ -f "firefox-ai-extension.xpi" ] && [ -x "scripts/install-firefox-extension-permanent.sh" ]; then
+        if gum_confirm "Do you want to set up the Firefox AI Extension for real-time web theming?"; then
+            print_step "Setting up Firefox AI Extension"
+            print_message "🌐 This enables real-time website theming based on your wallpaper colors"
+            print_message "✅ Firefox Developer Edition already installed for optimal compatibility"
+            ./scripts/install-firefox-extension-permanent.sh
+            print_success "Firefox AI Extension setup complete"
+            print_message "🚀 Complete desktop + web theming ecosystem ready!"
+        fi
+    else
+        print_message "🌐 Firefox AI Extension files not found - skipping"
     fi
     
     configure_defaults

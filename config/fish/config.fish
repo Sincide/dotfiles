@@ -222,7 +222,5 @@ function path
     echo $PATH | tr ' ' '\n' | tr ':' '\n'
 end 
 
-# === pyenv integration ===
-status --is-interactive; and pyenv init - | source
 
 set -gx ENABLE_AI_OPTIMIZATION true

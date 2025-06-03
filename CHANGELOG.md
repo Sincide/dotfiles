@@ -199,4 +199,41 @@ UPDATED FILES:
 
 ---
 
-**🎉 Version 2.0 represents the completion of the world's most advanced AI-enhanced theming ecosystem for any desktop platform!** 
+**🎉 Version 2.0 represents the completion of the world's most advanced AI-enhanced theming ecosystem for any desktop platform!**
+
+# Version 2.0.1 - Enhanced AI Setup Robustness (June 3, 2025)
+
+## 🛠️ **Critical AI Setup Improvements**
+
+### **Enhanced Ollama Service Management:**
+- ✅ **Service readiness detection**: Waits up to 60 seconds for ollama service to be ready
+- ✅ **Automatic service startup**: Tries both systemctl and direct launch methods
+- ✅ **Robust service verification**: Uses `ollama list` instead of just process checking
+
+### **Improved Model Download System:**
+- ✅ **Retry logic**: Up to 3 attempts per model with 5-second delays
+- ✅ **Timeout protection**: 30-minute timeout per download attempt
+- ✅ **Progress indication**: Visual dots show download progress
+- ✅ **Error reporting**: Shows specific error messages and exit codes
+- ✅ **Graceful degradation**: Continues setup even if model downloads fail
+
+### **Better Preflight Detection:**
+- ✅ **Enhanced AI component checking**: More robust detection of missing models
+- ✅ **Service status verification**: Checks if ollama can actually respond
+- ✅ **Phi4 model detection**: Now checks for both llava and phi4 models
+
+### **Installation Resume Features:**
+- ✅ **Idempotent execution**: Can safely re-run after failures
+- ✅ **Smart skipping**: Only runs missing components on subsequent runs
+- ✅ **Granular component detection**: Precise identification of what needs setup
+
+### **Error Handling:**
+- ✅ **Temporary log files**: Captures and displays error output
+- ✅ **Exit code reporting**: Shows specific failure reasons
+- ✅ **Non-blocking failures**: AI setup failures don't stop entire installation
+
+## 🎯 **Impact on User Experience**
+
+**Before**: AI setup could fail silently or hang indefinitely, requiring manual intervention
+
+**After**: Robust, self-healing AI setup with clear progress indication and graceful error handling 

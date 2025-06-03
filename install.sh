@@ -174,10 +174,10 @@ install_packages() {
     print_step "Installing required packages"
     
     # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip"
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip abseil-cpp"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local PHYSICAL_PACKAGES="brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
-    local VM_PACKAGES="mesa vulkan-swrast"
+    local VM_PACKAGES=""  # No special VM packages needed
     
     # Arrays to track installed packages
     local INSTALLED_PACKAGES=()
@@ -190,8 +190,8 @@ install_packages() {
         ALL_PACKAGES="$ALL_PACKAGES $PHYSICAL_PACKAGES"
         print_substep "Detected physical system - including AMD GPU packages"
     elif [ "$ENV_TYPE" = "vm" ]; then
-        ALL_PACKAGES="$ALL_PACKAGES $VM_PACKAGES"
-        print_substep "Detected VM environment - using software rendering packages"
+        print_substep "Detected VM environment - using standard packages with existing graphics"
+        # VM uses whatever graphics drivers are already configured
     fi
     
     # Check for missing packages
@@ -416,16 +416,119 @@ configure_env_specific() {
     print_success "Environment configuration completed"
 }
 
+wait_for_ollama_service() {
+    local max_attempts=30
+    local attempt=1
+    
+    print_substep "Waiting for ollama service to be ready..."
+    while [ $attempt -le $max_attempts ]; do
+        if ollama list >/dev/null 2>&1; then
+            print_success "Ollama service is ready"
+            return 0
+        fi
+        
+        if [ $attempt -eq 1 ]; then
+            print_progress "Starting ollama service..."
+            # Try to start service if not running
+            if ! pgrep -x ollama >/dev/null 2>&1; then
+                systemctl --user start ollama.service 2>/dev/null || ollama serve >/dev/null 2>&1 &
+            fi
+        fi
+        
+        printf "."
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+    
+    echo
+    print_error "Ollama service failed to start after ${max_attempts} attempts"
+    return 1
+}
+
+download_ollama_model() {
+    local model="$1"
+    local display_name="$2"
+    local max_retries=3
+    local retry=1
+    
+    print_substep "Setting up $display_name model..."
+    
+    # Check if model already exists
+    if ollama list 2>/dev/null | grep -q "^$model"; then
+        print_message "$display_name model already installed"
+        return 0
+    fi
+    
+    while [ $retry -le $max_retries ]; do
+        if [ $retry -gt 1 ]; then
+            print_progress "Retry $retry/$max_retries: Downloading $display_name model..."
+        else
+            print_progress "Downloading $display_name model (this may take several minutes)..."
+        fi
+        
+        # Create a temporary log file for ollama output
+        local temp_log=$(mktemp)
+        
+        # Run ollama pull with progress indication and timeout (30 minutes)
+        if timeout 1800 bash -c "
+            ollama pull '$model' > '$temp_log' 2>&1 &
+            pull_pid=\$!
+            
+            # Show progress while downloading
+            while kill -0 \$pull_pid 2>/dev/null; do
+                printf '.'
+                sleep 3
+            done
+            
+            wait \$pull_pid
+        "; then
+            rm -f "$temp_log"
+            print_success "$display_name model installed successfully"
+            return 0
+        else
+            local exit_code=$?
+            print_warning "Attempt $retry failed (exit code: $exit_code)"
+            
+            # Show last few lines of error if available
+            if [ -f "$temp_log" ] && [ -s "$temp_log" ]; then
+                print_message "Last error output:"
+                tail -n 3 "$temp_log" | sed 's/^/  /'
+            fi
+            rm -f "$temp_log"
+            
+            if [ $exit_code -eq 124 ]; then
+                print_warning "Download timed out after 30 minutes"
+            fi
+            
+            if [ $retry -lt $max_retries ]; then
+                print_progress "Waiting 5 seconds before retry..."
+                sleep 5
+            fi
+        fi
+        
+        retry=$((retry + 1))
+    done
+    
+    print_error "Failed to download $display_name model after $max_retries attempts"
+    print_warning "AI features requiring this model will be disabled"
+    return 1
+}
+
 setup_ai_system() {
     print_step "Setting up AI-Enhanced Dynamic Theming System"
     
     # Create AI configuration directory
     print_substep "Creating AI configuration directory..."
-    mkdir -p "$HOME/.config/dynamic-theming" || print_warning "Failed to create AI config directory"
+    mkdir -p "$HOME/.config/dynamic-theming" || {
+        print_error "Failed to create AI config directory"
+        return 1
+    }
     
     # Create matugen cache directory for AI processing
     print_substep "Creating matugen cache directory..."
-    mkdir -p "$HOME/.cache/matugen" || print_warning "Failed to create matugen cache directory"
+    mkdir -p "$HOME/.cache/matugen" || {
+        print_warning "Failed to create matugen cache directory"
+    }
     
     # Initialize AI configuration if it doesn't exist
     print_substep "Initializing AI configuration..."
@@ -439,8 +542,11 @@ setup_ai_system() {
         fi
         
         if [ -n "$ai_config_script" ]; then
-            bash "$ai_config_script" init || print_warning "Failed to initialize AI config"
-            print_success "AI configuration initialized with default settings"
+            if bash "$ai_config_script" init; then
+                print_success "AI configuration initialized with default settings"
+            else
+                print_warning "Failed to initialize AI config - continuing with defaults"
+            fi
         else
             print_warning "AI config script not found, skipping initialization"
         fi
@@ -448,31 +554,23 @@ setup_ai_system() {
         print_message "AI configuration already exists"
     fi
     
-    # Set up ollama vision model if ollama is available
+    # Set up ollama models if ollama is available
     if command -v ollama &> /dev/null; then
-        print_substep "Setting up ollama vision model..."
-        if ollama list | grep -q llava; then
-            print_message "llava vision model already installed"
+        # Wait for ollama service to be ready
+        if wait_for_ollama_service; then
+            # Download vision model (llava)
+            download_ollama_model "llava" "LLAVA vision"
+            
+            # Download text model (phi4) 
+            download_ollama_model "phi4" "Phi4 text"
+            
+            print_success "Ollama model setup completed"
         else
-            print_progress "Downloading llava vision model (this may take a few minutes)..."
-            if ollama pull llava; then
-                print_success "llava vision model installed successfully"
-            else
-                print_warning "Failed to install llava vision model. AI vision features will be disabled"
-            fi
-        fi
-        
-        # Start ollama service if not running
-        if ! pgrep -x ollama >/dev/null; then
-            print_substep "Starting ollama service..."
-            ollama serve &
-            sleep 2
-            print_success "ollama service started"
-        else
-            print_message "ollama service already running"
+            print_warning "Ollama service not available - AI features will be limited"
         fi
     else
-        print_warning "ollama not found. AI vision features will be unavailable"
+        print_warning "Ollama not found. AI vision and text features will be unavailable"
+        print_message "You can install ollama later and run this setup again"
     fi
     
     print_success "AI system setup completed"
@@ -488,6 +586,35 @@ configure_defaults() {
     print_substep "Creating Screenshots directory..."
     mkdir -p "$HOME/Pictures/Screenshots" || handle_error "Failed to create Screenshots directory"
     print_success "Default applications configured"
+}
+
+configure_user_permissions() {
+    print_step "Configuring user permissions and services"
+    
+    # Add user to required groups for hardware access
+    print_substep "Adding user to hardware access groups..."
+    local groups_to_add=""
+    if ! groups | grep -q "video"; then
+        groups_to_add="$groups_to_add video"
+    fi
+    if ! groups | grep -q "i2c"; then
+        groups_to_add="$groups_to_add i2c"
+    fi
+    
+    if [ -n "$groups_to_add" ]; then
+        print_progress "Adding user to groups:$groups_to_add"
+        sudo usermod -a -G "${groups_to_add# }" "$USER" || print_warning "Failed to add user to some groups"
+        print_success "User added to hardware access groups"
+        print_warning "You'll need to log out and back in for group changes to take effect"
+    else
+        print_message "User already in required groups"
+    fi
+    
+    # Refresh font cache
+    print_substep "Refreshing font cache..."
+    fc-cache -fv > /dev/null 2>&1 || print_warning "Failed to refresh font cache"
+    
+    print_success "User permissions and services configured"
 }
 
 set_fish_shell() {
@@ -746,13 +873,12 @@ preflight_check() {
     
     # Check packages
     print_substep "Checking installed packages..."
-    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
+    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip abseil-cpp lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
     local ENV_TYPE=$(detect_environment)
     if [ "$ENV_TYPE" = "physical" ]; then
         ALL_PACKAGES="$ALL_PACKAGES brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
-    elif [ "$ENV_TYPE" = "vm" ]; then
-        ALL_PACKAGES="$ALL_PACKAGES mesa vulkan-swrast"
     fi
+    # VM environments use standard packages with existing graphics setup
     
     for package in $ALL_PACKAGES; do
         if ! yay -Q "$package" &>/dev/null; then
@@ -816,11 +942,17 @@ preflight_check() {
         ai_missing_count=$((ai_missing_count + 1))
     fi
     if command -v ollama &> /dev/null; then
-        if ! ollama list | grep -q llava; then
+        # Check if ollama service can respond (more robust than just pgrep)
+        if ! ollama list >/dev/null 2>&1; then
             ai_missing_count=$((ai_missing_count + 1))
-        fi
-        if ! pgrep -x ollama >/dev/null; then
-            ai_missing_count=$((ai_missing_count + 1))
+        else
+            # Check for required models
+            if ! ollama list 2>/dev/null | grep -q "^llava"; then
+                ai_missing_count=$((ai_missing_count + 1))
+            fi
+            if ! ollama list 2>/dev/null | grep -q "^phi4"; then
+                ai_missing_count=$((ai_missing_count + 1))
+            fi
         fi
     else
         ai_missing_count=$((ai_missing_count + 1))
@@ -1048,6 +1180,7 @@ main() {
     fi
     
     configure_defaults
+    configure_user_permissions
 
     if [ "$SKIP_FISH" = "false" ]; then
     if gum_confirm "Do you want to set fish as your default shell?"; then

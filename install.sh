@@ -106,20 +106,7 @@ check_wayland_session() {
     fi
 }
 
-detect_environment() {
-    # Detect if running in VM
-    if systemd-detect-virt -q; then
-        echo "vm"
-    elif [ -d /proc/vz ]; then
-        echo "vm"  # OpenVZ container
-    elif grep -q "hypervisor" /proc/cpuinfo; then
-        echo "vm"  # VM detected via CPU flags
-    elif [ -n "$container" ]; then
-        echo "vm"  # Container environment
-    else
-        echo "physical"
-    fi
-}
+# VM detection removed - script now works for all environments
 
 install_yay() {
     if ! command -v yay &>/dev/null; then
@@ -173,26 +160,18 @@ show_progress_bar() {
 install_packages() {
     print_step "Installing required packages"
     
-    # Define all package groups
-    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip abseil-cpp"
+    # Define all packages (simplified - no environment detection)
+    local CORE_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip"
     local LF_PACKAGES="lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
-    local PHYSICAL_PACKAGES="brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
-    local VM_PACKAGES=""  # No special VM packages needed
+    local OPTIONAL_PACKAGES="brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
     
     # Arrays to track installed packages
     local INSTALLED_PACKAGES=()
     local FAILED_PACKAGES=()
     
-    # Combine all packages based on environment
-    local ALL_PACKAGES="$CORE_PACKAGES $LF_PACKAGES"
-    local ENV_TYPE=$(detect_environment)
-    if [ "$ENV_TYPE" = "physical" ]; then
-        ALL_PACKAGES="$ALL_PACKAGES $PHYSICAL_PACKAGES"
-        print_substep "Detected physical system - including AMD GPU packages"
-    elif [ "$ENV_TYPE" = "vm" ]; then
-        print_substep "Detected VM environment - using standard packages with existing graphics"
-        # VM uses whatever graphics drivers are already configured
-    fi
+    # Combine all packages
+    local ALL_PACKAGES="$CORE_PACKAGES $LF_PACKAGES $OPTIONAL_PACKAGES"
+    print_substep "Installing all packages (some may be skipped if not applicable to your system)"
     
     # Check for missing packages
     print_substep "Checking for missing packages..."
@@ -678,33 +657,50 @@ final_verification() {
     print_step "Performing final verification"
     missing_deps=0
     print_substep "Checking core dependencies..."
-    for cmd in hyprland waybar kitty fish fuzzel dunst jq bc ollama wl-copy wl-paste sensors radeontop ddcutil lf; do
+    local core_commands="hyprland waybar kitty fish fuzzel dunst jq bc ollama wl-copy wl-paste lf"
+    
+    for cmd in $core_commands; do
         if ! command -v "$cmd" &> /dev/null; then
             print_error "Required command '$cmd' not found after installation!"
             missing_deps=1
         fi
     done
+    
+    # Check optional tools without failing
+    print_substep "Checking optional tools..."
+    local optional_commands="sensors radeontop ddcutil brightnessctl"
+    for cmd in $optional_commands; do
+        if command -v "$cmd" &> /dev/null; then
+            print_message "Optional tool '$cmd' is available"
+        else
+            print_message "Optional tool '$cmd' not found (this is normal for VMs or non-AMD systems)"
+        fi
+    done
+    
     if [ $missing_deps -eq 1 ]; then
-        print_warning "Some dependencies are missing. Please check the error messages above"
+        print_warning "Some core dependencies are missing. Please check the error messages above"
     else
         print_success "All core dependencies are installed correctly"
     fi
 }
 
 verify_gpu_monitoring() {
-    ENV_TYPE=$(detect_environment)
-    if [ "$ENV_TYPE" = "physical" ]; then
-        print_step "Verifying GPU monitoring setup"
-        print_substep "Checking AMD GPU sensors..."
-        if ! sensors amdgpu-* > /dev/null 2>&1; then
-            print_warning "AMD GPU sensors not detected. GPU monitoring may not work correctly"
-        fi
-        print_substep "Checking GPU usage monitoring..."
-        if ! radeontop -d- -l1 > /dev/null 2>&1; then
-            print_warning "Unable to read GPU usage. Make sure you have the necessary permissions"
-        fi
-        print_success "GPU monitoring verification completed"
+    print_step "Verifying GPU monitoring setup"
+    print_substep "Checking GPU sensors..."
+    if sensors amdgpu-* > /dev/null 2>&1; then
+        print_success "AMD GPU sensors detected"
+    else
+        print_message "AMD GPU sensors not detected (normal for VMs or non-AMD systems)"
     fi
+    
+    print_substep "Checking GPU usage monitoring..."
+    if command -v radeontop &> /dev/null && radeontop -d- -l1 > /dev/null 2>&1; then
+        print_success "GPU usage monitoring available"
+    else
+        print_message "GPU usage monitoring not available (normal for VMs or non-AMD systems)"
+    fi
+    
+    print_success "GPU monitoring verification completed"
 }
 
 prompt_reboot() {
@@ -873,12 +869,7 @@ preflight_check() {
     
     # Check packages
     print_substep "Checking installed packages..."
-    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip abseil-cpp lf bat file mediainfo chafa atool ffmpegthumbnailer poppler"
-    local ENV_TYPE=$(detect_environment)
-    if [ "$ENV_TYPE" = "physical" ]; then
-        ALL_PACKAGES="$ALL_PACKAGES brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
-    fi
-    # VM environments use standard packages with existing graphics setup
+    local ALL_PACKAGES="hyprland hyprpaper waybar kitty fish fuzzel dunst polkit-gnome xdg-desktop-portal-hyprland xdg-desktop-portal-gtk qt5-wayland qt6-wayland pipewire wireplumber pavucontrol pamixer playerctl grim slurp wl-clipboard swappy cliphist catppuccin-gtk-theme-mocha ttf-jetbrains-mono-nerd noto-fonts noto-fonts-cjk noto-fonts-emoji papirus-icon-theme thunar thunar-volman thunar-archive-plugin xdg-utils xdg-user-dirs network-manager-applet blueman jq bc gnupg exa ripgrep fzf lm_sensors wlsunset light zoxide gum nwg-look qt5ct qt6ct kvantum waypaper matugen ollama nano firefox-developer-edition unzip zip p7zip python python-pip lf bat file mediainfo chafa atool ffmpegthumbnailer poppler brightnessctl vulkan-radeon lib32-vulkan-radeon libva-mesa-driver lib32-libva-mesa-driver mesa-vdpau lib32-mesa-vdpau radeontop ddcutil"
     
     for package in $ALL_PACKAGES; do
         if ! yay -Q "$package" &>/dev/null; then
@@ -985,33 +976,29 @@ preflight_check() {
         fi
     fi
     
-    # Check fstab automount setup (only for physical)
-    if [ "$(detect_environment)" = "physical" ]; then
-        print_substep "Checking external drive automounting..."
-        # Get list of external drives with labels and check if they're in fstab
-        # Use more robust parsing - only get lines where LABEL column has actual labels
-        # Filter out installation media and temporary drives
-        local external_drives=$(lsblk -o NAME,LABEL,TYPE,MOUNTPOINT | awk '$3 == "part" && $2 != "" && $2 != "-" && $2 !~ /ARCH/ && $2 !~ /ARCHISO/ && $2 !~ /EFI/ && ($4 == "" || $4 == "-") {print $2}')
-        
-        if [ -n "$external_drives" ]; then
-            local missing_drives=""
-            for label in $external_drives; do
-                if ! /bin/grep -q "LABEL=$label" /etc/fstab 2>/dev/null; then
-                    missing_drives="$missing_drives $label"
-                fi
-            done
-            
-            if [ -n "$missing_drives" ]; then
-                needs_fstab=true
+    # Check fstab automount setup
+    print_substep "Checking external drive automounting..."
+    # Get list of external drives with labels and check if they're in fstab
+    # Use more robust parsing - only get lines where LABEL column has actual labels
+    # Filter out installation media and temporary drives
+    local external_drives=$(lsblk -o NAME,LABEL,TYPE,MOUNTPOINT | awk '$3 == "part" && $2 != "" && $2 != "-" && $2 !~ /ARCH/ && $2 !~ /ARCHISO/ && $2 !~ /EFI/ && ($4 == "" || $4 == "-") {print $2}')
+    
+    if [ -n "$external_drives" ]; then
+        local missing_drives=""
+        for label in $external_drives; do
+            if ! /bin/grep -q "LABEL=$label" /etc/fstab 2>/dev/null; then
+                missing_drives="$missing_drives $label"
             fi
+        done
+        
+        if [ -n "$missing_drives" ]; then
+            needs_fstab=true
         fi
     fi
     
-    # Check VM setup (only for physical)
-    if [ "$(detect_environment)" = "physical" ]; then
-        if [ ! -f "$HOME/.local/share/applications/win11-vm.desktop" ]; then
-            needs_vm=true
-        fi
+    # Check VM setup
+    if [ ! -f "$HOME/.local/share/applications/win11-vm.desktop" ]; then
+        needs_vm=true
     fi
     
     # Display results
@@ -1063,12 +1050,10 @@ preflight_check() {
         print_substep "✅ Fish Shell: Already configured as default shell"
     fi
     
-    if [ "$(detect_environment)" = "physical" ]; then
-        if [ "$needs_vm" = true ]; then
-            print_substep "💻 VM Setup: Windows 11 VM entry needs configuration"
-        else
-            print_substep "✅ VM Setup: Already configured"
-        fi
+    if [ "$needs_vm" = true ]; then
+        print_substep "💻 VM Setup: Windows 11 VM entry needs configuration"
+    else
+        print_substep "✅ VM Setup: Already configured"
     fi
     
     if [ "$needs_wallpaper" = true ]; then
@@ -1077,12 +1062,10 @@ preflight_check() {
         print_substep "✅ Wallpaper Setup: hyprpaper.conf already configured"
     fi
     
-    if [ "$(detect_environment)" = "physical" ]; then
-        if [ "$needs_fstab" = true ]; then
-            print_substep "💾 External Drives: fstab automounting needs setup"
-        else
-            print_substep "✅ External Drives: All drives already in fstab"
-        fi
+    if [ "$needs_fstab" = true ]; then
+        print_substep "💾 External Drives: fstab automounting needs setup"
+    else
+        print_substep "✅ External Drives: All drives already in fstab"
     fi
     
     echo
@@ -1115,8 +1098,6 @@ main() {
     check_command "git"
     check_command "make"
     check_command "gcc"
-    ENV_TYPE=$(detect_environment)
-    print_message "Detected environment: $ENV_TYPE"
     check_wayland_session
 
     # Run preflight check to determine what needs to be done
@@ -1190,23 +1171,22 @@ main() {
         print_message "🐚 Skipping fish shell setup - already configured"
     fi
 
-    if [ "$ENV_TYPE" = "physical" ]; then
-        if [ "$SKIP_VM" = "false" ]; then
+    # Optional VM and drive setup
+    if [ "$SKIP_VM" = "false" ]; then
         if gum_confirm "Do you want to set up the Windows 11 VM entry?"; then
             install_win11_vm_entry
             restore_vm
-            fi
-        else
-            print_message "💻 Skipping VM setup - already configured"
         fi
-        
-        if [ "$SKIP_FSTAB" = "false" ]; then
+    else
+        print_message "💻 Skipping VM setup - already configured"
+    fi
+    
+    if [ "$SKIP_FSTAB" = "false" ]; then
         if gum_confirm "Would you like to automatically add external drives to /etc/fstab for automounting?"; then
             automount_external_drives
-            fi
-        else
-            print_message "💾 Skipping external drive setup - all drives already in fstab"
         fi
+    else
+        print_message "💾 Skipping external drive setup - all drives already in fstab"
     fi
 
     final_verification

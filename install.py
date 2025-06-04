@@ -203,6 +203,12 @@ class DotfilesInstaller:
         """Check for missing packages"""
         missing = []
         
+        # If yay is not installed, we can't check AUR packages yet
+        # We'll assume most packages are missing and let the install process handle it
+        if not shutil.which("yay"):
+            console.print("[yellow]⚠️  yay not found - will install it first, then check packages[/yellow]")
+            return self.all_packages  # Assume all packages need checking after yay install
+        
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -618,6 +624,117 @@ splash = false
         
         console.print("[green]✅ Default applications configured[/green]")
 
+    def setup_vm_entry(self):
+        """Setup Windows 11 VM entry"""
+        console.print("[blue]💻 Setting up Windows 11 VM entry...[/blue]")
+        
+        vm_desktop_content = """[Desktop Entry]
+Name=Windows 11 VM
+Comment=Windows 11 Virtual Machine
+Exec=virsh --connect qemu:///system start win11 && virt-viewer --connect qemu:///system --domain-name win11
+Icon=windows
+Terminal=false
+Type=Application
+Categories=System;Emulator;
+"""
+        
+        vm_desktop_path = self.home_dir / ".local/share/applications/win11-vm.desktop"
+        vm_desktop_path.parent.mkdir(parents=True, exist_ok=True)
+        vm_desktop_path.write_text(vm_desktop_content)
+        os.chmod(vm_desktop_path, 0o755)
+        
+        console.print("[green]✅ Windows 11 VM entry created[/green]")
+
+    def setup_external_drives(self):
+        """Setup external drive automounting"""
+        console.print("[blue]💾 Setting up external drive automounting...[/blue]")
+        
+        try:
+            # Get external drives with labels
+            result = self.run_command(["lsblk", "-o", "NAME,LABEL,TYPE,MOUNTPOINT"], capture=True)
+            lines = result.stdout.strip().split('\n')[1:]  # Skip header
+            
+            external_drives = []
+            for line in lines:
+                parts = line.split()
+                if len(parts) >= 3 and parts[2] == "part" and len(parts) > 1 and parts[1] not in ["", "-"]:
+                    label = parts[1]
+                    # Skip system drives
+                    if not any(skip in label.upper() for skip in ["ARCH", "ARCHISO", "EFI"]):
+                        external_drives.append(label)
+            
+            if not external_drives:
+                console.print("[yellow]⚠️  No external drives with labels found[/yellow]")
+                return
+            
+            # Read current fstab
+            fstab_path = Path("/etc/fstab")
+            try:
+                current_fstab = fstab_path.read_text()
+            except:
+                current_fstab = ""
+            
+            # Check which drives need to be added
+            drives_to_add = []
+            for label in external_drives:
+                if f"LABEL={label}" not in current_fstab:
+                    drives_to_add.append(label)
+            
+            if not drives_to_add:
+                console.print("[green]✅ All external drives already in fstab[/green]")
+                return
+            
+            # Add missing drives
+            with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_fstab:
+                temp_fstab.write(current_fstab)
+                
+                for label in drives_to_add:
+                    mountpoint = f"/mnt/{label}"
+                    # Create mountpoint
+                    self.run_command(["sudo", "mkdir", "-p", mountpoint], check=False)
+                    # Add to fstab
+                    temp_fstab.write(f"LABEL={label} {mountpoint} auto nosuid,nodev,nofail,x-gvfs-show 0 0\n")
+                    console.print(f"[green]✅ Added {label} to fstab[/green]")
+                
+                temp_fstab.flush()
+                
+                # Copy to actual fstab
+                self.run_command(["sudo", "cp", temp_fstab.name, "/etc/fstab"])
+                os.unlink(temp_fstab.name)
+            
+            console.print("[green]✅ External drive automounting configured[/green]")
+            console.print("[blue]💡 Run 'sudo mount -a' to mount all drives[/blue]")
+            
+        except Exception as e:
+            console.print(f"[yellow]⚠️  Failed to setup external drives: {e}[/yellow]")
+
+    def configure_user_permissions(self):
+        """Configure user permissions and groups"""
+        console.print("[blue]👤 Configuring user permissions...[/blue]")
+        
+        try:
+            # Get current user groups
+            current_groups = [g.gr_name for g in grp.getgrall() if pwd.getpwuid(os.getuid()).pw_name in g.gr_mem]
+            current_groups.append(pwd.getpwuid(os.getuid()).pw_gid)  # Primary group
+            
+            # Groups to add for hardware access
+            groups_to_add = []
+            if "video" not in current_groups:
+                groups_to_add.append("video")
+            if "i2c" not in current_groups:
+                groups_to_add.append("i2c")
+            
+            if groups_to_add:
+                groups_str = ",".join(groups_to_add)
+                self.run_command(["sudo", "usermod", "-a", "-G", groups_str, os.getenv("USER")])
+                console.print(f"[green]✅ Added user to groups: {groups_str}[/green]")
+                console.print("[yellow]⚠️  You'll need to log out and back in for group changes to take effect[/yellow]")
+            else:
+                console.print("[green]✅ User already in required groups[/green]")
+                
+        except Exception as e:
+            console.print(f"[yellow]⚠️  Failed to configure user permissions: {e}[/yellow]")
+
     def preflight_check(self) -> Dict[str, bool]:
         """Analyze current system state"""
         console.print("[bold blue]🔍 Analyzing current system state...[/bold blue]")
@@ -628,10 +745,12 @@ splash = false
             'ai_scripts': False,
             'ai_system': False,
             'fish': False,
-            'wallpaper': False
+            'wallpaper': False,
+            'vm': False,
+            'fstab': False
         }
         
-        # Check packages
+        # Check packages (but handle missing yay gracefully)
         with console.status("[yellow]Checking packages...", spinner="dots"):
             missing_packages = self.check_missing_packages()
             if missing_packages:
@@ -678,6 +797,34 @@ splash = false
         if not wallpaper_config.exists():
             needs['wallpaper'] = True
         
+        # Check VM setup
+        vm_desktop = self.home_dir / ".local/share/applications/win11-vm.desktop"
+        if not vm_desktop.exists():
+            needs['vm'] = True
+        
+        # Check external drive automounting
+        try:
+            result = self.run_command(["lsblk", "-o", "NAME,LABEL,TYPE,MOUNTPOINT"], capture=True, check=False)
+            if result.returncode == 0:
+                lines = result.stdout.strip().split('\n')[1:]  # Skip header
+                has_external_drives = False
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) >= 3 and parts[2] == "part" and len(parts) > 1 and parts[1] not in ["", "-"]:
+                        label = parts[1]
+                        if not any(skip in label.upper() for skip in ["ARCH", "ARCHISO", "EFI"]):
+                            has_external_drives = True
+                            # Check if it's in fstab
+                            try:
+                                fstab_content = Path("/etc/fstab").read_text()
+                                if f"LABEL={label}" not in fstab_content:
+                                    needs['fstab'] = True
+                                    break
+                            except:
+                                needs['fstab'] = True
+        except:
+            pass
+        
         # Show analysis results
         self.show_analysis_results(needs, len(missing_packages) if missing_packages else 0)
         
@@ -696,7 +843,9 @@ splash = false
             ("ai_scripts", "AI Scripts", "System access needs setup" if needs['ai_scripts'] else "Already accessible"),
             ("ai_system", "AI System", "Components need setup" if needs['ai_system'] else "Fully configured"),
             ("fish", "Fish Shell", "Needs to be set as default" if needs['fish'] else "Already default shell"),
-            ("wallpaper", "Wallpaper", "Config needs generation" if needs['wallpaper'] else "Already configured")
+            ("wallpaper", "Wallpaper", "Config needs generation" if needs['wallpaper'] else "Already configured"),
+            ("vm", "VM Setup", "Windows 11 VM entry needs setup" if needs['vm'] else "Already configured"),
+            ("fstab", "External Drives", "Automounting needs setup" if needs['fstab'] else "All drives in fstab")
         ]
         
         for key, name, details in components:
@@ -747,7 +896,10 @@ splash = false
             # Package installation
             if needs['packages']:
                 if Confirm.ask("\n[blue]📦 Install missing packages?[/blue]"):
+                    # Ensure yay is installed first
                     self.install_yay()
+                    # Re-check packages now that yay is available
+                    console.print("[blue]🔍 Re-scanning packages with yay...[/blue]")
                     missing_packages = self.check_missing_packages()
                     self.install_packages(missing_packages)
             
@@ -774,8 +926,19 @@ splash = false
                 if Confirm.ask("\n[blue]🐚 Set fish as default shell?[/blue]"):
                     self.setup_fish_shell()
             
-            # Default applications
+            # Default applications and user permissions
             self.configure_defaults()
+            self.configure_user_permissions()
+            
+            # Optional VM setup
+            if needs['vm']:
+                if Confirm.ask("\n[blue]💻 Setup Windows 11 VM entry?[/blue]"):
+                    self.setup_vm_entry()
+            
+            # Optional external drive setup
+            if needs['fstab']:
+                if Confirm.ask("\n[blue]💾 Setup external drive automounting?[/blue]"):
+                    self.setup_external_drives()
             
             # Firefox extension setup
             firefox_extension = self.dotfiles_dir / "firefox-ai-extension.xpi"

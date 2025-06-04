@@ -224,7 +224,20 @@ class DotfilesInstaller:
                 # Clean up
                 shutil.rmtree(yay_dir)
                 
-                console.print("[green]✅ yay installed successfully[/green]")
+                # Refresh PATH and verify yay is accessible
+                os.environ['PATH'] = os.environ['PATH'] + ':/usr/bin:/usr/local/bin'
+                
+                # Verify yay installation
+                if shutil.which("yay"):
+                    console.print("[green]✅ yay installed successfully[/green]")
+                else:
+                    # Try to find yay manually
+                    for path in ['/usr/bin/yay', '/usr/local/bin/yay', '/bin/yay']:
+                        if os.path.exists(path):
+                            console.print(f"[green]✅ yay found at {path}[/green]")
+                            break
+                    else:
+                        raise Exception("yay was installed but cannot be found in PATH")
                 
             except Exception as e:
                 console.print(f"[red]❌ Failed to install yay: {e}[/red]")
@@ -232,7 +245,18 @@ class DotfilesInstaller:
 
     def run_yay(self, args: List[str]) -> subprocess.CompletedProcess:
         """Run yay with non-interactive flags"""
-        cmd = ["yay", "--answerclean", "None", "--answerdiff", "None", "--answeredit", "None", "--mflags", "--noconfirm"] + args
+        # Find yay executable
+        yay_cmd = shutil.which("yay")
+        if not yay_cmd:
+            # Try common locations
+            for path in ['/usr/bin/yay', '/usr/local/bin/yay', '/bin/yay']:
+                if os.path.exists(path):
+                    yay_cmd = path
+                    break
+            else:
+                raise Exception("yay command not found")
+        
+        cmd = [yay_cmd, "--answerclean", "None", "--answerdiff", "None", "--answeredit", "None", "--mflags", "--noconfirm"] + args
         return self.run_command(cmd, check=False)
 
     def check_missing_packages(self) -> List[str]:

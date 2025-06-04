@@ -1,1 +1,4 @@
-rich>=13.0.0 
+# System packages (install via pacman):
+# sudo pacman -S python python-rich
+
+# No pip packages needed - we use system packages only! 

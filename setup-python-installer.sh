@@ -1,38 +1,26 @@
 #!/bin/bash
 
 # Setup script for the beautiful Python installer
-# This installs the required Python dependencies and runs the installer
+# This installs the required Python dependencies via pacman and runs the installer
 
 set -e
 
 echo "🐍 Setting up Beautiful Python Installer..."
 
-# Check if Python 3 is installed
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is not installed. Please install it first:"
-    echo "   sudo pacman -S python python-pip"
+# Check if running as root
+if [ "$EUID" -eq 0 ]; then
+    echo "❌ Please do not run as root"
     exit 1
 fi
 
-# Check if pip is available
-if ! command -v pip &> /dev/null && ! python3 -m pip --version &> /dev/null; then
-    echo "❌ pip is not available. Please install it first:"
-    echo "   sudo pacman -S python-pip"
-    exit 1
-fi
-
-# Install Rich library if not already installed
-echo "📦 Installing Python dependencies..."
-if python3 -c "import rich" 2>/dev/null; then
-    echo "✅ Rich library already installed"
+# Install Python and python-rich via pacman
+echo "📦 Installing Python dependencies via pacman..."
+if ! command -v python3 &> /dev/null || ! python3 -c "import rich" 2>/dev/null; then
+    echo "📥 Installing python and python-rich..."
+    sudo pacman -S --needed --noconfirm python python-rich
+    echo "✅ Python and Rich library installed via pacman"
 else
-    echo "📥 Installing Rich library..."
-    if command -v pip &> /dev/null; then
-        pip install --user rich
-    else
-        python3 -m pip install --user rich
-    fi
-    echo "✅ Rich library installed"
+    echo "✅ Python and Rich library already available"
 fi
 
 echo ""

@@ -172,22 +172,24 @@ class DotfilesInstaller:
 
     def start_sudo_keepalive(self):
         """Start background process to keep sudo privileges alive"""
-        def keepalive():
-            import threading
-            import time
-            def refresh_sudo():
-                while True:
-                    try:
-                        subprocess.run(["sudo", "-n", "true"], check=False, 
-                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                        time.sleep(60)  # Refresh every minute
-                    except:
-                        break
-            
-            thread = threading.Thread(target=refresh_sudo, daemon=True)
-            thread.start()
+        import threading
+        import time
         
-        keepalive()
+        def refresh_sudo():
+            while True:
+                try:
+                    # Only refresh if we can do it non-interactively
+                    result = subprocess.run(["sudo", "-n", "true"], check=False, 
+                                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    if result.returncode != 0:
+                        # If non-interactive sudo fails, stop the keepalive
+                        break
+                    time.sleep(60)  # Refresh every minute
+                except:
+                    break
+        
+        thread = threading.Thread(target=refresh_sudo, daemon=True)
+        thread.start()
 
     def install_yay(self):
         """Install yay AUR helper if not present"""
@@ -212,8 +214,8 @@ class DotfilesInstaller:
             
             try:
                 # Build and install in one go - simple and effective
-                with console.status("[yellow]Building and installing yay...", spinner="dots"):
-                    self.run_command(["makepkg", "-si", "--noconfirm"], quiet=True)
+                console.print("[yellow]Building and installing yay (may ask for password)...[/yellow]")
+                self.run_command(["makepkg", "-si", "--noconfirm"], interactive=True)
                 console.print("[green]✅ yay installed successfully[/green]")
             finally:
                 # Always return to original directory
@@ -236,11 +238,8 @@ class DotfilesInstaller:
         """Check for missing packages"""
         missing = []
         
-        # If yay is not installed, we can't check AUR packages yet
-        # We'll assume most packages are missing and let the install process handle it
-        if not shutil.which("yay"):
-            console.print("[yellow]⚠️  yay not found - will install it first, then check packages[/yellow]")
-            return self.all_packages  # Assume all packages need checking after yay install
+        # Check packages using pacman first, then yay if available
+        use_yay = shutil.which("yay") is not None
         
         with Progress(
             SpinnerColumn(),
@@ -252,9 +251,17 @@ class DotfilesInstaller:
             task = progress.add_task("Scanning installed packages...", total=len(self.all_packages))
             
             for package in self.all_packages:
-                result = self.run_command(["yay", "-Q", package], check=False, capture=True)
+                # Try pacman first (works for most packages)
+                result = self.run_command(["pacman", "-Q", package], check=False, capture=True)
                 if result.returncode != 0:
-                    missing.append(package)
+                    # If pacman fails and yay is available, try yay
+                    if use_yay:
+                        result = self.run_command(["yay", "-Q", package], check=False, capture=True)
+                    
+                    # If still not found, it's missing
+                    if result.returncode != 0:
+                        missing.append(package)
+                
                 progress.advance(task)
         
         return missing
@@ -803,11 +810,15 @@ Categories=System;Emulator;
                 config_name = config_path.name
                 if config_name == "applications":
                     apps_dir = self.home_dir / ".local/share/applications"
-                    for app_file in config_path.glob("*"):
-                        target = apps_dir / app_file.name
-                        if not target.is_symlink() or target.readlink() != app_file:
-                            needs['configs'] = True
-                            break
+                    if not apps_dir.exists():
+                        needs['configs'] = True
+                    else:
+                        for app_file in config_path.glob("*"):
+                            if app_file.is_file():
+                                target = apps_dir / app_file.name
+                                if not target.is_symlink() or target.readlink() != app_file:
+                                    needs['configs'] = True
+                                    break
                 else:
                     target = self.config_dir / config_name
                     if not target.is_symlink() or target.readlink() != config_path:
@@ -820,19 +831,57 @@ Categories=System;Emulator;
             needs['ai_scripts'] = True
         
         # Check AI system
+        ai_missing = 0
+        
+        # Check AI config file
         ai_config_file = self.config_dir / "dynamic-theming/ai-config.conf"
         if not ai_config_file.exists():
+            ai_missing += 1
+        
+        # Check matugen cache directory
+        matugen_cache = self.home_dir / ".cache/matugen"
+        if not matugen_cache.exists():
+            ai_missing += 1
+        
+        # Check Ollama and models if available
+        if shutil.which("ollama"):
+            try:
+                result = self.run_command(["ollama", "list"], check=False, capture=True)
+                if result.returncode == 0:
+                    # Check for required models
+                    if "llava" not in result.stdout:
+                        ai_missing += 1
+                    if "phi4" not in result.stdout:
+                        ai_missing += 1
+                else:
+                    ai_missing += 1  # Ollama service not running
+            except:
+                ai_missing += 1
+        else:
+            ai_missing += 1  # Ollama not installed
+        
+        if ai_missing > 0:
             needs['ai_system'] = True
         
         # Check fish shell
         fish_path = shutil.which("fish")
-        if fish_path and os.environ.get("SHELL") != fish_path:
+        current_shell = os.environ.get("SHELL", "")
+        if not fish_path or current_shell != fish_path:
             needs['fish'] = True
         
         # Check wallpaper config
         wallpaper_config = self.config_dir / "hypr/hyprpaper.conf"
         if not wallpaper_config.exists():
             needs['wallpaper'] = True
+        else:
+            # Check if it points to our dotfiles wallpapers
+            try:
+                config_content = wallpaper_config.read_text()
+                dotfiles_wallpaper_path = str(self.dotfiles_dir / "assets/wallpapers")
+                if dotfiles_wallpaper_path not in config_content:
+                    needs['wallpaper'] = True
+            except:
+                needs['wallpaper'] = True
         
         # Check VM setup
         vm_desktop = self.home_dir / ".local/share/applications/win11-vm.desktop"
@@ -840,25 +889,35 @@ Categories=System;Emulator;
             needs['vm'] = True
         
         # Check external drive automounting
+        # Only check if there are actually external drives with labels
         try:
             result = self.run_command(["lsblk", "-o", "NAME,LABEL,TYPE,MOUNTPOINT"], capture=True, check=False)
             if result.returncode == 0:
                 lines = result.stdout.strip().split('\n')[1:]  # Skip header
-                has_external_drives = False
+                external_drives_found = []
+                
                 for line in lines:
                     parts = line.split()
-                    if len(parts) >= 3 and parts[2] == "part" and len(parts) > 1 and parts[1] not in ["", "-"]:
-                        label = parts[1]
-                        if not any(skip in label.upper() for skip in ["ARCH", "ARCHISO", "EFI"]):
-                            has_external_drives = True
-                            # Check if it's in fstab
-                            try:
-                                fstab_content = Path("/etc/fstab").read_text()
-                                if f"LABEL={label}" not in fstab_content:
-                                    needs['fstab'] = True
-                                    break
-                            except:
+                    if len(parts) >= 3 and parts[2] == "part":
+                        # Check if it has a label and is not a system partition
+                        if len(parts) > 1 and parts[1] not in ["", "-"]:
+                            label = parts[1]
+                            # Skip system drives and mounted drives
+                            if not any(skip in label.upper() for skip in ["ARCH", "ARCHISO", "EFI"]):
+                                # Check if not already mounted (4th column would have mount point)
+                                if len(parts) < 4 or parts[3] in ["", "-"]:
+                                    external_drives_found.append(label)
+                
+                # Only set needs['fstab'] = True if we found external drives that aren't in fstab
+                if external_drives_found:
+                    try:
+                        fstab_content = Path("/etc/fstab").read_text()
+                        for label in external_drives_found:
+                            if f"LABEL={label}" not in fstab_content:
                                 needs['fstab'] = True
+                                break
+                    except:
+                        needs['fstab'] = True
         except:
             pass
         
@@ -879,10 +938,10 @@ Categories=System;Emulator;
             ("configs", "Configurations", "Some symlinks need creation" if needs['configs'] else "All symlinks configured"),
             ("ai_scripts", "AI Scripts", "System access needs setup" if needs['ai_scripts'] else "Already accessible"),
             ("ai_system", "AI System", "Components need setup" if needs['ai_system'] else "Fully configured"),
-            ("fish", "Fish Shell", "Needs to be set as default" if needs['fish'] else "Already default shell"),
+            ("fish", "Fish Shell", "Fish needs installation/setup" if needs['fish'] else "Already default shell"),
             ("wallpaper", "Wallpaper", "Config needs generation" if needs['wallpaper'] else "Already configured"),
             ("vm", "VM Setup", "Windows 11 VM entry needs setup" if needs['vm'] else "Already configured"),
-            ("fstab", "External Drives", "Automounting needs setup" if needs['fstab'] else "All drives in fstab")
+            ("fstab", "External Drives", "External drives need fstab setup" if needs['fstab'] else "No external drives or already configured")
         ]
         
         for key, name, details in components:

@@ -98,9 +98,9 @@ class DotfilesInstaller:
             if capture:
                 result = subprocess.run(cmd, check=check, capture_output=True, text=True)
             elif quiet:
-                # Suppress output but allow password input by redirecting only stdout/stderr
+                # Suppress output but preserve stdin for password prompts
                 with open(self.log_file, "a") as log:
-                    result = subprocess.run(cmd, check=check, stdout=log, stderr=log)
+                    result = subprocess.run(cmd, check=check, stdout=log, stderr=log, stdin=None)
             elif interactive or (len(cmd) > 0 and cmd[0] == "sudo"):
                 # For sudo and interactive commands, allow terminal input/output
                 result = subprocess.run(cmd, check=check)
@@ -229,10 +229,10 @@ class DotfilesInstaller:
             console.print("[yellow]💡 You can install yay manually and re-run this installer[/yellow]")
             raise
 
-    def run_yay(self, args: List[str]) -> subprocess.CompletedProcess:
+    def run_yay(self, args: List[str], quiet: bool = False) -> subprocess.CompletedProcess:
         """Run yay with non-interactive flags"""
         cmd = ["yay", "--answerclean", "None", "--answerdiff", "None", "--answeredit", "None", "--mflags", "--noconfirm"] + args
-        return self.run_command(cmd, check=False, interactive=True)
+        return self.run_command(cmd, check=False, interactive=not quiet, quiet=quiet)
 
     def check_missing_packages(self) -> List[str]:
         """Check for missing packages"""
@@ -294,10 +294,7 @@ class DotfilesInstaller:
                 progress.update(task, description=f"Installing [cyan]{package}[/cyan]...")
                 
                 # Run package installation quietly to reduce screen clutter
-                result = self.run_command(["yay", "-S", "--needed", "--noconfirm", 
-                                         "--answerclean", "None", "--answerdiff", "None", 
-                                         "--answeredit", "None", package], 
-                                         check=False, quiet=True)
+                result = self.run_yay(["-S", "--needed", "--noconfirm", package], quiet=True)
                 
                 if result.returncode == 0:
                     self.installed_packages.append(package)
@@ -392,7 +389,9 @@ class DotfilesInstaller:
 
     def create_symlinks(self):
         """Create configuration symlinks"""
-        config_dirs = list((self.dotfiles_dir / "config").iterdir())
+        config_dirs = [d for d in (self.dotfiles_dir / "config").iterdir() if d.is_dir()]
+        
+        console.print(f"[blue]🔗 Found {len(config_dirs)} configuration directories to process[/blue]")
         
         with Progress(
             SpinnerColumn(),
@@ -404,16 +403,19 @@ class DotfilesInstaller:
             task = progress.add_task("Creating symlinks...", total=len(config_dirs))
             
             for config_path in config_dirs:
-                if not config_path.is_dir():
-                    continue
-                
                 config_name = config_path.name
                 progress.update(task, description=f"Linking [cyan]{config_name}[/cyan]...")
                 
-                if config_name == "applications":
-                    self.setup_applications(config_path)
-                else:
-                    self.setup_config_symlink(config_path, config_name)
+                try:
+                    if config_name == "applications":
+                        self.setup_applications(config_path)
+                        console.print(f"[green]✅ Application shortcuts processed[/green]")
+                    else:
+                        self.setup_config_symlink(config_path, config_name)
+                        console.print(f"[green]✅ {config_name} configuration linked[/green]")
+                except Exception as e:
+                    console.print(f"[red]❌ Failed to link {config_name}: {e}[/red]")
+                    self.log(f"Failed to link {config_name}: {e}", "ERROR")
                 
                 progress.advance(task)
         
@@ -549,14 +551,37 @@ class DotfilesInstaller:
         
         console.print("[green]✅ Ollama service ready[/green]")
         
-        # Download models
+        # AI Model Information Panel
+        model_info_panel = Panel(
+            "[bold cyan]🧠 AI Models for Dynamic Theming[/bold cyan]\n\n"
+            "The system uses two AI models for intelligent theming:\n\n"
+            "[bold magenta]1. LLAVA-Llama3 Vision Model (8B)[/bold magenta]\n"
+            "   • [blue]Size:[/blue] ~4.7 GB\n"
+            "   • [blue]Purpose:[/blue] Analyzes wallpaper content and mood\n"
+            "   • [blue]Features:[/blue] Color harmony, accessibility optimization\n"
+            "   • [blue]Required for:[/blue] Smart wallpaper analysis, content-aware theming\n\n"
+            "[bold yellow]2. Phi4 Text Model[/bold yellow]\n"
+            "   • [blue]Size:[/blue] ~2.4 GB\n"
+            "   • [blue]Purpose:[/blue] Generates theme descriptions and optimizations\n"
+            "   • [blue]Features:[/blue] Theme naming, config explanations\n"
+            "   • [blue]Required for:[/blue] AI-generated theme insights, smart config\n\n"
+            "[dim]Note: Models are downloaded once and cached locally[/dim]",
+            title="[bold]🤖 AI Models[/bold]",
+            border_style="cyan"
+        )
+        console.print(model_info_panel)
+        
+        # Ask about each model individually
         models = [
-            ("llava-llama3:8b", "LLAVA-Llama3 Vision Model"),
-            ("phi4", "Phi4 Text Model")
+            ("llava-llama3:8b", "LLAVA-Llama3 Vision Model", "~4.7 GB", "wallpaper analysis and content-aware theming"),
+            ("phi4", "Phi4 Text Model", "~2.4 GB", "theme descriptions and AI insights")
         ]
         
-        for model_name, display_name in models:
-            self.download_ollama_model(model_name, display_name)
+        for model_name, display_name, size, purpose in models:
+            if Confirm.ask(f"\n[blue]📥 Download {display_name} ({size}) for {purpose}?[/blue]"):
+                self.download_ollama_model(model_name, display_name)
+            else:
+                console.print(f"[yellow]⚠️  Skipping {display_name} - some AI features will be limited[/yellow]")
 
     def download_ollama_model(self, model_name: str, display_name: str):
         """Download an Ollama model with progress"""
@@ -778,6 +803,42 @@ Categories=System;Emulator;
                 
         except Exception as e:
             console.print(f"[yellow]⚠️  Failed to configure user permissions: {e}[/yellow]")
+
+    def set_script_permissions(self):
+        """Set permissions for various scripts"""
+        console.print("[blue]🔐 Setting script permissions...[/blue]")
+        
+        script_paths = [
+            (self.config_dir / "lf/preview.sh", "lf preview script"),
+            (self.config_dir / "lf/cleaner.sh", "lf cleaner script"),
+        ]
+        
+        # Set permissions for individual scripts
+        for script_path, description in script_paths:
+            if script_path.exists():
+                try:
+                    os.chmod(script_path, 0o755)
+                    console.print(f"[dim]✅ {description}[/dim]")
+                except Exception as e:
+                    console.print(f"[yellow]⚠️  Failed to set permissions for {description}: {e}[/yellow]")
+        
+        # Set permissions for script directories
+        script_dirs = [
+            (self.config_dir / "hypr/scripts", "Hyprland scripts"),
+            (self.config_dir / "waybar/scripts", "Waybar scripts"),
+            (self.dotfiles_dir / "scripts/ai", "AI scripts"),
+        ]
+        
+        for script_dir, description in script_dirs:
+            if script_dir.exists():
+                try:
+                    for script_file in script_dir.glob("*.sh"):
+                        os.chmod(script_file, 0o755)
+                    console.print(f"[dim]✅ {description}[/dim]")
+                except Exception as e:
+                    console.print(f"[yellow]⚠️  Failed to set permissions for {description}: {e}[/yellow]")
+        
+        console.print("[green]✅ Script permissions configured[/green]")
 
     def preflight_check(self) -> Dict[str, bool]:
         """Analyze current system state"""
@@ -1025,6 +1086,7 @@ Categories=System;Emulator;
             # Default applications and user permissions
             self.configure_defaults()
             self.configure_user_permissions()
+            self.set_script_permissions()
             
             # Optional VM setup
             if needs['vm']:

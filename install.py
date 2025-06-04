@@ -89,7 +89,7 @@ class DotfilesInstaller:
         with open(self.log_file, "a") as f:
             f.write(f"[{timestamp}] {level}: {message}\n")
 
-    def run_command(self, cmd: List[str], check: bool = True, capture: bool = False) -> subprocess.CompletedProcess:
+    def run_command(self, cmd: List[str], check: bool = True, capture: bool = False, interactive: bool = False) -> subprocess.CompletedProcess:
         """Run a command with logging"""
         cmd_str = " ".join(cmd)
         self.log(f"Running command: {cmd_str}")
@@ -97,6 +97,9 @@ class DotfilesInstaller:
         try:
             if capture:
                 result = subprocess.run(cmd, check=check, capture_output=True, text=True)
+            elif interactive or (len(cmd) > 0 and cmd[0] == "sudo"):
+                # For sudo and interactive commands, allow terminal input/output
+                result = subprocess.run(cmd, check=check)
             else:
                 result = subprocess.run(cmd, check=check)
             self.log(f"Command completed with return code: {result.returncode}")
@@ -155,9 +158,32 @@ class DotfilesInstaller:
             with console.status("[yellow]Checking sudo privileges...", spinner="dots"):
                 self.run_command(["sudo", "-v"])
             console.print("[green]✅ Sudo privileges cached[/green]")
+            
+            # Start background process to keep sudo alive (like the bash script does)
+            self.start_sudo_keepalive()
+            
         except subprocess.CalledProcessError:
             console.print("[red]❌ Failed to get sudo privileges[/red]")
             sys.exit(1)
+
+    def start_sudo_keepalive(self):
+        """Start background process to keep sudo privileges alive"""
+        def keepalive():
+            import threading
+            import time
+            def refresh_sudo():
+                while True:
+                    try:
+                        subprocess.run(["sudo", "-n", "true"], check=False, 
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        time.sleep(60)  # Refresh every minute
+                    except:
+                        break
+            
+            thread = threading.Thread(target=refresh_sudo, daemon=True)
+            thread.start()
+        
+        keepalive()
 
     def install_yay(self):
         """Install yay AUR helper if not present"""
@@ -182,7 +208,17 @@ class DotfilesInstaller:
                 self.run_command(["git", "clone", "https://aur.archlinux.org/yay-bin.git", "/tmp/yay-bin"])
                 
                 os.chdir("/tmp/yay-bin")
-                self.run_command(["makepkg", "-si", "--noconfirm"])
+                # Build package (allow interactive for potential questions)
+                self.run_command(["makepkg", "-s", "--noconfirm"], interactive=True)
+                
+                # Install with pacman directly (sudo will prompt for password if needed)
+                import glob
+                pkg_files = glob.glob("yay-bin-*.pkg.tar.*")
+                if pkg_files:
+                    self.run_command(["sudo", "pacman", "-U", "--noconfirm", pkg_files[0]], interactive=True)
+                else:
+                    raise Exception("Built package file not found")
+                
                 os.chdir(self.dotfiles_dir)
                 
                 # Clean up

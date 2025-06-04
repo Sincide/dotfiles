@@ -622,14 +622,23 @@ class DotfilesInstaller:
         
         with console.status("[yellow]Building AI Performance Dashboard...", spinner="dots"):
             try:
+                original_dir = os.getcwd()
                 os.chdir(dashboard_dir)
                 
                 # Initialize go module if needed
                 if not (dashboard_dir / "go.mod").exists():
+                    console.print("[blue]📦 Initializing Go module...[/blue]")
                     self.run_command(["go", "mod", "init", "ai-dashboard"])
-                    self.run_command(["go", "mod", "tidy"])
+                
+                # Download dependencies and update go.sum
+                console.print("[blue]📥 Downloading Go dependencies...[/blue]")
+                self.run_command(["go", "mod", "tidy"])
+                
+                # Ensure all dependencies are available
+                self.run_command(["go", "mod", "download"])
                 
                 # Build dashboard
+                console.print("[blue]🔨 Compiling dashboard...[/blue]")
                 self.run_command(["go", "build", "-o", "dashboard", "dashboard.go"])
                 os.chmod(dashboard_dir / "dashboard", 0o755)
                 
@@ -637,8 +646,9 @@ class DotfilesInstaller:
                 
             except Exception as e:
                 console.print(f"[yellow]⚠️  Failed to build AI dashboard: {e}[/yellow]")
+                console.print("[dim]This is optional - the AI system will work without the dashboard[/dim]")
             finally:
-                os.chdir(self.dotfiles_dir)
+                os.chdir(original_dir)
 
     def setup_wallpaper_config(self):
         """Setup wallpaper configuration"""

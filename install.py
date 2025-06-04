@@ -89,7 +89,7 @@ class DotfilesInstaller:
         with open(self.log_file, "a") as f:
             f.write(f"[{timestamp}] {level}: {message}\n")
 
-    def run_command(self, cmd: List[str], check: bool = True, capture: bool = False, interactive: bool = False) -> subprocess.CompletedProcess:
+    def run_command(self, cmd: List[str], check: bool = True, capture: bool = False, interactive: bool = False, quiet: bool = False) -> subprocess.CompletedProcess:
         """Run a command with logging"""
         cmd_str = " ".join(cmd)
         self.log(f"Running command: {cmd_str}")
@@ -97,6 +97,10 @@ class DotfilesInstaller:
         try:
             if capture:
                 result = subprocess.run(cmd, check=check, capture_output=True, text=True)
+            elif quiet:
+                # Suppress output but allow password input by redirecting only stdout/stderr
+                with open(self.log_file, "a") as log:
+                    result = subprocess.run(cmd, check=check, stdout=log, stderr=log)
             elif interactive or (len(cmd) > 0 and cmd[0] == "sudo"):
                 # For sudo and interactive commands, allow terminal input/output
                 result = subprocess.run(cmd, check=check)
@@ -208,7 +212,8 @@ class DotfilesInstaller:
             
             try:
                 # Build and install in one go - simple and effective
-                self.run_command(["makepkg", "-si", "--noconfirm"], interactive=True)
+                with console.status("[yellow]Building and installing yay...", spinner="dots"):
+                    self.run_command(["makepkg", "-si", "--noconfirm"], quiet=True)
                 console.print("[green]✅ yay installed successfully[/green]")
             finally:
                 # Always return to original directory
@@ -264,7 +269,7 @@ class DotfilesInstaller:
         
         # Update system first
         with console.status("[yellow]Updating system packages...", spinner="dots"):
-            self.run_command(["sudo", "pacman", "-Syu", "--noconfirm"])
+            self.run_command(["sudo", "pacman", "-Syu", "--noconfirm"], quiet=True)
 
         # Install packages with progress tracking
         with Progress(
@@ -281,7 +286,11 @@ class DotfilesInstaller:
             for i, package in enumerate(missing_packages):
                 progress.update(task, description=f"Installing [cyan]{package}[/cyan]...")
                 
-                result = self.run_yay(["-S", "--needed", "--noconfirm", package])
+                # Run package installation quietly to reduce screen clutter
+                result = self.run_command(["yay", "-S", "--needed", "--noconfirm", 
+                                         "--answerclean", "None", "--answerdiff", "None", 
+                                         "--answeredit", "None", package], 
+                                         check=False, quiet=True)
                 
                 if result.returncode == 0:
                     self.installed_packages.append(package)
@@ -291,7 +300,7 @@ class DotfilesInstaller:
                     progress.update(task, description=f"❌ Failed [red]{package}[/red]")
                 
                 progress.advance(task)
-                time.sleep(0.1)  # Small delay for visual effect
+                time.sleep(0.2)  # Slightly longer delay to show the status
         
         # Show installation summary
         self.show_package_summary()

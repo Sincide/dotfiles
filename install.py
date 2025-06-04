@@ -191,73 +191,41 @@ class DotfilesInstaller:
             console.print("[green]✅ yay is already installed[/green]")
             return
         
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            transient=True,
-        ) as progress:
-            task = progress.add_task("Installing yay AUR helper...", total=None)
+        console.print("[blue]📦 Installing yay AUR helper...[/blue]")
+        
+        try:
+            # Clean up any existing yay-bin directory
+            yay_dir = Path("/tmp/yay-bin")
+            if yay_dir.exists():
+                shutil.rmtree(yay_dir)
+            
+            # Clone, build, and install - just like the bash script
+            self.run_command(["git", "clone", "https://aur.archlinux.org/yay-bin.git", "/tmp/yay-bin"])
+            
+            # Save current directory and change to yay-bin
+            original_dir = os.getcwd()
+            os.chdir("/tmp/yay-bin")
             
             try:
-                # Clean up any existing yay-bin directory
-                yay_dir = Path("/tmp/yay-bin")
+                # Build and install in one go - simple and effective
+                self.run_command(["makepkg", "-si", "--noconfirm"], interactive=True)
+                console.print("[green]✅ yay installed successfully[/green]")
+            finally:
+                # Always return to original directory
+                os.chdir(original_dir)
+                # Clean up
                 if yay_dir.exists():
                     shutil.rmtree(yay_dir)
-                
-                # Clone and build yay-bin
-                self.run_command(["git", "clone", "https://aur.archlinux.org/yay-bin.git", "/tmp/yay-bin"])
-                
-                os.chdir("/tmp/yay-bin")
-                # Build package (allow interactive for potential questions)
-                self.run_command(["makepkg", "-s", "--noconfirm"], interactive=True)
-                
-                # Install with pacman directly (sudo will prompt for password if needed)
-                import glob
-                pkg_files = glob.glob("yay-bin-*.pkg.tar.*")
-                if pkg_files:
-                    self.run_command(["sudo", "pacman", "-U", "--noconfirm", pkg_files[0]], interactive=True)
-                else:
-                    raise Exception("Built package file not found")
-                
-                os.chdir(self.dotfiles_dir)
-                
-                # Clean up
-                shutil.rmtree(yay_dir)
-                
-                # Refresh PATH and verify yay is accessible
-                os.environ['PATH'] = os.environ['PATH'] + ':/usr/bin:/usr/local/bin'
-                
-                # Verify yay installation
-                if shutil.which("yay"):
-                    console.print("[green]✅ yay installed successfully[/green]")
-                else:
-                    # Try to find yay manually
-                    for path in ['/usr/bin/yay', '/usr/local/bin/yay', '/bin/yay']:
-                        if os.path.exists(path):
-                            console.print(f"[green]✅ yay found at {path}[/green]")
-                            break
-                    else:
-                        raise Exception("yay was installed but cannot be found in PATH")
-                
-            except Exception as e:
-                console.print(f"[red]❌ Failed to install yay: {e}[/red]")
-                raise
+            
+        except Exception as e:
+            console.print(f"[red]❌ Failed to install yay: {e}[/red]")
+            console.print("[yellow]💡 You can install yay manually and re-run this installer[/yellow]")
+            raise
 
     def run_yay(self, args: List[str]) -> subprocess.CompletedProcess:
         """Run yay with non-interactive flags"""
-        # Find yay executable
-        yay_cmd = shutil.which("yay")
-        if not yay_cmd:
-            # Try common locations
-            for path in ['/usr/bin/yay', '/usr/local/bin/yay', '/bin/yay']:
-                if os.path.exists(path):
-                    yay_cmd = path
-                    break
-            else:
-                raise Exception("yay command not found")
-        
-        cmd = [yay_cmd, "--answerclean", "None", "--answerdiff", "None", "--answeredit", "None", "--mflags", "--noconfirm"] + args
-        return self.run_command(cmd, check=False)
+        cmd = ["yay", "--answerclean", "None", "--answerdiff", "None", "--answeredit", "None", "--mflags", "--noconfirm"] + args
+        return self.run_command(cmd, check=False, interactive=True)
 
     def check_missing_packages(self) -> List[str]:
         """Check for missing packages"""

@@ -50,7 +50,6 @@ generate_commit_message() {
     ai_message=$(generate_ai_commit_message "$files_changed")
     
     if [ -n "$ai_message" ] && [ "$ai_message" != "FALLBACK" ]; then
-        print_success "Generated: \"$ai_message\"" >&2
         echo "$ai_message"
         return 0
     fi
@@ -74,7 +73,7 @@ generate_ai_commit_message() {
         return 1
     fi
     
-    print_status "🧠 Generating AI commit message..." >&2
+    echo -e "${BLUE}🧠${NC} Generating commit message..." >&2
     
     # Get detailed git diff for better context
     local diff_context
@@ -96,23 +95,9 @@ $diff_context
 Use format: type: description (e.g., fix: update script, feat: add function)
 Message only, no explanations:"
 
-    # Check if phi4 model is loaded and provide feedback
-    if ollama ps 2>/dev/null | grep -q "phi4"; then
-        echo -e "${BLUE}   →${NC} Using phi4 model (already loaded)" >&2
-    else
-        echo -e "${BLUE}   →${NC} Loading phi4 model..." >&2
-    fi
-
     # Query phi4 with timeout
     local ai_response
     ai_response=$(timeout 20s ollama run phi4 "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    
-    # Debug: show what phi4 actually returned
-    if [ -n "$ai_response" ]; then
-        echo -e "${BLUE}   →${NC} phi4 returned: \"$ai_response\" (${#ai_response} chars)" >&2
-    else
-        echo -e "${YELLOW}   →${NC} phi4 returned empty response" >&2
-    fi
     
     # Validate the response (more lenient validation)
     if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 5 ]; then
@@ -212,7 +197,7 @@ sync_dotfiles() {
         fi
 
         if git commit -m "$commit_msg" >/dev/null 2>&1; then
-            print_success "Committed: $commit_msg"
+            print_success "✓ $commit_msg"
         else
             print_error "Failed to commit changes"
             return 1
@@ -233,7 +218,7 @@ sync_dotfiles() {
 
     # Always push (in case rebase rewrote local commits, or you resolved conflicts)
     print_status "Pushing changes..."
-    if ! git push; then
+    if ! git push --quiet; then
         print_error "Failed to push changes. Check your remote/network."
         return 1
     else

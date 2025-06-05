@@ -188,6 +188,21 @@ sync_dotfiles() {
         local_changes=1
         git add -A
 
+        # Show which files are being committed
+        echo -e "${BLUE}📁${NC} Files being committed:"
+        while IFS= read -r line; do
+            local status="${line:0:2}"
+            local filename="${line:3}"
+            case "$status" in
+                " M"|"M "|"MM") echo -e "   ${YELLOW}•${NC} $filename";;
+                "A "|"AM")      echo -e "   ${GREEN}•${NC} $filename";;
+                "D "|" D")      echo -e "   ${RED}•${NC} $filename";;
+                "R ")           echo -e "   ${BLUE}•${NC} $filename";;
+                "??")           echo -e "   ${BLUE}•${NC} $filename";;
+                *)              echo -e "   • $filename";;
+            esac
+        done < <(git status --porcelain)
+
         local commit_msg
         if [ -n "$1" ]; then
             commit_msg="$1"

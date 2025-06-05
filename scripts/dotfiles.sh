@@ -197,7 +197,7 @@ sync_dotfiles() {
         fi
 
         if git commit -m "$commit_msg" >/dev/null 2>&1; then
-            print_success "✓ $commit_msg"
+            echo -e "${GREEN}[✓]${NC} ${BLUE}$commit_msg${NC}"
         else
             print_error "Failed to commit changes"
             return 1

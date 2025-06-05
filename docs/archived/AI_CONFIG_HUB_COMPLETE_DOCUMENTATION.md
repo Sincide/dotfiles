@@ -350,10 +350,7 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 4. **Optional Cleanup:** `sudo paccache -r` for package cache
 
 ### **Available Next Steps:**
-1. **Firefox Integration:** Complete theming ecosystem with browser theming
-2. **System Monitoring:** Background monitoring and trend analysis
-3. **Community Sharing:** Package for Linux community distribution
-4. **Advanced AI:** Model training and personalization features
+**See ROADMAP.md for current development priorities and planned features.**
 
 ### **Commands to Remember:**
 ```bash

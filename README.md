@@ -424,13 +424,9 @@ export TERM=xterm-256color
 ls -la /tmp/system-health-analysis.json
 ```
 
-## 🚀 Future Enhancements
+## 🚀 Development Planning
 
-- [ ] **Historical trending** (score graphs over time)
-- [ ] **Alert system** (notifications for critical issues)
-- [ ] **Export functionality** (JSON/CSV reports)
-- [ ] **Plugin system** (custom health checks)
-- [ ] **Web interface** (optional HTTP server mode)
+**See ROADMAP.md for all planned features and development priorities.**
 
 ## 📝 License
 

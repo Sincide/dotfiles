@@ -247,10 +247,9 @@ UPDATED FILES:
 
 ---
 
-## 🎯 **NEXT DEVELOPMENT ROADMAP**
+## 🎯 **DEVELOPMENT PLANNING**
 
-### **Potential Enhancements**
-1. **Brave Browser Extension**: Extend to Brave browser (future consideration)
+**See ROADMAP.md for all planned features and development priorities.**
 
 ### **Community Contributions Welcome**
 - Multi-GPU testing and optimization

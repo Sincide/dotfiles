@@ -73,6 +73,8 @@ generate_ai_commit_message() {
         return 1
     fi
     
+    print_status "🧠 Generating AI commit message..."
+    
     # Get git diff for context
     local diff_context
     diff_context=$(git diff --cached --stat --summary 2>/dev/null | head -20)
@@ -81,7 +83,7 @@ generate_ai_commit_message() {
     local prompt="You are a git commit message generator. Create a concise, professional commit message for the following changes to a Linux dotfiles repository.
 
 RULES:
-- Maximum 50 characters for the subject line
+- Maximum 72 characters for the subject line, but atleast 50
 - Use conventional commit format when appropriate (feat:, fix:, config:, etc.)
 - Be specific about what changed
 - Focus on the most important changes
@@ -95,31 +97,88 @@ $diff_context
 
 Generate ONLY the commit message (no quotes, no explanations):"
 
+    # Check if phi4 model is loaded
+    print_status "Trying phi4 model..."
+    local model_loaded=false
+    if ollama ps 2>/dev/null | grep -q "phi4"; then
+        model_loaded=true
+        echo -e "${BLUE}   →${NC} Model already loaded in memory"
+    else
+        echo -e "${BLUE}   →${NC} Loading phi4 model (this may take 10-30 seconds)..."
+        # Show a spinner while loading
+        (
+            while ps aux | grep -q "[o]llama run phi4" 2>/dev/null; do
+                for char in '|' '/' '-' '\'; do
+                    printf "\r${BLUE}   →${NC} Loading phi4 model ${char}"
+                    sleep 0.2
+                done
+            done
+        ) &
+        local spinner_pid=$!
+    fi
+
     # Query the LLM with timeout
     local ai_response
-    ai_response=$(timeout 10s ollama run phi4 "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    ai_response=$(timeout 15s ollama run phi4 "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    
+    # Kill spinner if it's running
+    if [ ! "$model_loaded" = true ]; then
+        kill $spinner_pid 2>/dev/null
+        printf "\r${BLUE}   →${NC} phi4 model loaded                    \n"
+    fi
     
     # Validate the response
     if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 10 ]; then
         # Clean up the message (remove quotes if present)
         ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
+        print_success "Generated: \"$ai_response\""
         echo "$ai_response"
         return 0
     fi
     
     # Try with a simpler model if phi4 fails
-    if ollama list 2>/dev/null | grep -q "llama"; then
-        local model=$(ollama list 2>/dev/null | grep -E "(llama|mistral|codellama)" | head -1 | awk '{print $1}')
-        if [ -n "$model" ]; then
-            ai_response=$(timeout 8s ollama run "$model" "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 10 ]; then
-                ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
-                echo "$ai_response"
-                return 0
-            fi
+    local fallback_model
+    fallback_model=$(ollama list 2>/dev/null | grep -E "(llama|mistral|codellama)" | head -1 | awk '{print $1}')
+    
+    if [ -n "$fallback_model" ]; then
+        print_status "phi4 failed, trying $fallback_model..."
+        
+        # Check if fallback model is loaded
+        local fallback_loaded=false
+        if ollama ps 2>/dev/null | grep -q "$fallback_model"; then
+            fallback_loaded=true
+            echo -e "${BLUE}   →${NC} Model already loaded in memory"
+        else
+            echo -e "${BLUE}   →${NC} Loading $fallback_model model..."
+            # Show a spinner for fallback model
+            (
+                while ps aux | grep -q "[o]llama run $fallback_model" 2>/dev/null; do
+                    for char in '|' '/' '-' '\'; do
+                        printf "\r${BLUE}   →${NC} Loading $fallback_model ${char}"
+                        sleep 0.2
+                    done
+                done
+            ) &
+            local fallback_spinner_pid=$!
+        fi
+        
+        ai_response=$(timeout 12s ollama run "$fallback_model" "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        
+        # Kill fallback spinner if it's running
+        if [ ! "$fallback_loaded" = true ]; then
+            kill $fallback_spinner_pid 2>/dev/null
+            printf "\r${BLUE}   →${NC} $fallback_model model loaded                    \n"
+        fi
+        
+        if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 10 ]; then
+            ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
+            print_success "Generated: \"$ai_response\""
+            echo "$ai_response"
+            return 0
         fi
     fi
     
+    print_warning "AI models failed to generate suitable commit message"
     return 1
 }
 
@@ -203,7 +262,9 @@ sync_dotfiles() {
         local commit_msg
         if [ -n "$1" ]; then
             commit_msg="$1"
+            print_status "Using provided commit message: \"$commit_msg\""
         else
+            print_status "Generating commit message..."
             commit_msg=$(generate_commit_message)
         fi
 

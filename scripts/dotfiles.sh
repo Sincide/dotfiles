@@ -55,7 +55,7 @@ generate_commit_message() {
     fi
     
     # Fallback to original logic if AI fails
-    print_warning "AI commit message generation failed, using fallback logic" >&2
+    echo -e "${RED}[✗]${NC} ${YELLOW}phi4 AI failed - using fallback logic${NC}" >&2
     generate_fallback_commit_message "$files_changed"
 }
 
@@ -107,7 +107,7 @@ Message only, no explanations:"
         return 0
     fi
     
-    echo -e "${YELLOW}[!]${NC} phi4 response failed validation (length: ${#ai_response})" >&2
+    echo -e "${RED}[✗]${NC} ${YELLOW}phi4 returned invalid response${NC} (length: ${#ai_response})" >&2
     return 1
 }
 

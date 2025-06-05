@@ -50,6 +50,7 @@ generate_commit_message() {
     ai_message=$(generate_ai_commit_message "$files_changed")
     
     if [ -n "$ai_message" ] && [ "$ai_message" != "FALLBACK" ]; then
+        print_success "Generated: \"$ai_message\"" >&2
         echo "$ai_message"
         return 0
     fi
@@ -102,9 +103,7 @@ $diff_context
 Generate ONLY the commit message:"
 
     # Check if phi4 model is loaded and provide feedback
-    local model_loaded=false
     if ollama ps 2>/dev/null | grep -q "phi4"; then
-        model_loaded=true
         echo -e "${BLUE}   →${NC} Using phi4 model (already loaded)" >&2
     else
         echo -e "${BLUE}   →${NC} Loading phi4 model..." >&2
@@ -118,7 +117,6 @@ Generate ONLY the commit message:"
     if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 8 ]; then
         # Clean up the message (remove quotes if present)
         ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
-        print_success "Generated: \"$ai_response\"" >&2
         echo "$ai_response"
         return 0
     fi
@@ -128,13 +126,12 @@ Generate ONLY the commit message:"
     fallback_model=$(ollama list 2>/dev/null | grep -E "(llama|mistral|codellama)" | head -1 | awk '{print $1}')
     
     if [ -n "$fallback_model" ]; then
-        echo -e "${YELLOW}   →${NC} Trying $fallback_model model..." >&2
+        echo -e "${BLUE}   →${NC} Trying $fallback_model model..." >&2
         
         ai_response=$(timeout 12s ollama run "$fallback_model" "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         
         if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 8 ]; then
             ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
-            print_success "Generated: \"$ai_response\"" >&2
             echo "$ai_response"
             return 0
         fi
@@ -229,11 +226,11 @@ sync_dotfiles() {
             commit_msg=$(generate_commit_message)
         fi
 
-        if ! git commit -m "$commit_msg"; then
+        if git commit -m "$commit_msg" >/dev/null 2>&1; then
+            print_success "Committed: $commit_msg"
+        else
             print_error "Failed to commit changes"
             return 1
-        else
-            print_success "Changes committed: $commit_msg"
         fi
     else
         print_warning "No local changes to commit!"

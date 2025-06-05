@@ -154,7 +154,7 @@ fuse_color_intelligence() {
         if jq -e . "$vision_file" >/dev/null 2>&1; then
             vision_available=true
             vision_category=$(jq -r '.category // .content.category // "unknown"' "$vision_file")
-            vision_mood=$(jq -r '.mood // .mood.energy // "unknown"' "$vision_file")
+            vision_mood=$(jq -r '.mood.energy // .mood // "unknown"' "$vision_file")
             vision_primary=$(jq -r '.primary_color // .theming.primary_suggestion // ""' "$vision_file")
             vision_accent=$(jq -r '.accent_color // .theming.accent_suggestion // ""' "$vision_file")
             vision_style=$(jq -r '.style // .theming.background_style // ""' "$vision_file")

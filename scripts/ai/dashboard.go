@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,6 +24,7 @@ type model struct {
 	resources      Resources
 	wallpaper      Wallpaper
 	statistics     Statistics
+	activityLog    ActivityLog
 	startTime      time.Time
 	lastUpdate     time.Time
 	updateInterval time.Duration
@@ -37,6 +39,7 @@ type AIStatus struct {
 	ColorServer   string `json:"color_server"`
 	FirefoxExt    string `json:"firefox_ext"`
 	OllamaMemory  string `json:"ollama_memory"`
+	ModelWarmth   string `json:"model_warmth"`
 }
 
 type Performance struct {
@@ -58,10 +61,23 @@ type Wallpaper struct {
 }
 
 type Statistics struct {
-	TotalAnalyses int    `json:"total_analyses"`
-	SuccessRate   int    `json:"success_rate"`
-	AvgTime       string `json:"avg_time"`
-	CacheHitRate  int    `json:"cache_hit_rate"`
+	TotalAnalyses    int    `json:"total_analyses"`
+	EnhancedAnalyses int    `json:"enhanced_analyses"`
+	RegularAnalyses  int    `json:"regular_analyses"`
+	SuccessRate      int    `json:"success_rate"`
+	AvgTime          string `json:"avg_time"`
+	CacheHitRate     int    `json:"cache_hit_rate"`
+}
+
+type ActivityLog struct {
+	Entries []LogEntry `json:"entries"`
+}
+
+type LogEntry struct {
+	Timestamp string `json:"timestamp"`
+	Message   string `json:"message"`
+	Duration  string `json:"duration,omitempty"`
+	Type      string `json:"type"` // "start", "step", "complete", "error"
 }
 
 // Styles for the UI
@@ -236,20 +252,24 @@ func (m model) dashboardView() string {
 	perfPanel := m.renderPerformance()
 	resourcePanel := m.renderResources()
 
-	// Right column panels
+	// Middle column panels
 	wallpaperPanel := m.renderWallpaper()
 	statsPanel := m.renderStatistics()
+
+	// Right column - Activity Log
+	activityPanel := m.renderActivityLog()
 
 	// Controls
 	controls := panelStyle.Copy().
 		Border(lipgloss.NormalBorder()).
-		Render("Controls: [q]uit | [w]aybar mode | Ctrl+C")
+		Render("Controls: [q]uit | [w]aybar mode | [r]eal-time logs | Ctrl+C")
 
-	// Layout
+	// 3-column layout
 	leftColumn := lipgloss.JoinVertical(lipgloss.Left, aiPanel, perfPanel, resourcePanel)
-	rightColumn := lipgloss.JoinVertical(lipgloss.Left, wallpaperPanel, statsPanel)
+	middleColumn := lipgloss.JoinVertical(lipgloss.Left, wallpaperPanel, statsPanel)
+	rightColumn := activityPanel
 
-	mainContent := lipgloss.JoinHorizontal(lipgloss.Top, leftColumn, rightColumn)
+	mainContent := lipgloss.JoinHorizontal(lipgloss.Top, leftColumn, middleColumn, rightColumn)
 
 	return lipgloss.JoinVertical(lipgloss.Center,
 		header,
@@ -349,21 +369,81 @@ func (m model) renderWallpaper() string {
 // Render Statistics panel
 func (m model) renderStatistics() string {
 	content := fmt.Sprintf(
-		"Vision Analyses:  %d total, %d%% success\n"+
-			"  (Heavy AI: only for new images)\n"+
-			"Average Time:     %s per analysis\n"+
+		"AI Analyses:      %d total (%d%% success)\n"+
+			"Enhanced (new):   %d analyses (8-9s each)\n"+
+			"Cached (fast):    %d analyses (0.1s each)\n"+
 			"Cache Hit Rate:   %d%% (reused results)\n"+
-			"\nSmart AI: Vision runs once,\n"+
-			"Enhancement runs every change",
+			"Average Time:     %s per analysis\n"+
+			"\nSmart Caching: Heavy AI runs once\n"+
+			"per wallpaper, then uses cache",
 		m.statistics.TotalAnalyses,
 		m.statistics.SuccessRate,
-		m.statistics.AvgTime,
+		m.statistics.EnhancedAnalyses,
+		m.statistics.RegularAnalyses,
 		m.statistics.CacheHitRate,
+		m.statistics.AvgTime,
 	)
 
 	return panelStyle.Copy().
 		BorderForeground(lipgloss.Color("86")).
 		Render(headerStyle.Render("📊 AI Statistics") + "\n\n" + content)
+}
+
+// Render Activity Log panel
+func (m model) renderActivityLog() string {
+	content := ""
+
+	if len(m.activityLog.Entries) == 0 {
+		content = "🔍 Waiting for wallpaper changes...\n\n" +
+			"When you change wallpapers, you'll see:\n" +
+			"• File detection & analysis start\n" +
+			"• AI vision processing steps\n" +
+			"• Color extraction timing\n" +
+			"• Theme generation progress\n" +
+			"• Firefox CSS updates\n" +
+			"• Desktop theme application\n" +
+			"• Total completion time\n\n" +
+			"💡 Each step shows duration for\n" +
+			"   performance optimization"
+	} else {
+		// Show last 12-15 log entries (fit in panel)
+		maxEntries := 15
+		startIdx := 0
+		if len(m.activityLog.Entries) > maxEntries {
+			startIdx = len(m.activityLog.Entries) - maxEntries
+		}
+
+		for i := startIdx; i < len(m.activityLog.Entries); i++ {
+			entry := m.activityLog.Entries[i]
+
+			// Format based on entry type
+			switch entry.Type {
+			case "start":
+				content += fmt.Sprintf("🚀 %s %s\n", entry.Timestamp, entry.Message)
+			case "step":
+				if entry.Duration != "" {
+					content += fmt.Sprintf("  ⚡ %s (%s)\n", entry.Message, entry.Duration)
+				} else {
+					content += fmt.Sprintf("  🔄 %s\n", entry.Message)
+				}
+			case "complete":
+				content += fmt.Sprintf("✅ %s (%s)\n", entry.Message, entry.Duration)
+			case "error":
+				content += fmt.Sprintf("❌ %s\n", entry.Message)
+			default:
+				content += fmt.Sprintf("   %s %s\n", entry.Timestamp, entry.Message)
+			}
+		}
+	}
+
+	// Add model warmth status right under the header
+	warmthStatus := fmt.Sprintf("🌡️ Model: %s\n", m.aiStatus.ModelWarmth)
+
+	return panelStyle.Copy().
+		BorderForeground(lipgloss.Color("196")).
+		Width(45).
+		Height(25).
+		Render(headerStyle.Render("📝 Real-time Activity Log") + "\n" + warmthStatus + "\n" + content)
 }
 
 // Helper functions
@@ -402,6 +482,7 @@ func (m *model) updateData() {
 	m.updateResources()
 	m.updateWallpaper()
 	m.updateStatistics()
+	m.updateActivityLog()
 }
 
 func (m *model) updateAIStatus() {
@@ -414,14 +495,18 @@ func (m *model) updateAIStatus() {
 			loaded := string(output)
 			if strings.Contains(loaded, "llava-llama3") {
 				m.aiStatus.LlavaModel = "Loaded"
+				m.aiStatus.ModelWarmth = "🔥 Warm (3-4s)"
 			} else {
 				m.aiStatus.LlavaModel = "Available"
+				m.aiStatus.ModelWarmth = "❄️ Cold (8-9s load)"
 			}
 			if strings.Contains(loaded, "phi4") {
 				m.aiStatus.Phi4Model = "Loaded"
 			} else {
 				m.aiStatus.Phi4Model = "Available"
 			}
+		} else {
+			m.aiStatus.ModelWarmth = "❄️ Cold (8-9s load)"
 		}
 
 		// Get memory usage
@@ -439,6 +524,7 @@ func (m *model) updateAIStatus() {
 		m.aiStatus.LlavaModel = "Not loaded"
 		m.aiStatus.Phi4Model = "Not loaded"
 		m.aiStatus.OllamaMemory = "0MB"
+		m.aiStatus.ModelWarmth = "🔌 Offline"
 	}
 
 	// Check color server
@@ -587,19 +673,90 @@ func (m *model) updateStatistics() {
 		m.statistics.SuccessRate = (success * 100) / m.statistics.TotalAnalyses
 	}
 
-	// Cache hit rate
-	aiLogPath := "/tmp/ai-pipeline-output.log"
-	if output, err := exec.Command("bash", "-c", fmt.Sprintf("grep -c 'Using cached' %s", aiLogPath)).Output(); err == nil {
+	// Cache hit rate - updated to look for actual cache messages
+	logPath := "/tmp/wallpaper-theme-optimized.log"
+
+	// Count cache hits
+	if output, err := exec.Command("bash", "-c", fmt.Sprintf("grep -c 'Using cached analysis' %s 2>/dev/null || echo 0", logPath)).Output(); err == nil {
 		if hits, err := strconv.Atoi(strings.TrimSpace(string(output))); err == nil {
-			if output, err := exec.Command("bash", "-c", fmt.Sprintf("grep -c 'Generating new' %s", aiLogPath)).Output(); err == nil {
+			// Count cache misses (new AI analysis)
+			if output, err := exec.Command("bash", "-c", fmt.Sprintf("grep -c 'No cache found, running full analysis' %s 2>/dev/null || echo 0", logPath)).Output(); err == nil {
 				if misses, err := strconv.Atoi(strings.TrimSpace(string(output))); err == nil {
 					total := hits + misses
 					if total > 0 {
 						m.statistics.CacheHitRate = (hits * 100) / total
 					}
+
+					// Update enhanced vs regular analysis counts
+					m.statistics.EnhancedAnalyses = misses // New AI analyses
+					m.statistics.RegularAnalyses = hits    // Cached analyses (fast)
+					m.statistics.TotalAnalyses = total
 				}
 			}
 		}
+	}
+}
+
+func (m *model) updateActivityLog() {
+	// Read activity log from AI theming system
+	logPath := filepath.Join(os.Getenv("HOME"), ".cache/matugen/activity.log")
+
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		// Create example entries for demonstration if no log exists yet
+		if len(m.activityLog.Entries) == 0 {
+			m.activityLog.Entries = []LogEntry{
+				{
+					Timestamp: time.Now().Format("15:04:05"),
+					Message:   "System ready for wallpaper changes",
+					Type:      "start",
+				},
+			}
+		}
+		return
+	}
+
+	// Read new log entries (in production, this would read incremental changes)
+	file, err := os.Open(logPath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	var newEntries []LogEntry
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		// Parse log line format: [HH:MM:SS] TYPE: MESSAGE (DURATION)
+		// Example: [14:23:45] step: Vision model processing (1.2s)
+		re := regexp.MustCompile(`\[(\d{2}:\d{2}:\d{2})\]\s+(\w+):\s+(.+?)(?:\s+\(([^)]+)\))?$`)
+		matches := re.FindStringSubmatch(line)
+
+		if len(matches) >= 4 {
+			entry := LogEntry{
+				Timestamp: matches[1],
+				Type:      matches[2],
+				Message:   matches[3],
+			}
+			if len(matches) > 4 && matches[4] != "" {
+				entry.Duration = matches[4]
+			}
+			newEntries = append(newEntries, entry)
+		}
+	}
+
+	// Replace with new entries (or append in real implementation)
+	if len(newEntries) > 0 {
+		m.activityLog.Entries = newEntries
+	}
+
+	// Keep only last 50 entries to prevent memory bloat
+	if len(m.activityLog.Entries) > 50 {
+		m.activityLog.Entries = m.activityLog.Entries[len(m.activityLog.Entries)-50:]
 	}
 }
 

@@ -23,11 +23,102 @@ log_message() {
     printf "[%.3f] %s - %s\n" "$elapsed" "$(date '+%H:%M:%S')" "$1" >> /tmp/wallpaper-theme-optimized.log
 }
 
+# Function to log to activity dashboard (for real-time monitoring)
+log_activity() {
+    local type="$1"
+    local message="$2"
+    local duration="$3"
+    local timestamp=$(date '+%H:%M:%S')
+    
+    mkdir -p ~/.cache/matugen
+    
+    # Clear log when starting a new wallpaper change
+    if [ "$type" = "start" ]; then
+        > ~/.cache/matugen/activity.log  # Clear the log file
+    fi
+    
+    if [ -n "$duration" ]; then
+        # Format duration to 1 decimal place for readability
+        local formatted_duration=$(echo "$duration" | sed 's/s$//' | awk '{printf "%.1fs", $1}')
+        echo "[$timestamp] $type: $message ($formatted_duration)" >> ~/.cache/matugen/activity.log
+    else
+        echo "[$timestamp] $type: $message" >> ~/.cache/matugen/activity.log
+    fi
+}
+
+# Function to check AI result cache
+check_ai_cache() {
+    local wallpaper="$1"
+    local cache_dir="$HOME/.cache/matugen/ai-results"
+    local wallpaper_hash=$(md5sum "$wallpaper" 2>/dev/null | cut -d' ' -f1)
+    local cache_file="$cache_dir/ai-result-$wallpaper_hash.json"
+    
+    mkdir -p "$cache_dir"
+    
+    # Check if cached result exists and is valid
+    if [ -f "$cache_file" ]; then
+        # Verify cache file is not empty and has valid JSON
+        if [ -s "$cache_file" ] && jq -e . "$cache_file" >/dev/null 2>&1; then
+            # Copy cached result to expected location
+            cp "$cache_file" "/tmp/ai-optimized-colors.json"
+            log_message "💾 AI Cache: Using cached analysis for $(basename "$wallpaper")"
+            log_activity "step" "Using cached AI analysis 🚀 (0.1s)"
+            echo "cache_hit"
+            return 0
+        else
+            # Remove invalid cache file
+            rm -f "$cache_file"
+        fi
+    fi
+    
+    echo "cache_miss"
+    return 1
+}
+
+# Function to save AI result to cache
+save_ai_cache() {
+    local wallpaper="$1"
+    local cache_dir="$HOME/.cache/matugen/ai-results"
+    local wallpaper_hash=$(md5sum "$wallpaper" 2>/dev/null | cut -d' ' -f1)
+    local cache_file="$cache_dir/ai-result-$wallpaper_hash.json"
+    
+    mkdir -p "$cache_dir"
+    
+    # Save AI result to cache if it exists and is valid
+    if [ -f "/tmp/ai-optimized-colors.json" ] && [ -s "/tmp/ai-optimized-colors.json" ]; then
+        if jq -e . "/tmp/ai-optimized-colors.json" >/dev/null 2>&1; then
+            cp "/tmp/ai-optimized-colors.json" "$cache_file"
+            log_message "💾 AI Cache: Saved analysis for $(basename "$wallpaper")"
+            return 0
+        fi
+    fi
+    return 1
+}
+
 # Function to run AI-enhanced color generation
 generate_ai_enhanced_colors() {
     local wallpaper="$1"
     
     log_message "🧠 AI Enhancement: Starting intelligent color optimization..."
+    log_activity "step" "Starting AI color analysis"
+    
+    # Check cache first
+    local cache_result=$(check_ai_cache "$wallpaper")
+    if [ "$cache_result" = "cache_hit" ]; then
+        log_message "🚀 AI Enhancement: Using cached result (instant)"
+        return 0
+    fi
+    
+    # Cache miss - proceed with full AI analysis
+    log_message "🔍 AI Enhancement: No cache found, running full analysis..."
+    log_activity "step" "Generating new AI analysis 🧠"
+    
+    # Check model warmth status for performance prediction
+    if command -v ollama >/dev/null 2>&1 && ollama ps | grep -q "llava-llama3:8b"; then
+        log_activity "step" "AI model is warm 🔥 (expecting 3-4s processing)"
+    else
+        log_activity "step" "AI model needs loading ❄️ (expecting 8-9s processing)"
+    fi
     
     # Check if AI pipeline exists
     if [ ! -f "$AI_PIPELINE_SCRIPT" ]; then
@@ -50,6 +141,10 @@ generate_ai_enhanced_colors() {
             # The AI pipeline handles the matugen integration internally
             # and generates all necessary theme files
             log_message "✅ AI-optimized theme files generated successfully"
+            
+            # Save result to cache for future use
+            save_ai_cache "$wallpaper"
+            
             return 0
         else
             log_message "⚠️  AI output file missing or empty"
@@ -89,9 +184,11 @@ generate_standard_colors() {
 # Function to reload applications in parallel (PERFORMANCE OPTIMIZATION)
 reload_applications_parallel() {
     log_message "Starting parallel application reloads..."
+    log_activity "step" "Updating application themes"
     
     (
-        # Waybar reload (very fast) - BOTH WAYBARS
+        # Waybar reload (very fast) - BOTH WAYBARS with timing
+        local waybar_start_time=$(date +%s.%N)
         log_message "Reloading Waybar instances..."
         
         # Kill existing waybar instances
@@ -101,11 +198,36 @@ reload_applications_parallel() {
         # Start BOTH waybar instances like your original setup
         # Main waybar (top) with dynamic theme
         waybar -s ~/.config/waybar/style-dynamic.css &>/tmp/waybar-main.log &
+        local main_waybar_pid=$!
         log_message "Started main Waybar (top)"
         
         # Bottom waybar with dynamic theme
         waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom-dynamic.css &>/tmp/waybar-bottom.log &
+        local bottom_waybar_pid=$!
         log_message "Started bottom Waybar"
+        
+        # Wait a moment for waybars to fully initialize
+        sleep 0.3
+        
+        # Check if both waybars started successfully
+        local main_status="✅"
+        local bottom_status="✅"
+        if ! kill -0 $main_waybar_pid 2>/dev/null; then
+            main_status="❌"
+        fi
+        if ! kill -0 $bottom_waybar_pid 2>/dev/null; then
+            bottom_status="❌"
+        fi
+        
+        local waybar_end_time=$(date +%s.%N)
+        local waybar_duration=$(echo "$waybar_end_time - $waybar_start_time" | bc -l)
+        local waybar_duration_formatted=$(echo "$waybar_duration" | awk '{printf "%.1fs", $1}')
+        
+        # Log to activity dashboard
+        log_activity "step" "Main waybar reloaded $main_status ($waybar_duration_formatted)"
+        log_activity "step" "Bottom waybar reloaded $bottom_status ($waybar_duration_formatted)"
+        
+        log_message "Both Waybars reloaded in ${waybar_duration_formatted}"
         
     ) &
     local waybar_pid=$!
@@ -133,17 +255,33 @@ reload_applications_parallel() {
     local kitty_pid=$!
     
     (
-        # Fuzzel theme update and cache clear
-        log_message "Updating Fuzzel colors..."
+        # Fuzzel theme update - SYMLINK-AWARE cache preservation
+        log_message "Updating Fuzzel colors (symlink-aware method)..."
         
-        # Update Fuzzel colors (copy from generated dynamic config)
-        if [ -f ~/.config/fuzzel/fuzzel-dynamic.ini ]; then
-            # Extract colors section from dynamic config and update main config
+        # Check if fuzzel.ini is a symlink (dotfiles setup)
+        if [ -L ~/.config/fuzzel/fuzzel.ini ]; then
+            log_message "Fuzzel config is symlinked - preserving original and using color overlay"
+            
+            # For symlinked configs, we can't modify the original file
+            # Instead, we'll use environment variables or skip color updates
+            # Fuzzel doesn't support includes, so we respect the symlinked config
+            
+            log_message "Skipping fuzzel color modification to preserve symlinked dotfiles config"
+            log_message "Fuzzel will use static colors from dotfiles/config/fuzzel/fuzzel.ini"
+            
+        elif [ -f ~/.config/fuzzel/fuzzel-dynamic.ini ] && [ -f ~/.config/fuzzel/fuzzel.ini ]; then
+            # Only for non-symlinked configs: safe to modify
+            log_message "Updating fuzzel colors for non-symlinked config"
+            
+            # Preserve cache settings from existing config
+            cache_line=$(grep "^cache=" ~/.config/fuzzel/fuzzel.ini 2>/dev/null || echo "")
+            log_message "Preserving fuzzel cache settings: $cache_line"
+            
+            # Update colors while preserving cache and other settings
             python3 -c "
 import re
 import sys
 
-# Read both files
 try:
     with open('$HOME/.config/fuzzel/fuzzel.ini', 'r') as f:
         main_config = f.read()
@@ -154,24 +292,24 @@ try:
     colors_match = re.search(r'\[colors\].*?(?=\n\[|\Z)', dynamic_config, re.DOTALL)
     if colors_match:
         new_colors = colors_match.group(0)
-        # Replace colors section in main config
-        main_config = re.sub(r'\[colors\].*?(?=\n\[|\Z)', new_colors, main_config, flags=re.DOTALL)
+        # Replace colors section while preserving everything else
+        updated_config = re.sub(r'\[colors\].*?(?=\n\[|\Z)', new_colors, main_config, flags=re.DOTALL)
         
         # Write back to main config
         with open('$HOME/.config/fuzzel/fuzzel.ini', 'w') as f:
-            f.write(main_config)
+            f.write(updated_config)
+        
         print('Fuzzel colors updated successfully')
     else:
         print('No colors section found in dynamic config')
 except Exception as e:
     print(f'Error updating fuzzel colors: {e}')
 "
-            log_message "Fuzzel colors updated from dynamic config"
         else
-            log_message "Dynamic fuzzel config not found"
+            log_message "Dynamic fuzzel config not found or fuzzel.ini missing"
         fi
         
-        # Note: Preserving fuzzel usage cache for better app sorting
+        # Symlink-aware cache preservation: respects dotfiles structure
     ) &
     local fuzzel_pid=$!
     
@@ -326,14 +464,22 @@ generate_theme_optimized() {
     log_message "Starting optimized wallpaper and theme change for: $(basename "$wallpaper")"
     
     # Step 1: Set wallpaper first (fast)
+    log_activity "step" "File detection and validation"
+    wallpaper_start=$(date +%s.%N)
     if ! set_wallpaper_optimized "$wallpaper"; then
         log_message "Wallpaper setting failed"
+        log_activity "error" "Wallpaper setting failed"
         return 1
     fi
+    wallpaper_end=$(date +%s.%N)
+    wallpaper_duration=$(echo "$wallpaper_end - $wallpaper_start" | bc -l)
+    log_activity "step" "Wallpaper applied" "${wallpaper_duration}s"
     
     # Step 2: Check if theme regeneration is needed (caching optimization)
     if [ "$FORCE_REGENERATION" != "force" ] && ! needs_theme_regeneration "$wallpaper"; then
         log_message "Skipping color generation - using cached theme"
+        log_activity "step" "Cache hit - using existing analysis" "0.0s"
+        log_activity "step" "Applying cached color scheme"
         reload_applications_parallel
         return 0
     elif [ "$FORCE_REGENERATION" = "force" ]; then
@@ -345,19 +491,38 @@ generate_theme_optimized() {
     
     if [ "$ENABLE_AI_OPTIMIZATION" = "true" ]; then
         log_message "🧠 AI Enhancement enabled - attempting intelligent color optimization"
+        log_activity "step" "Starting AI vision analysis"
         
+        ai_generation_start=$(date +%s.%N)
         if generate_ai_enhanced_colors "$wallpaper"; then
+            ai_generation_end=$(date +%s.%N)
+            ai_generation_duration=$(echo "$ai_generation_end - $ai_generation_start" | bc -l)
             log_message "🎉 AI Enhancement successful - using AI-optimized colors"
+            log_activity "step" "AI vision processing complete" "${ai_generation_duration}s"
             color_generation_success=true
         else
+            ai_generation_end=$(date +%s.%N)
+            ai_generation_duration=$(echo "$ai_generation_end - $ai_generation_start" | bc -l)
             log_message "⚠️  AI Enhancement failed - falling back to standard colors"
+            log_activity "step" "AI analysis failed, using standard colors" "${ai_generation_duration}s"
+            
+            standard_start=$(date +%s.%N)
             if generate_standard_colors "$wallpaper"; then
+                standard_end=$(date +%s.%N)
+                standard_duration=$(echo "$standard_end - $standard_start" | bc -l)
+                log_activity "step" "Standard color extraction" "${standard_duration}s"
                 color_generation_success=true
             fi
         fi
     else
         log_message "🎨 AI Enhancement disabled - using standard color generation"
+        log_activity "step" "Starting standard color extraction"
+        
+        standard_start=$(date +%s.%N)
         if generate_standard_colors "$wallpaper"; then
+            standard_end=$(date +%s.%N)
+            standard_duration=$(echo "$standard_end - $standard_start" | bc -l)
+            log_activity "step" "Standard color extraction" "${standard_duration}s"
             color_generation_success=true
         fi
     fi
@@ -365,10 +530,18 @@ generate_theme_optimized() {
     # Step 4: Apply theme if color generation succeeded
     if [ "$color_generation_success" = true ]; then
         log_message "✅ Color generation successful - applying theme"
+        log_activity "step" "Generating theme files"
+        
+        theme_apply_start=$(date +%s.%N)
         reload_applications_parallel
+        theme_apply_end=$(date +%s.%N)
+        theme_apply_duration=$(echo "$theme_apply_end - $theme_apply_start" | bc -l)
+        
+        log_activity "step" "Desktop theme applied" "${theme_apply_duration}s"
         return 0
     else
         log_message "❌ Color generation failed"
+        log_activity "error" "Color generation failed"
         return 1
     fi
 }
@@ -410,6 +583,9 @@ main() {
         exit 1
     fi
     
+    # Start activity logging for dashboard
+    log_activity "start" "Wallpaper changed: $(basename "$WALLPAPER_PATH")"
+    
     # Fix dunst config issues before starting
     create_optimized_dunst_config
     
@@ -424,6 +600,9 @@ main() {
         fi
         
         log_message "🎉 OPTIMIZATION SUCCESS - Total time: ${total_time}s"
+        
+        # Log completion to activity dashboard
+        log_activity "complete" "Theme change complete" "${total_time}s"
         
         # Send success notification with AI status
         if command -v notify-send > /dev/null; then

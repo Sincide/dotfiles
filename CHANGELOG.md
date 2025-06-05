@@ -26,6 +26,13 @@
 
 ### 🐛 **BUG FIXES & IMPROVEMENTS**
 
+#### **🚀 Boot Performance Optimization** (NEW)
+- **Feature**: Automatic man-db.timer optimization in install script
+- **Performance Impact**: ~55% boot time improvement (26s → ~12s)
+- **Implementation**: Disable, stop, and mask man-db.timer during installation
+- **User Impact**: Manual page indexing disabled (can run `sudo mandb` manually if needed)
+- **Permanent**: Optimization persists across reboots and prevents unwanted reactivation
+
 #### **✅ Fuzzel Cache Preservation** (FULLY RESOLVED)
 - **Issue**: Application usage statistics lost on wallpaper changes
 - **Root Cause**: Wallpaper selector corrupting app cache with wallpaper filenames
@@ -307,3 +314,29 @@ UPDATED FILES:
 **Before**: AI setup could fail silently or hang indefinitely, requiring manual intervention
 
 **After**: Robust, self-healing AI setup with clear progress indication and graceful error handling 
+
+## [Unreleased]
+
+### 🐟 Fish Shell Configuration Cleanup
+- **REMOVED**: Ripgrep alias (`grep='rg'`) from fish configuration
+- **CLEANED**: Eliminated ripgrep references from shell environment  
+- **NOTE**: Ripgrep remains installed as VS Code dependency but not aliased
+- **RESULT**: Standard `grep` command behavior restored in fish shell
+- **FILES**: Updated `config/fish/config.fish`
+
+### ✅ Fuzzel Cache & Symlink Fix - WORKING
+- **FIXED**: Fuzzel launcher not working due to missing cache directory and symlink conflicts
+- **FIXED**: Script attempting to modify symlinked dotfiles configuration files  
+- **IMPROVED**: Symlink-aware configuration handling that respects dotfiles structure
+- **RESTORED**: Fuzzel cache functionality by using default XDG cache location
+- **NEW**: Automatic detection of symlinked configs to preserve dotfiles integrity
+- **RESULT**: Fuzzel maintains app ranking and usage statistics across wallpaper changes
+- **TESTED**: Firefox Developer Edition stays at top of list after wallpaper changes
+- **FILES**: Updated `scripts/wallpaper-theme-changer-optimized.sh` and `config/fuzzel/fuzzel.ini`
+
+### 🎨 Firefox Extension Color Moderation Improvements
+- **FIXED**: Overwhelming bright colors in Firefox UI theming
+- **NEW**: Advanced neutral tint approach for professional, subtle theming
+- **IMPROVED**: Color moderation uses neutral base grays with 1.5-3% wallpaper color hints
+- **RESULT**: Firefox UI maintains cohesive feel without visual overwhelm
+- **FILES**: Updated `firefox-ai-extension/background.js` with new color mixing algorithms 

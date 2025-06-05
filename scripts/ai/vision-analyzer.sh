@@ -39,6 +39,17 @@ log_message() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $message" >> "$VISION_LOG"
 }
 
+# Check model warmth (if already loaded in memory)
+check_model_warmth() {
+    if ollama ps | grep -q "$VISION_MODEL"; then
+        log_message "INFO" "🔥 Model is already warm in memory - expecting fast processing"
+        return 0
+    else
+        log_message "INFO" "❄️  Model needs loading - may take 8-9s for first analysis"
+        return 1
+    fi
+}
+
 # Check dependencies
 check_dependencies() {
     # Check ollama
@@ -57,6 +68,9 @@ check_dependencies() {
     if ! command -v jq &> /dev/null; then
         log_message "WARN" "jq not found - using fallback JSON processing"
     fi
+    
+    # Check model warmth for performance prediction
+    check_model_warmth
     
     return 0
 }

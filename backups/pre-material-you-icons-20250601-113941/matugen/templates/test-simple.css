@@ -1,5 +1,0 @@
-/* Simple test template */
-.test {
-    background: {{colors.primary.dark.hex}};
-    color: {{colors.on_primary.dark.hex}};
-} 

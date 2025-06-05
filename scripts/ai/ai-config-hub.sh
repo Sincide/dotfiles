@@ -121,21 +121,51 @@ get_system_status() {
             status_color="$YELLOW"
             status_text="Good"
         fi
-        echo -e "  ${CHECK} Overall Health: ${status_color}${overall_score}/100${NC} (${status_text})"
+        echo -e "  ${CHECK} ${BOLD}Overall Health: ${status_color}${overall_score}/100${NC} (${status_text})"
     else
         echo -e "  ${WARNING} Overall Health: ${DIM}No recent analysis${NC}"
     fi
     
-    # Boot performance
-    if [[ "$boot_score" != "Unknown" ]]; then
-        if (( $(echo "$boot_score < 70" | bc -l 2>/dev/null || echo 0) )); then
-            echo -e "  ${WARNING} Boot Performance: ${YELLOW}${boot_score}/100${NC} ${DIM}(Optimization available)${NC}"
-        else
-            echo -e "  ${CHECK} Boot Performance: ${GREEN}${boot_score}/100${NC}"
-        fi
-    else
-        echo -e "  ${WARNING} Boot Performance: ${DIM}No recent analysis${NC}"
+    # Detailed component scores (if analysis exists)
+    if [[ -f "$ANALYSIS_CACHE" ]]; then
+        echo -e "\n  ${DIM}${BOLD}Component Breakdown:${NC}"
+        
+        # Extract individual component scores
+        local cpu_score=$(cat "$ANALYSIS_CACHE" | grep -A 10 '"cpu":' | grep '"score":' | awk '{print $2}' | sed 's/,//' 2>/dev/null || echo "N/A")
+        local memory_score=$(cat "$ANALYSIS_CACHE" | grep -A 10 '"memory":' | grep '"score":' | awk '{print $2}' | sed 's/,//' 2>/dev/null || echo "N/A")
+        local boot_score=$(cat "$ANALYSIS_CACHE" | grep -A 15 '"boot":' | grep '"score":' | awk '{print $2}' | sed 's/,//' 2>/dev/null || echo "N/A")
+        local disk_score=$(cat "$ANALYSIS_CACHE" | grep -A 10 '"disk":' | grep '"score":' | awk '{print $2}' | sed 's/,//' 2>/dev/null || echo "N/A")
+        local gpu_score=$(cat "$ANALYSIS_CACHE" | grep -A 10 '"gpu":' | grep '"score":' | awk '{print $2}' | sed 's/,//' 2>/dev/null || echo "N/A")
+        local package_score=$(cat "$ANALYSIS_CACHE" | grep -A 10 '"packages":' | grep '"score":' | awk '{print $2}' | sed 's/,//' 2>/dev/null || echo "N/A")
+        
+        # Display scores with appropriate colors
+        format_component_score() {
+            local name="$1"
+            local score="$2"
+            local icon="$3"
+            
+            if [[ "$score" == "N/A" ]]; then
+                echo -e "    ${icon} ${name}: ${DIM}${score}${NC}"
+            elif (( $(echo "$score >= 100" | bc -l 2>/dev/null || echo 0) )); then
+                echo -e "    ${icon} ${name}: ${GREEN}${score}/100${NC} ${DIM}(Optimized!)${NC}"
+            elif (( $(echo "$score >= 90" | bc -l 2>/dev/null || echo 0) )); then
+                echo -e "    ${icon} ${name}: ${GREEN}${score}/100${NC}"
+            elif (( $(echo "$score >= 70" | bc -l 2>/dev/null || echo 0) )); then
+                echo -e "    ${icon} ${name}: ${YELLOW}${score}/100${NC}"
+            else
+                echo -e "    ${icon} ${name}: ${RED}${score}/100${NC}"
+            fi
+        }
+        
+        format_component_score "CPU Performance" "$cpu_score" "🖥️"
+        format_component_score "Memory Usage" "$memory_score" "🧠"
+        format_component_score "Boot Performance" "$boot_score" "🚀"
+        format_component_score "Disk Health" "$disk_score" "💾"
+        format_component_score "GPU Performance" "$gpu_score" "🎮"
+        format_component_score "Package System" "$package_score" "📦"
     fi
+    
+    echo ""
     
     # AI status
     echo -e "  ${AI} AI Engine (Ollama): $llm_status"

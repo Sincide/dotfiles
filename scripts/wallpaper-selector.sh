@@ -32,6 +32,45 @@ fi
 # Export AI settings for the theme script
 export ENABLE_AI_OPTIMIZATION
 
+# Function to preload AI models for faster processing
+preload_ai_models() {
+    if [ "$ENABLE_AI_OPTIMIZATION" = "true" ]; then
+        # Check if model is already warm
+        if ollama ps | grep -q "llava-llama3:8b"; then
+            log_message "🔥 AI model already warm, no preloading needed"
+            notify-send "🧠 AI Ready" "Model is warm - wallpapers will be fast!" -t 2000
+            return 0
+        fi
+        
+        # Show immediate loading notification for cold model
+        notify-send "🧠 AI Loading" "Preloading vision model for faster themes..." -t 4000
+        log_message "🧠 Preloading AI models for faster processing..."
+        
+        # Start AI model preloading in background
+        (
+            # Check if ollama service is running
+            if pgrep -x ollama >/dev/null 2>&1; then
+                log_message "🔧 Ollama service detected, preloading vision model..."
+                
+                # Preload the llava model by sending a simple prompt to warm it up
+                echo "Ready" | ollama run llava-llama3:8b "Say OK" >/dev/null 2>&1
+                
+                # Send completion notification
+                notify-send "🔥 AI Ready" "Model preloaded - themes will be fast!" -t 2000
+                log_message "✅ AI model preloading completed"
+            else
+                log_message "⚠️  Ollama service not running, skipping model preload"
+                notify-send "⚠️ AI Offline" "Ollama service not running" -u normal -t 3000
+            fi
+        ) &
+        
+        # Don't wait for completion - let it preload while user browses wallpapers
+        log_message "🚀 Model preloading initiated, continuing with wallpaper selection..."
+    else
+        log_message "🎨 AI optimization disabled, skipping model preload"
+    fi
+}
+
 # Function to save last wallpaper for startup restoration
 save_last_wallpaper() {
     local wallpaper_path="$1"
@@ -204,6 +243,9 @@ apply_wallpaper_and_theme() {
 # Main execution
 main() {
     log_message "=== Enhanced Wallpaper Selector Started ==="
+    
+    # Start AI model preloading immediately for faster theme processing
+    preload_ai_models
     
     # Enhanced swww daemon management with recovery
     log_message "Checking swww daemon status..."

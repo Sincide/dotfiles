@@ -228,18 +228,30 @@ ENABLE_AI_OPTIMIZATION=false ./scripts/wallpaper-theme-changer-optimized.sh wall
 
 ### Fuzzel Cache Issues
 ```bash
-# Fuzzel cache is FULLY preserved across wallpaper changes (v2.1.1 fix)
+# ✅ FIXED IN v2.1.1: Fuzzel cache is FULLY preserved across wallpaper changes
 
-# App launcher cache (preserved across theme changes)
-cat ~/.config/fuzzel/fuzzel.ini | grep cache
-# Should show: cache=/home/martin/.cache/fuzzel/cache
+# The system now uses symlink-aware cache preservation:
+# - Detects symlinked dotfiles configurations automatically
+# - Preserves app usage rankings across theme changes  
+# - Maintains Firefox Developer Edition at top of launcher after multiple uses
 
-# Solution: Separate cache files prevent corruption
-# - App launcher: ~/.cache/fuzzel/cache (preserves usage stats)
-# - Wallpaper selector: /tmp/fuzzel-wallpaper-cache (temporary)
+# App launcher cache location (preserved across theme changes)
+ls -la ~/.cache/fuzzel
+# Should show cache file with app usage statistics
 
-# Manual cache reset (if needed)
-rm ~/.cache/fuzzel/cache
+# Verify symlink detection is working:
+grep "Fuzzel config is symlinked" /tmp/wallpaper-theme-optimized.log
+# Should show: "Fuzzel config is symlinked - preserving original"
+
+# Test cache preservation:
+# 1. Launch Firefox Developer Edition 3 times via fuzzel
+# 2. Change wallpaper  
+# 3. Open fuzzel again
+# Result: Firefox Developer Edition should appear at the top
+
+# Manual cache reset (only if needed for testing)
+rm ~/.cache/fuzzel
+# Cache will be recreated automatically on next fuzzel use
 ```
 
 ---

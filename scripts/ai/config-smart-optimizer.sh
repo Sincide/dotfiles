@@ -188,8 +188,11 @@ generate_optimization_plan() {
     boot_score=${boot_score:-100}  # Ensure it's not empty
     
     local mandb_optimized=false
-    if ! systemctl is-enabled man-db.timer &>/dev/null; then
-        mandb_optimized=true
+    # Check if man-db.timer is disabled (exit code 1 means disabled)
+    if systemctl is-enabled man-db.timer &>/dev/null; then
+        mandb_optimized=false  # enabled = not optimized
+    else
+        mandb_optimized=true   # disabled = optimized
     fi
     
     # Get LLM analysis if available (optional enhancement)
@@ -236,13 +239,13 @@ generate_optimization_plan() {
         echo "   └─ sudo systemctl disable man-db.timer"
         echo "   └─ sudo systemctl stop man-db.timer"
         ((recommendation_count++))
-    elif [ "$mandb_optimized" = true ] && [ "$boot_score" -lt 90 ]; then
-        # Only show if optimization exists but hasn't taken effect yet (needs reboot)
+    elif [ "$mandb_optimized" = true ] && [ "$boot_score" -lt 85 ]; then
+        # Only show if there are other boot issues beyond man-db (which is already fixed)
         echo ""
-        echo -e "${YELLOW}🔄 $recommendation_count. BOOT OPTIMIZATION PENDING REBOOT${NC}"
-        echo "   Status: man-db.timer disabled but reboot required"
-        echo "   Action: Reboot to see full 55% boot time improvement"
-        echo "   Expected: Boot score will improve from $boot_score/100 to ~95/100"
+        echo -e "${YELLOW}🔄 $recommendation_count. ADDITIONAL BOOT OPTIMIZATIONS AVAILABLE${NC}"
+        echo "   Status: man-db.timer optimization complete (✅ masked)"
+        echo "   Notice: Other services may be affecting boot performance"
+        echo "   Action: Run 'systemd-analyze blame' to identify remaining bottlenecks"
         ((recommendation_count++))
     fi
     # If boot_score >= 90 and optimized = true: Don't show anything (it's working perfectly)

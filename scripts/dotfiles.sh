@@ -84,16 +84,23 @@ generate_ai_commit_message() {
         diff_context=$(git diff --cached --stat --summary 2>/dev/null | head -15)
     fi
     
-    # Prepare a simpler, more direct prompt for phi4
-    local prompt="Generate a concise git commit message (max 60 chars) for these changes:
+    # Prepare an enhanced prompt for phi4 with specific analysis guidance
+    local prompt="Analyze these git changes and generate a specific commit message (max 60 chars):
 
-Files: $files_changed
+Files modified: $files_changed
 
-Changes:
+Actual changes:
 $diff_context
 
-Use format: type: description (e.g., fix: update script, feat: add function)
-Message only, no explanations:"
+Focus on what was CHANGED, not just files touched. Look for:
+- Config changes (what setting/path changed?)
+- New features added (what functionality?)
+- Bug fixes (what was broken?)
+- Script enhancements (what capability added?)
+
+Format: type: specific description
+Examples: 'feat: activate Qt AI theming', 'config: switch to matugen colors'
+Message only:"
 
     # Query phi4 with timeout
     local ai_response

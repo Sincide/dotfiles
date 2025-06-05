@@ -1,5 +1,76 @@
 # 📝 AI-Enhanced Dotfiles Ecosystem - CHANGELOG
 
+## Version 2.1.5 - AI Theming System Restoration & GTK Fixes (June 9, 2025)
+
+### 🔧 **CRITICAL AI THEMING FIXES**
+
+#### **✅ AI Theming System Restored** ⭐ CRITICAL FIX
+- **Root Cause Found**: Missing `AI_MODE="enhanced"` variable in AI configuration
+- **Config File Mismatch**: Two different AI config formats causing pipeline failures
+- **Solution**: Created unified config with both old and new format variables
+- **Impact**: AI-enhanced wallpaper theming fully operational again
+
+#### **🎨 GTK Button Styling Fixed**
+- **Issue**: White squares around buttons in GTK apps (GNOME Text Editor)
+- **Cause**: Harsh border styling conflicting with bright AI-generated accent colors
+- **Solution**: 
+  - Transparent borders: `alpha(@window_fg_color, 0.3)` instead of solid
+  - Smooth hover effects: `alpha(@accent_bg_color, 0.8)` for better blending
+  - Added transitions: `transition: all 0.2s ease` for polished UX
+- **Impact**: Clean, elegant GTK theming without visual artifacts
+
+#### **🚀 AI Cache System Debugging**
+- **Issue**: Overly aggressive AI cache causing stale colors
+- **Diagnosis**: Cache using same results for different wallpapers
+- **Solution**: Added force regeneration flag and cache clearing procedures
+- **Command**: `./scripts/wallpaper-theme-changer-optimized.sh "wallpaper.jpg" force`
+
+### 🧠 **AI PIPELINE IMPROVEMENTS**
+
+#### **✅ Configuration Unification**
+```bash
+# New unified AI config format supporting both systems:
+AI_MODE="enhanced"                    # New format for AI pipeline
+ENABLE_AI_OPTIMIZATION=true          # Old format for compatibility
+ENABLE_VISION_AI="true"
+ENABLE_MATHEMATICAL_AI="true"
+```
+
+#### **🔍 Enhanced Diagnostics**
+- **Activity Logging**: Improved real-time status tracking
+- **Cache Management**: Better cache validation and cleanup
+- **Error Detection**: Clearer error messages and fallback procedures
+- **Performance**: Maintained sub-2 second theme changes
+
+### 🛠️ **TROUBLESHOOTING PROCEDURES**
+
+#### **When AI Theming Stops Working**
+```bash
+# 1. Check AI configuration
+cat ~/.config/dynamic-theming/ai-config.conf
+
+# 2. Clear AI cache if needed
+rm -rf ~/.cache/matugen/ai-results/*
+
+# 3. Force fresh generation
+./scripts/wallpaper-theme-changer-optimized.sh "wallpaper.jpg" force
+
+# 4. Check activity log
+tail -10 ~/.cache/matugen/activity.log
+```
+
+#### **GTK Theming Issues**
+- **Problem**: White squares or harsh borders
+- **Solution**: Updated GTK CSS with transparent borders and smooth transitions
+- **Files**: `~/.config/gtk-3.0/gtk.css`, `~/.config/gtk-4.0/gtk.css`
+
+### 📚 **DOCUMENTATION UPDATES**
+- **Troubleshooting Guide**: Added AI theming failure recovery procedures
+- **Configuration Reference**: Documented unified AI config format
+- **GTK Styling**: Documented button styling improvements
+
+---
+
 ## Version 2.1.4 - Qt Theming Activation & LLM Expansion (June 9, 2025)
 
 ### 🎨 **MAJOR FEATURE COMPLETION**

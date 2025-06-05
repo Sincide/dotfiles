@@ -169,6 +169,30 @@ config/waybar/scripts/ai-dashboard.sh   # Test waybar output
 # Firefox → about:addons → AI Dynamic Colors → Details
 ```
 
+### ⚠️ **Common Issues (Fixed in v2.1.5)**
+
+#### **AI Theming Stopped Working**
+```bash
+# 1. Check/fix AI configuration
+cat ~/.config/dynamic-theming/ai-config.conf | grep AI_MODE
+# If empty: echo 'AI_MODE="enhanced"' >> ~/.config/dynamic-theming/ai-config.conf
+
+# 2. Clear cache and force regeneration
+rm -rf ~/.cache/matugen/ai-results/*
+./scripts/wallpaper-theme-changer-optimized.sh "wallpaper.jpg" force
+
+# 3. Verify fresh generation in logs
+tail -5 ~/.cache/matugen/activity.log
+```
+
+#### **GTK Apps Have White Squares Around Buttons**
+Fixed automatically in v2.1.5 with transparent borders. If still occurring:
+```bash
+# Force GTK theme reload
+gsettings set org.gnome.desktop.interface gtk-theme ""
+gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-blue-standard+default"
+```
+
 ## 🧠 AI-Powered Development Workflow
 
 ### **Smart Dotfiles Management**

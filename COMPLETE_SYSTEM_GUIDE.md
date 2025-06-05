@@ -266,6 +266,75 @@ cat /tmp/ai-pipeline-error.log
 cat /tmp/vision-analysis-enhanced.json
 ```
 
+### ⚠️ AI Theming System Not Working
+**Issue**: Wallpaper changes but colors stay the same, activity log shows cache hits
+
+**Common Causes & Solutions:**
+
+#### **1. Missing AI_MODE Configuration** ⭐ MOST COMMON
+```bash
+# Check if AI_MODE is set
+cat ~/.config/dynamic-theming/ai-config.conf | grep AI_MODE
+
+# If missing or empty, create proper config:
+cat > ~/.config/dynamic-theming/ai-config.conf << 'EOF'
+# AI Mode: enhanced, vision, mathematical, disabled
+AI_MODE="enhanced"
+ENABLE_VISION_AI="true"
+ENABLE_MATHEMATICAL_AI="true"
+ENABLE_AI_OPTIMIZATION=true
+FALLBACK_TO_STANDARD="true"
+EOF
+```
+
+#### **2. Overly Aggressive AI Cache**
+```bash
+# Clear AI cache and force fresh generation
+rm -rf ~/.cache/matugen/ai-results/*
+./scripts/wallpaper-theme-changer-optimized.sh "wallpaper.jpg" force
+
+# Check if new cache files are created
+ls -la ~/.cache/matugen/ai-results/
+```
+
+#### **3. Check Activity Log**
+```bash
+# Look for cache hits vs fresh generation
+tail -10 ~/.cache/matugen/activity.log
+
+# Should show fresh generation:
+# [16:40:33] step: Generating new AI analysis 🧠
+# NOT constant cache hits:
+# [16:38:41] step: Using cached AI analysis 🚀
+```
+
+#### **4. Verify Theme Files Update**
+```bash
+# Check timestamps - should be recent
+ls -la ~/.config/waybar/style-dynamic.css ~/.config/kitty/theme-dynamic.conf
+
+# Force regeneration if timestamps are old
+./scripts/wallpaper-theme-changer-optimized.sh "assets/wallpapers/space/wallpaper.jpg" force
+```
+
+### GTK Theming Issues (White Squares Around Buttons)
+**Issue**: White squares or harsh borders around buttons in GTK apps
+
+**Solution**: Fixed in v2.1.5 with transparent borders and smooth transitions
+```bash
+# Check if GTK files have the fixes
+grep "alpha.*0.3" ~/.config/gtk-4.0/gtk.css
+
+# Should show:
+# border: 1px solid alpha(@window_fg_color, 0.3);
+# background-color: alpha(@accent_bg_color, 0.8);
+
+# Force GTK theme reload
+gsettings set org.gnome.desktop.interface gtk-theme ""
+sleep 0.1
+gsettings set org.gnome.desktop.interface gtk-theme "catppuccin-mocha-blue-standard+default"
+```
+
 ### Performance Issues
 ```bash
 # Check system resources

@@ -109,7 +109,7 @@ Generate ONLY the commit message:"
         echo -e "${BLUE}   →${NC} Loading phi4 model..." >&2
     fi
 
-    # Query the LLM with timeout
+    # Query phi4 with timeout
     local ai_response
     ai_response=$(timeout 15s ollama run phi4 "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     
@@ -121,23 +121,7 @@ Generate ONLY the commit message:"
         return 0
     fi
     
-    # Try with a simpler model if phi4 fails
-    local fallback_model
-    fallback_model=$(ollama list 2>/dev/null | grep -E "(llama|mistral|codellama)" | head -1 | awk '{print $1}')
-    
-    if [ -n "$fallback_model" ]; then
-        echo -e "${BLUE}   →${NC} Trying $fallback_model model..." >&2
-        
-        ai_response=$(timeout 12s ollama run "$fallback_model" "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        
-        if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 8 ]; then
-            ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
-            echo "$ai_response"
-            return 0
-        fi
-    fi
-    
-    echo -e "${YELLOW}[!]${NC} AI models failed to generate suitable commit message" >&2
+    echo -e "${YELLOW}[!]${NC} phi4 failed to generate suitable commit message" >&2
     return 1
 }
 

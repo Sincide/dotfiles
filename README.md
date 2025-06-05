@@ -169,6 +169,45 @@ config/waybar/scripts/ai-dashboard.sh   # Test waybar output
 # Firefox → about:addons → AI Dynamic Colors → Details
 ```
 
+## 🧠 AI-Powered Development Workflow
+
+### **Smart Dotfiles Management**
+This repository includes an AI-enhanced development workflow for managing dotfiles changes:
+
+```bash
+# Quick dotfiles sync with AI-generated commit messages
+dots                    # Alias for intelligent sync workflow
+
+# Manual options
+./scripts/dotfiles.sh sync              # AI commit messages
+./scripts/dotfiles.sh sync "custom msg" # Manual commit message  
+./scripts/dotfiles.sh status            # Check sync status
+./scripts/dotfiles.sh diff              # View changes
+```
+
+### **AI Commit Message Generation**
+- 🧠 **Local LLM Integration**: Uses your Ollama models (phi4, llama, etc.)
+- 📏 **Platform Compliance**: Adheres to GitHub/GitLab 50-72 character limits
+- 🎯 **Context Aware**: Analyzes changed files and git diff for intelligent messages
+- 🔄 **Graceful Fallback**: Falls back to rule-based messages if AI unavailable
+- ⚡ **Fast Generation**: 8-10 second timeout for responsive experience
+
+### **Example AI Messages:**
+```bash
+# Instead of: "Updated waybar, hypr configs. Modified ai scripts."
+# AI generates: "config: enhance waybar AI module and hypr scripts"
+
+# Instead of: "Updated fish configuration files"  
+# AI generates: "feat: add SSH agent auto-loading to fish shell"
+```
+
+### **Features:**
+- ✅ **Conventional Commits**: Follows standard format (feat:, fix:, config:)
+- ✅ **Smart Analysis**: Understands dotfiles context and component relationships
+- ✅ **Multi-Model Support**: Tries phi4 → llama → mistral → fallback logic
+- ✅ **Message Validation**: Ensures proper length and format
+- ✅ **SSH Integration**: Works seamlessly with SSH key authentication
+
 ## 🤝 Support
 
 - 📖 **Full Documentation**: [COMPLETE_SYSTEM_GUIDE.md](COMPLETE_SYSTEM_GUIDE.md)

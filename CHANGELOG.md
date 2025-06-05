@@ -1,5 +1,101 @@
 # 📝 AI-Enhanced Dotfiles Ecosystem - CHANGELOG
 
+## Version 2.1.2 - AI-Powered Development Workflow (June 8, 2025)
+
+### 🧠 **NEW AI FEATURES**
+
+#### **🤖 AI-Generated Commit Messages** ⭐ NEW
+- **Local LLM Integration**: Uses Ollama models (phi4, llama, mistral) for intelligent commit messages
+- **Platform Compliance**: Automatic adherence to GitHub/GitLab 50-72 character limits
+- **Context Analysis**: Analyzes changed files and git diff for accurate descriptions
+- **Conventional Commits**: Generates proper format (feat:, fix:, config:, docs:)
+- **Multi-Model Fallback**: phi4 → llama → mistral → rule-based logic
+
+#### **📝 Enhanced Dotfiles Script** 
+- **Smart Message Generation**: `./scripts/dotfiles.sh sync` now uses AI by default
+- **Fast Performance**: 3-8 second generation with 10s timeout protection
+- **Graceful Degradation**: Falls back to original logic if AI unavailable
+- **SSH Integration**: Works seamlessly with automatic SSH agent setup
+
+#### **🚀 Development Workflow**
+- **`dots` Alias**: Quick sync with AI-generated messages
+- **SSH Auto-loading**: Fish shell automatically connects to SSH agent and loads keys
+- **Git SSH Setup**: Automatic remote URL configuration for SSH authentication
+- **Professional Messages**: Replaces generic "Updated configs" with specific descriptions
+
+### 🐛 **BUG FIXES & IMPROVEMENTS**
+
+#### **✅ SSH Authentication Restoration**
+- **Issue**: `dots` alias asking for username/password after reboot
+- **Root Cause**: Git remote using HTTPS instead of SSH + SSH agent not connected
+- **Solution**: 
+  - Changed git remote from `https://` to `git@gitlab.com:` format
+  - Added `config/fish/conf.d/ssh-agent.fish` for automatic SSH agent connection
+  - Auto-loads SSH keys (`id_ed25519` or `id_rsa`) on fish shell startup
+- **Impact**: Seamless passwordless git operations restored
+
+#### **✅ AI Performance Dashboard Binary**
+- **Issue**: `ai-perf` command missing after reboot
+- **Root Cause**: Go binary wasn't compiled, directory restriction in dashboard.go
+- **Solution**: 
+  - Built missing `ai-perf` binary from `dashboard.go`
+  - Removed directory restriction (can run from anywhere)
+  - Fixed waybar script path reference
+- **Impact**: AI performance monitoring fully restored
+
+### 🔧 **TECHNICAL ENHANCEMENTS**
+
+#### **AI Commit Message Generation**
+```bash
+# Examples of AI-generated messages:
+"config: enhance waybar AI module and hypr scripts"
+"feat: add SSH agent auto-loading to fish shell"  
+"fix: restore ai-perf dashboard binary and waybar integration"
+"docs: update AI workflow documentation"
+```
+
+#### **Prompt Engineering**
+- **Structured Prompts**: Optimized for dotfiles context understanding
+- **Validation Logic**: Length, format, and content validation
+- **Performance**: Timeouts and model prioritization for responsive experience
+- **Error Handling**: Comprehensive fallback chain for reliability
+
+#### **Fish Shell Integration**
+- **SSH Agent Function**: Automatic connection to existing agent or start new one
+- **Key Auto-loading**: Detects and loads available SSH keys automatically
+- **Session Persistence**: Maintains SSH authentication across terminal sessions
+- **Install Integration**: Works automatically after fresh `install.sh` run
+
+### 📚 **DOCUMENTATION UPDATES**
+
+#### **Enhanced Documentation**
+- **README.md**: Added "AI-Powered Development Workflow" section
+- **COMPLETE_SYSTEM_GUIDE.md**: Comprehensive AI workflow documentation
+- **Help Text**: Updated `dotfiles.sh --help` with AI features
+- **Examples**: Real-world AI-generated commit message examples
+
+#### **Technical Specifications**
+- **Model Requirements**: Compatible with any Ollama model
+- **Performance Metrics**: Timing expectations and optimization details
+- **Troubleshooting**: Common issues and solutions for AI workflow
+- **Integration Guide**: SSH setup and fish shell configuration
+
+### 🛠️ **INSTALLATION & COMPATIBILITY**
+
+#### **Automatic Setup**
+- **Fresh Installs**: SSH agent and AI commit messages work out-of-box
+- **Existing Systems**: Fish config automatically sources new SSH agent setup
+- **Cross-Platform**: Works with any SSH key type (Ed25519, RSA)
+- **Model Flexibility**: Adapts to whatever Ollama models are available
+
+#### **Prerequisites Met**
+- **Ollama Integration**: Uses existing AI infrastructure
+- **SSH Key Support**: Ed25519 and RSA key automatic detection
+- **Git Configuration**: Automatic SSH remote URL setup
+- **Performance**: Sub-10 second commit message generation
+
+---
+
 ## Version 2.1.1 - Performance Dashboard & Waybar Integration (June 6, 2025)
 
 ### 🚀 **NEW MAJOR FEATURES**

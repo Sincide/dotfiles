@@ -705,6 +705,156 @@ bash scripts/ai/vision-analyzer.sh /path/to/test-image.jpg
 ai-perf
 ```
 
+## 🧠 AI-Enhanced Development Workflow
+
+### **Smart Dotfiles Management**
+
+This system includes an advanced AI-powered workflow for managing dotfiles changes with intelligent commit message generation.
+
+#### **Core Script: `scripts/dotfiles.sh`**
+```bash
+# Quick sync with AI-generated commit messages
+dots                               # Fish alias for dotfiles.sh sync
+
+# Direct script usage
+./scripts/dotfiles.sh sync         # AI commit message generation
+./scripts/dotfiles.sh sync "msg"   # Manual commit message
+./scripts/dotfiles.sh status       # Local/remote sync status
+./scripts/dotfiles.sh diff         # View uncommitted changes
+```
+
+### **AI Commit Message Generation**
+
+#### **How It Works**
+1. **Context Analysis**: Scans changed files and git diff summary
+2. **LLM Query**: Sends structured prompt to local Ollama models
+3. **Message Validation**: Ensures 10-72 character length, proper format
+4. **Fallback Logic**: Uses rule-based generation if AI unavailable
+
+#### **Model Priority**
+```bash
+1. phi4          # Primary model (fastest, most concise)
+2. llama*        # Secondary (any llama variant)
+3. mistral*      # Tertiary fallback
+4. Rule-based    # Final fallback if no models available
+```
+
+#### **Generated Message Examples**
+```bash
+# File changes: config/waybar/config, config/hypr/hyprland.conf
+# AI generates: "config: update waybar and hypr display settings"
+
+# File changes: scripts/ai/dashboard.go, config/fish/conf.d/ai-performance.fish  
+# AI generates: "feat: add SSH agent setup and ai-perf command"
+
+# File changes: README.md, COMPLETE_SYSTEM_GUIDE.md
+# AI generates: "docs: enhance AI workflow documentation"
+```
+
+### **Configuration & Prompting**
+
+#### **LLM Prompt Structure**
+```
+You are a git commit message generator. Create a concise, professional commit message for the following changes to a Linux dotfiles repository.
+
+RULES:
+- Maximum 50 characters for the subject line
+- Use conventional commit format when appropriate (feat:, fix:, config:, etc.)
+- Be specific about what changed
+- Focus on the most important changes
+- No extra explanations, just the commit message
+
+Changed files: [file list]
+Git diff summary: [diff context]
+
+Generate ONLY the commit message (no quotes, no explanations):
+```
+
+#### **Validation Logic**
+- **Length**: 10-72 characters (GitHub/GitLab compatibility)
+- **Format**: Conventional commits preferred
+- **Content**: Must be specific and descriptive
+- **Cleanup**: Removes quotes, extra whitespace
+
+#### **Performance Features**
+- **Timeout Protection**: 10s for phi4, 8s for fallback models
+- **Fast Fallback**: Immediate switch to rule-based if AI fails
+- **Context Optimization**: Limits diff context to 20 lines for speed
+- **Model Detection**: Auto-discovers available Ollama models
+
+### **Integration with Fish Shell**
+
+#### **Aliases Configuration** (`config/fish/config.fish`)
+```fish
+alias dots='$HOME/dotfiles/scripts/dotfiles.sh sync'     # Quick sync
+alias dotst='$HOME/dotfiles/scripts/dotfiles.sh status'  # Status check
+```
+
+#### **SSH Agent Integration** (`config/fish/conf.d/ssh-agent.fish`)
+```fish
+# Automatic SSH agent setup for seamless git operations
+function __ssh_agent_start
+    # Auto-connects to existing agent or starts new one
+    # Loads ~/.ssh/id_ed25519 or ~/.ssh/id_rsa automatically
+end
+```
+
+### **Git Configuration Requirements**
+
+#### **Remote URL Setup**
+```bash
+# Ensure SSH authentication (not HTTPS)
+git remote set-url origin git@gitlab.com:username/dotfiles.git
+
+# Verify SSH connection
+ssh -T git@gitlab.com
+```
+
+#### **Conventional Commits Support**
+The AI generates messages following conventional commit format:
+- `feat:` - New features or capabilities
+- `fix:` - Bug fixes and corrections  
+- `config:` - Configuration file changes
+- `docs:` - Documentation updates
+- `refactor:` - Code restructuring
+- `perf:` - Performance improvements
+
+### **Troubleshooting AI Workflow**
+
+#### **Common Issues**
+```bash
+# AI model not responding
+ollama ps                          # Check running models
+ollama run phi4 "test message"     # Test model directly
+
+# SSH authentication failing  
+ssh-add -l                         # Check loaded keys
+ssh-add ~/.ssh/id_ed25519         # Add key manually
+
+# Commit message too long/short
+./scripts/dotfiles.sh diff         # Check what's changing
+```
+
+#### **Fallback Behavior**
+If AI generation fails, the script automatically uses intelligent rule-based logic:
+```bash
+# Analyzes file patterns
+config/* → "Updated [app] configs"
+scripts/* → "Modified [category] scripts"  
+README.md → "Updated documentation"
+```
+
+#### **Performance Monitoring**
+```bash
+# Time AI commit generation
+time ./scripts/dotfiles.sh sync
+
+# Expected performance:
+# - AI generation: 3-8 seconds
+# - Fallback: <1 second
+# - Total sync: 5-15 seconds
+```
+
 ## 📋 Version History
 
 ### v2.1 - Performance & Monitoring

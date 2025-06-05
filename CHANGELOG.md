@@ -1,5 +1,40 @@
 # 📝 AI-Enhanced Dotfiles Ecosystem - CHANGELOG
 
+## Version 2.1.4 - Qt Theming Activation & LLM Expansion (June 9, 2025)
+
+### 🎨 **MAJOR FEATURE COMPLETION**
+
+#### **✅ Qt Theming Activation** ⭐ COMPLETED
+- **Qt5/Qt6 Integration**: Switched from default airy.conf to AI-generated matugen.conf colors
+- **Real-time Updates**: Qt applications now change colors with wallpaper changes
+- **Complete Desktop Harmony**: GTK + Qt + Hyprland + Waybar + Firefox all synchronized
+- **Parallel Reload**: Added Qt app restart to wallpaper theme workflow
+
+#### **🧠 Enhanced AI Commit Messages**
+- **Improved Analysis**: Enhanced phi4 prompt to analyze actual diff content vs just filenames
+- **Specific Descriptions**: Better commit messages like "feat: activate Qt AI theming" vs generic updates
+- **Focused Guidance**: AI now looks for config changes, new features, bug fixes specifically
+
+### 🚀 **NEW DEVELOPMENT DIRECTION**
+
+#### **🧠 Local LLM System Assistant** (Planned)
+- **Extended LLM Usage**: Maximize value from existing Ollama phi4 infrastructure
+- **System Queries**: Natural language system explanations and troubleshooting
+- **File Organization**: AI-powered file naming and directory structure suggestions
+- **Config Explanations**: Plain English explanations of complex configuration files
+- **Development Helper**: Code documentation, refactoring, and debugging assistance
+- **Automation Designer**: Generate custom scripts from natural language descriptions
+
+### 🛡️ **PROJECT SCOPE CLARIFICATION**
+
+#### **🚫 Explicit Non-Goals Added**
+- **No Official AUR Package**: Personal project, not for community distribution
+- **No Cross-Desktop Support**: Hyprland-focused, no GNOME/KDE/XFCE adaptations
+- **No Mobile Versions**: Desktop-only, no Android/iOS implementations
+- **No Cross-Platform**: Arch Linux focused, no Ubuntu/Fedora/macOS support
+
+---
+
 ## Version 2.1.3 - Enhanced UX & Cleanup (June 9, 2025)
 
 ### 🎨 **USER EXPERIENCE IMPROVEMENTS**

@@ -86,7 +86,7 @@ generate_ai_commit_message() {
     fi
     
     # Prepare a simpler, more direct prompt for phi4
-    local prompt="Generate a concise git commit message (max 72 chars) for these changes:
+    local prompt="Generate a concise git commit message (max 50 chars) for these changes:
 
 Files: $files_changed
 

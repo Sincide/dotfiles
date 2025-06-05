@@ -380,11 +380,31 @@ except Exception as e:
     ) &
     local icons_pid=$!
     
-
+    (
+        # Qt applications reload (instant)
+        log_message "Reloading Qt applications..."
+        
+        # Qt5/Qt6 applications should automatically pick up new theme
+        # when config files are updated (which happens via matugen templates)
+        # We may need to restart existing Qt apps for immediate effect
+        
+        # Send signal to Qt applications to reload themes
+        # Note: qt5ct/qt6ct configs are already pointing to matugen.conf
+        for qt_app in kate kwrite qt5ct qt6ct kvantum; do
+            if pgrep -x "$qt_app" > /dev/null; then
+                pkill -USR1 "$qt_app" 2>/dev/null || true
+                log_message "Signaled $qt_app to reload theme"
+            fi
+        done
+        
+        log_message "Qt applications reload complete"
+        
+    ) &
+    local qt_pid=$!
     
     # Wait for all parallel operations to complete
     log_message "Waiting for parallel reloads to complete..."
-    wait $waybar_pid $dunst_pid $kitty_pid $fuzzel_pid $hyprland_pid $gtk_pid $icons_pid
+    wait $waybar_pid $dunst_pid $kitty_pid $fuzzel_pid $hyprland_pid $gtk_pid $icons_pid $qt_pid
     
     log_message "All parallel application reloads completed"
 }

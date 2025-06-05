@@ -83,7 +83,7 @@ generate_ai_commit_message() {
     local prompt="You are a git commit message generator. Create a concise, professional commit message for the following changes to a Linux dotfiles repository.
 
 RULES:
-- Maximum 72 characters for the subject line, but atleast 50
+- Maximum 72 characters for the subject line
 - Use conventional commit format when appropriate (feat:, fix:, config:, etc.)
 - Be specific about what changed
 - Focus on the most important changes

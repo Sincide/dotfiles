@@ -18,9 +18,15 @@ Usage: $(basename "$0") <command> [options]
 
 Commands:
   status, st         Show status of dotfiles (local and remote sync info)
-  sync, s [msg]      Sync dotfiles (add, commit, pull, push). Optionally provide a commit message.
+  sync, s [msg]      Sync dotfiles (add, commit, pull, push). 
+                     If no message provided, AI will generate one using local LLM (with fallback).
   diff, d            Show diff of changes
   help, -h, --help   Show this help message
+
+Features:
+  🧠 AI-powered commit messages using your local Ollama models (phi4, llama, etc.)
+  📏 Automatic adherence to GitHub/GitLab message length limits (≤72 chars)
+  🔄 Graceful fallback to rule-based messages if AI is unavailable
 EOF
 }
 
@@ -34,10 +40,92 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { print_error "Failed to cd to repo root: $REPO_ROOT"; exit 1; }
 print_status "Using repository root: $REPO_ROOT"
 
-# Function to generate commit message based on changes
+# Function to generate commit message using local LLM with fallback
 generate_commit_message() {
     local files_changed
     files_changed=$(git diff --cached --name-only)
+    
+    # Try AI-generated commit message first
+    local ai_message
+    ai_message=$(generate_ai_commit_message "$files_changed")
+    
+    if [ -n "$ai_message" ] && [ "$ai_message" != "FALLBACK" ]; then
+        echo "$ai_message"
+        return 0
+    fi
+    
+    # Fallback to original logic if AI fails
+    print_warning "AI commit message generation failed, using fallback logic"
+    generate_fallback_commit_message "$files_changed"
+}
+
+# Function to generate commit message using local LLM
+generate_ai_commit_message() {
+    local files_changed="$1"
+    
+    # Check if ollama is available
+    if ! command -v ollama >/dev/null 2>&1; then
+        return 1
+    fi
+    
+    # Check if ollama service is running
+    if ! ollama list >/dev/null 2>&1; then
+        return 1
+    fi
+    
+    # Get git diff for context
+    local diff_context
+    diff_context=$(git diff --cached --stat --summary 2>/dev/null | head -20)
+    
+    # Prepare the prompt for the LLM
+    local prompt="You are a git commit message generator. Create a concise, professional commit message for the following changes to a Linux dotfiles repository.
+
+RULES:
+- Maximum 50 characters for the subject line
+- Use conventional commit format when appropriate (feat:, fix:, config:, etc.)
+- Be specific about what changed
+- Focus on the most important changes
+- No extra explanations, just the commit message
+
+Changed files:
+$files_changed
+
+Git diff summary:
+$diff_context
+
+Generate ONLY the commit message (no quotes, no explanations):"
+
+    # Query the LLM with timeout
+    local ai_response
+    ai_response=$(timeout 10s ollama run phi4 "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    
+    # Validate the response
+    if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 10 ]; then
+        # Clean up the message (remove quotes if present)
+        ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
+        echo "$ai_response"
+        return 0
+    fi
+    
+    # Try with a simpler model if phi4 fails
+    if ollama list 2>/dev/null | grep -q "llama"; then
+        local model=$(ollama list 2>/dev/null | grep -E "(llama|mistral|codellama)" | head -1 | awk '{print $1}')
+        if [ -n "$model" ]; then
+            ai_response=$(timeout 8s ollama run "$model" "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 10 ]; then
+                ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
+                echo "$ai_response"
+                return 0
+            fi
+        fi
+    fi
+    
+    return 1
+}
+
+# Original commit message generation logic (fallback)
+generate_fallback_commit_message() {
+    local files_changed="$1"
     local changes=""
 
     if echo "$files_changed" | grep -q "config/"; then
@@ -60,6 +148,12 @@ generate_commit_message() {
     if [ -z "$changes" ]; then
         changes="Updated dotfiles: $(echo "$files_changed" | tr '\n' ',' | sed 's/,$//')"
     fi
+    
+    # Ensure fallback message isn't too long (GitHub/GitLab limit ~72 chars for subject)
+    if [ ${#changes} -gt 72 ]; then
+        changes="Updated dotfiles configuration files"
+    fi
+    
     echo "$changes"
 }
 

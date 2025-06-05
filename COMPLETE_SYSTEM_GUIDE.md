@@ -123,6 +123,59 @@ tail -f /tmp/ai-pipeline-output.log
 
 ---
 
+## 🎯 AI-Powered Development Workflow ⭐ NEW
+
+### **🤖 Intelligent Commit Messages**
+The dotfiles system now generates professional commit messages using your local Ollama models with enhanced visual output:
+
+```bash
+# Quick sync with AI-generated commit messages  
+dots
+
+# Example output:
+📁 Files being committed:
+   • scripts/dotfiles.sh
+   • config/waybar/scripts/ai-dashboard.sh  
+🧠 Generating commit message...
+[✓] feat: enhance dotfiles sync with colored output and file display
+
+# Manual commit message override
+./scripts/dotfiles.sh sync "feat: add new feature"
+
+# Check status and view changes
+./scripts/dotfiles.sh status
+./scripts/dotfiles.sh diff
+```
+
+### **🎨 Enhanced Visual Output**
+- **📁 File Status Display**: Shows exactly which files are being committed with color-coded status indicators
+- **🎯 Colored Messages**: Blue highlighted commit messages for better visibility
+- **🧠 Clean Progress**: Brain emoji for AI generation, folder emoji for file listing
+- **❌ Failure Alerts**: Prominent red [✗] notifications when AI fails with clear fallback indication
+- **⚡ Optimized Git**: Quieter push operations for cleaner output
+
+### **Features:**
+- ✅ **Local LLM Integration**: Uses phi4 model for context-aware commit messages
+- ✅ **Platform Compliance**: Adheres to GitHub/GitLab 50-60 character limits
+- ✅ **Conventional Commits**: Follows standard format (feat:, fix:, config:)
+- ✅ **Smart Analysis**: Understands dotfiles context and component relationships
+- ✅ **SSH Integration**: Works seamlessly with SSH key authentication
+- ✅ **Graceful Fallback**: Falls back to rule-based messages if AI unavailable
+
+### **SSH Agent Integration**
+Automatic SSH key loading on fish shell startup:
+
+```bash
+# Fish configuration automatically handles SSH:
+# config/fish/conf.d/ssh-agent.fish
+
+# Detects SSH keys (Ed25519, RSA)
+# Connects to existing agent or starts new one  
+# Loads keys automatically for passwordless git operations
+```
+
+---
+
 ## 🔧 Configuration
 
 ### Hyprland Config

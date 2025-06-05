@@ -218,7 +218,12 @@ dots                    # Alias for intelligent sync workflow
 
 **This system represents the world's first complete AI-enhanced desktop + web theming ecosystem with real-time synchronization across desktop environment, browser interface, and website content.**
 
-**Installation:** ~35-45 minutes | **Disk Usage:** ~6.5GB | **Performance:** <3s theme updates 
+**Installation:** ~35-45 minutes | **Disk Usage:** ~6.5GB | **Performance:** <3s theme updates
+
+### 🧹 **Recent Cleanup (v2.1.3)**
+- **Scripts Simplified**: Removed duplicate/outdated scripts for cleaner codebase
+- **Enhanced UX**: Improved visual output with colored messages and file status display  
+- **Streamlined Operation**: Better error handling and quieter git operations 
 
 ## 🚀 **Key Features**
 

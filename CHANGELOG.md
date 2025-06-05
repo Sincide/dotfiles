@@ -1,5 +1,51 @@
 # 📝 AI-Enhanced Dotfiles Ecosystem - CHANGELOG
 
+## Version 2.1.3 - Enhanced UX & Cleanup (June 9, 2025)
+
+### 🎨 **USER EXPERIENCE IMPROVEMENTS**
+
+#### **🎯 Enhanced dotfiles.sh Output** ⭐ NEW
+- **Clean Visual Design**: Streamlined output with reduced noise
+- **Colored Commit Messages**: Blue highlighted commit messages for better visibility
+- **File Change Display**: Shows exactly which files are being committed with color-coded status
+- **Progress Indicators**: Clean brain emoji (🧠) and folder emoji (📁) for clear workflow stages
+- **Failure Notifications**: Prominent red [✗] alerts when phi4 AI fails with fallback indication
+
+#### **📝 AI Commit Message Enhancements**
+- **Character Limit Adjustment**: Increased from 50 to 60 characters for better descriptions
+- **Clear Failure Handling**: Explicit notifications when AI models fail or return invalid responses
+- **Simplified Model Strategy**: Focused on phi4 only for consistency and reliability
+- **Debug Output Cleanup**: Removed verbose debugging while maintaining error visibility
+
+#### **📁 File Status Display**
+```bash
+📁 Files being committed:
+   • scripts/dotfiles.sh
+   • config/waybar/scripts/ai-dashboard.sh
+🧠 Generating commit message...
+[✓] feat: enhance dotfiles sync with colored output and file display
+```
+
+### 🧹 **CODEBASE CLEANUP**
+
+#### **✅ Duplicate Script Removal**
+- **Removed**: `scripts/wallpaper-theme-changer.sh` (original version)
+- **Removed**: `scripts/wallpaper-selector-original.sh` (original version)  
+- **Kept**: Enhanced versions with AI integration and performance optimizations
+- **Impact**: Cleaner scripts directory, no confusion between versions
+
+#### **🔧 Git Output Optimization**
+- **Quieter Push**: Added `--quiet` flag to `git push` for cleaner output
+- **Status Messages**: Simplified success/failure indicators
+- **Error Handling**: Maintained comprehensive error reporting while reducing noise
+
+### 📚 **DOCUMENTATION UPDATES**
+- **Script References**: Updated to reflect removed duplicate scripts
+- **Enhanced Examples**: Real output samples showing new visual improvements
+- **Cleanup Guide**: Documentation on maintaining clean codebase
+
+---
+
 ## Version 2.1.2 - AI-Powered Development Workflow (June 8, 2025)
 
 ### 🧠 **NEW AI FEATURES**

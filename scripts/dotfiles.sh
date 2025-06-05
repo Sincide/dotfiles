@@ -85,22 +85,16 @@ generate_ai_commit_message() {
         diff_context=$(git diff --cached --stat --summary 2>/dev/null | head -15)
     fi
     
-    # Prepare the prompt for the LLM with better context
-    local prompt="You are a git commit message generator. Analyze the actual code changes and create a precise, professional commit message.
+    # Prepare a simpler, more direct prompt for phi4
+    local prompt="Generate a concise git commit message (max 72 chars) for these changes:
 
-RULES:
-- Maximum 72 characters for the subject line
-- Use conventional commit format (feat:, fix:, config:, docs:, refactor:, style:)
-- Be specific about what actually changed, not generic descriptions
-- Focus on the PURPOSE of the change, not just what files were modified
-- NO quotes, explanations, or extra text
+Files: $files_changed
 
-Files changed: $files_changed
-
-Actual changes (git diff):
+Changes:
 $diff_context
 
-Generate ONLY the commit message:"
+Use format: type: description (e.g., fix: update script, feat: add function)
+Message only, no explanations:"
 
     # Check if phi4 model is loaded and provide feedback
     if ollama ps 2>/dev/null | grep -q "phi4"; then
@@ -111,17 +105,24 @@ Generate ONLY the commit message:"
 
     # Query phi4 with timeout
     local ai_response
-    ai_response=$(timeout 15s ollama run phi4 "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    ai_response=$(timeout 20s ollama run phi4 "$prompt" 2>/dev/null | head -1 | tr -d '\n\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     
-    # Validate the response
-    if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 8 ]; then
+    # Debug: show what phi4 actually returned
+    if [ -n "$ai_response" ]; then
+        echo -e "${BLUE}   →${NC} phi4 returned: \"$ai_response\" (${#ai_response} chars)" >&2
+    else
+        echo -e "${YELLOW}   →${NC} phi4 returned empty response" >&2
+    fi
+    
+    # Validate the response (more lenient validation)
+    if [ -n "$ai_response" ] && [ ${#ai_response} -le 72 ] && [ ${#ai_response} -ge 5 ]; then
         # Clean up the message (remove quotes if present)
         ai_response=$(echo "$ai_response" | sed 's/^["'\'']*//;s/["'\'']*$//')
         echo "$ai_response"
         return 0
     fi
     
-    echo -e "${YELLOW}[!]${NC} phi4 failed to generate suitable commit message" >&2
+    echo -e "${YELLOW}[!]${NC} phi4 response failed validation (length: ${#ai_response})" >&2
     return 1
 }
 

@@ -39,7 +39,7 @@
         "return-type": "json",
         "interval": 5,
         "tooltip": true,
-        "on-click": "kitty --class floating -e bash -c 'cd ~/dotfiles && scripts/ai/dashboard'"
+        "on-click": "kitty --class floating -e ~/dotfiles/scripts/ai/ai-perf"
     },
 
     "clock": {

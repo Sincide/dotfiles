@@ -4,7 +4,7 @@
 # Calls the Go dashboard in waybar mode and handles errors gracefully
 
 # Path to the dashboard binary
-DASHBOARD_PATH="$HOME/dotfiles/scripts/ai/dashboard"
+DASHBOARD_PATH="$HOME/dotfiles/scripts/ai/ai-perf"
 
 # Check if dashboard exists and is executable
 if [[ ! -x "$DASHBOARD_PATH" ]]; then

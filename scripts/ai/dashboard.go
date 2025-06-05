@@ -771,18 +771,7 @@ func main() {
 		return
 	}
 
-	// Check if we're in the right directory (dotfiles or scripts/ai)
-	dotfilesCheck := "scripts/wallpaper-theme-changer-optimized.sh"
-	scriptsAiCheck := "../../scripts/wallpaper-theme-changer-optimized.sh"
-
-	if _, err := os.Stat(dotfilesCheck); os.IsNotExist(err) {
-		if _, err := os.Stat(scriptsAiCheck); os.IsNotExist(err) {
-			fmt.Fprintf(os.Stderr, "❌ Error: Please run from dotfiles directory or scripts/ai\n")
-			fmt.Fprintf(os.Stderr, "Current directory: %s\n", func() string { wd, _ := os.Getwd(); return wd }())
-			fmt.Fprintf(os.Stderr, "Expected: ~/dotfiles or ~/dotfiles/scripts/ai\n")
-			os.Exit(1)
-		}
-	}
+	// App can now run from any directory
 
 	// Initialize and run the TUI
 	m := initialModel()

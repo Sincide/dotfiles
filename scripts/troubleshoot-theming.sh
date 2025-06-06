@@ -495,9 +495,20 @@ EOF" "Create AI configuration file"
     echo ""
 }
 
-# Check 2: System Services
+# Check 2: System Services and Environment
 check_system_services() {
     echo -e "${YELLOW}🔧 Checking System Services...${NC}"
+    
+    # Check if we're in proper Wayland/Hyprland environment
+    if [[ -n "$WAYLAND_DISPLAY" ]] && pgrep -f hypr >/dev/null 2>&1; then
+        log_success "Running in Hyprland/Wayland environment"
+    elif [[ -n "$WAYLAND_DISPLAY" ]]; then
+        log_warn "In Wayland but Hyprland not running"
+        record_issue "environment" "Hyprland not active" "warning" false
+    else
+        log_warn "Not in Wayland environment - GUI theming unavailable"
+        record_issue "environment" "Not in Wayland/Hyprland" "warning" false
+    fi
     
     # Check Ollama with actual functionality test
     if command -v ollama >/dev/null 2>&1; then
@@ -677,8 +688,15 @@ check_activity_log() {
             record_issue "activity" "Recent errors in log" "warning" false
         fi
         
-        # Check waybar status
-        if echo "$recent_lines" | grep -q "waybar reloaded ❌"; then
+        # Check waybar status (environment-aware)
+        if [[ -z "$WAYLAND_DISPLAY" ]]; then
+            log_info "Waybar status unavailable (not in Wayland environment)"
+        elif ! pgrep -f hypr >/dev/null 2>&1; then
+            log_info "Waybar status unavailable (Hyprland not running)"
+        elif ! pgrep -f waybar >/dev/null 2>&1; then
+            log_warn "Waybar not running in Hyprland session"
+            record_issue "waybar" "Waybar not active" "warning" true
+        elif echo "$recent_lines" | grep -q "waybar reloaded ❌"; then
             log_warn "Waybar reload issues detected"
             record_issue "waybar" "Waybar reload failures" "warning" false
         else
@@ -704,6 +722,13 @@ quick_performance_test() {
     fi
     
     echo -e "${YELLOW}⚡ Quick Performance Test...${NC}"
+    
+    # Check if we can actually test theming in this environment
+    if [[ -z "$WAYLAND_DISPLAY" ]]; then
+        log_info "Skipping performance test (not in Wayland environment)"
+        log_info "Theme generation can be tested, but GUI updates won't be visible"
+        return 0
+    fi
     
     # Test wallpaper path
     local test_wallpaper

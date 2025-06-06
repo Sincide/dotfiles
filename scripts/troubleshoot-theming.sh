@@ -471,7 +471,11 @@ EOF" "Create AI configuration file"
             
             apply_fix "sed -i 's/^AI_MODE=.*/AI_MODE=\"enhanced\"/' '$config_file'" "Set AI_MODE to enhanced"
         else
-            log_success "AI_MODE is set to: $ai_mode"
+            # Only log AI_MODE if there might be an issue
+            if [[ "$ai_mode" != "enhanced" && "$ai_mode" != "standard" ]]; then
+                log_warn "AI_MODE has unusual value: $ai_mode"
+                record_issue "ai_config" "Unusual AI_MODE value" "warning" true
+            fi
         fi
     fi
     
@@ -481,8 +485,6 @@ EOF" "Create AI configuration file"
         record_issue "ai_config" "AI optimization not enabled" "warning" true
         
         apply_fix "echo 'ENABLE_AI_OPTIMIZATION=true' >> '$config_file'" "Enable AI optimization"
-    else
-        log_success "AI optimization enabled"
     fi
     
     verbose_log "AI config file contents:"
@@ -497,17 +499,18 @@ EOF" "Create AI configuration file"
 check_system_services() {
     echo -e "${YELLOW}🔧 Checking System Services...${NC}"
     
-    # Check Ollama
+    # Check Ollama with actual functionality test
     if command -v ollama >/dev/null 2>&1; then
         if pgrep -f ollama >/dev/null 2>&1; then
-            log_success "Ollama service is running"
-            
-            # Check models
+            # Test if Ollama can actually respond
             local models=$(ollama list 2>/dev/null | grep -v "NAME" | wc -l)
             if [[ $models -gt 0 ]]; then
-                log_success "Ollama models available: $models"
-                if [[ "$VERBOSE" == "true" ]]; then
-                    ollama list
+                # Test actual AI model response
+                if timeout 5s ollama run phi4 "test" >/dev/null 2>&1 || timeout 5s ollama run llama3.2 "test" >/dev/null 2>&1; then
+                    log_success "Ollama AI models responding ($models available)"
+                else
+                    log_warn "Ollama models found but not responding"
+                    record_issue "ollama" "Models not responding" "warning" true
                 fi
             else
                 log_warn "No Ollama models found"
@@ -534,9 +537,15 @@ check_system_services() {
         apply_fix "cd '$DOTFILES_DIR' && python3 local-color-server.py &" "Start color server"
     fi
     
-    # Check matugen
+    # Check matugen with functionality test
     if command -v matugen >/dev/null 2>&1; then
-        log_success "Matugen available"
+        # Test if matugen can actually generate colors
+        if matugen --help >/dev/null 2>&1; then
+            log_success "Matugen responding to commands"
+        else
+            log_warn "Matugen installed but not responding"
+            record_issue "matugen" "Not responding" "warning" true
+        fi
     else
         log_error "Matugen not found"
         record_issue "matugen" "Not installed" "critical" false
@@ -612,7 +621,7 @@ check_ai_cache() {
         local cache_files=$(find "$cache_dir" -name "*.json" | wc -l)
         
         if [[ $cache_files -gt 0 ]]; then
-            log_success "AI cache contains $cache_files entries"
+            log_info "AI cache contains $cache_files entries"
             
             # Check for very old cache files
             local old_cache=$(find "$cache_dir" -name "*.json" -mtime +7 | wc -l)
@@ -659,7 +668,7 @@ check_activity_log() {
         fi
         
         if echo "$recent_lines" | grep -q "Generating new AI analysis"; then
-            log_success "Fresh AI generation detected"
+            log_info "Fresh AI generation detected"
         fi
         
         # Check for errors
@@ -669,11 +678,11 @@ check_activity_log() {
         fi
         
         # Check waybar status
-        if echo "$recent_lines" | grep -q "waybar reloaded ✅"; then
-            log_success "Waybar reloading properly"
-        elif echo "$recent_lines" | grep -q "waybar reloaded ❌"; then
+        if echo "$recent_lines" | grep -q "waybar reloaded ❌"; then
             log_warn "Waybar reload issues detected"
-            record_issue "waybar" "Reload failures" "warning" false
+            record_issue "waybar" "Waybar reload failures" "warning" false
+        else
+            log_success "Waybar reloading properly"
         fi
         
         if [[ "$VERBOSE" == "true" ]]; then

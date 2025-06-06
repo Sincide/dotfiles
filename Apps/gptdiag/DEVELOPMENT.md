@@ -344,28 +344,135 @@ themes:
 
 ---
 
-## Development Notes
+## 🔄 ARCHITECTURE EVOLUTION: HYBRID WEB+TUI APPROACH
 
-**Last Updated:** 2024-12-19  
-**Current Focus:** ✅ **AI INTEGRATION SUCCESSFUL!** Ollama models working perfectly  
-**Next Milestone:** Build AI-powered widgets and real system monitoring  
+**Status Change:** 2025-06-07 00:20 Swedish Time  
+**Decision:** Pivot from pure TUI to hybrid web dashboard + simplified TUI
 
-**Known Issues:**
-- None currently identified
+### 🤔 Problem Identified
+- **TUI Aesthetic Limitation:** Terminal interfaces inherently look dated (1990s aesthetic)
+- **Modern Expectations:** Users expect beautiful, modern interfaces for system monitoring
+- **Showcase Potential:** Current TUI doesn't properly showcase the AI capabilities
 
-**🎉 MAJOR SUCCESS:**
-- ✅ **AI Integration Working!** Successfully connected to Ollama
-- ✅ **All 5 models detected:** phi4, qwen3:4b, codellama:7b, llava-llama3:8b, qwen2.5-coder:1.5b
-- ✅ **Model role assignment working:** Different models for different tasks
-- ✅ **Real AI analysis:** Generated comprehensive 7,915 character system analysis
-- ✅ **25-second response time:** Reasonable performance for local models
-- ✅ **1,691 tokens generated:** Full detailed analysis with recommendations
+### 💡 Solution: Hybrid Architecture
 
-**Technical Debt:**
-- Need to implement comprehensive error handling
-- Add logging framework integration
-- Create unit test structure
+```
+GPTDiag v2.0 - Modern Hybrid Architecture
+├── 🧠 Core Engine (COMPLETED ✅)
+│   ├── SystemInfo - Real system monitoring with psutil
+│   ├── AIManager - Ollama integration with 5 working models
+│   └── ConfigManager - YAML configuration system
+├── 🌐 Web Dashboard (NEW - PRIMARY UI)
+│   ├── FastAPI backend (reuse 90% of existing code)
+│   ├── Modern HTML5/CSS3/JS frontend
+│   ├── WebSocket real-time updates
+│   ├── Interactive charts and graphs
+│   ├── Rich AI analysis display
+│   └── Mobile-responsive design
+└── 📟 TUI (SIMPLIFIED - TERMINAL ACCESS)
+    ├── Quick status overview
+    ├── Basic system metrics
+    └── SSH-friendly operation
+```
+
+### 🎯 Implementation Strategy
+
+#### **Phase 1: FastAPI Web Backend** (Day 1-2)
+**Code Reuse:** 90% of existing engine transfers directly!
+
+**API Endpoints:**
+- `GET /api/system/summary` - Quick metrics (existing `get_quick_summary()`)
+- `GET /api/system/detailed` - Full system info (existing `get_async_info()`)
+- `POST /api/ai/analyze` - AI health analysis (existing `analyze_system_health()`)
+- `WebSocket /ws/updates` - Live data stream for real-time updates
+
+**Benefits:**
+- ✅ Reuse all existing SystemInfo + AIManager code
+- ✅ Keep all 5 Ollama models working as-is
+- ✅ Maintain configuration system
+- ✅ No rework of core engine needed
+
+#### **Phase 2: Modern Web Frontend** (Day 3-5)
+**Features:**
+- 📊 **Real-time system charts** (CPU/memory graphs, not just progress bars)
+- 🤖 **Rich AI analysis display** with markdown rendering and syntax highlighting
+- 🎨 **Modern dark theme** with gradients, animations, smooth transitions
+- 📱 **Responsive design** for desktop, tablet, mobile access
+- ⚡ **WebSocket live updates** every 5 seconds
+- 🚨 **Interactive alerts** with notifications
+- 📈 **Historical graphs** and performance trends
+- 💾 **Export capabilities** (PDF reports, JSON data)
+
+**Design Inspiration:**
+- GitHub dashboard aesthetics
+- Grafana monitoring interface
+- VS Code dark theme
+- Modern SaaS application design
+
+#### **Phase 3: Simplified TUI** (Day 6)
+**Purpose:** Quick terminal access and SSH-friendly monitoring
+**Features:**
+- `gptdiag --status` - Quick system overview
+- `gptdiag --ai-check` - Fast AI health analysis
+- Basic text-based metrics display
+- No complex styling - focus on functionality
+
+### 🎨 Expected Results
+
+**Web Dashboard Benefits:**
+- ✅ **Professional appearance** suitable for portfolio/demos
+- ✅ **Unlimited styling** with modern CSS3 and animations
+- ✅ **Better AI showcase** with rich text formatting
+- ✅ **Real-time interactivity** with charts and live updates
+- ✅ **Mobile accessibility** for remote monitoring
+- ✅ **Screenshot-worthy** interface for documentation
+
+**TUI Benefits Retained:**
+- ✅ **Quick terminal access** for daily workflow
+- ✅ **SSH-friendly** for remote server monitoring
+- ✅ **Lightweight** for minimal resource usage
+- ✅ **Keyboard-only** operation in terminal environments
+
+### 🔧 Technical Advantages
+
+1. **Code Reuse:** 90% of existing engine code transfers directly to web backend
+2. **Parallel Development:** Can build web and TUI simultaneously
+3. **Future-Proof:** Web platform allows unlimited UI evolution
+4. **Best Practices:** FastAPI + modern frontend follows current standards
+5. **Accessibility:** Web interface reaches broader audience
 
 ---
 
-*This document is updated regularly to reflect current development progress and architectural decisions.* 
+## Development Notes
+
+**Last Updated:** 2025-06-07 00:20 Swedish Time  
+**Current Focus:** 🔄 **ARCHITECTURE PIVOT TO WEB+TUI HYBRID**  
+**Next Sprint:** FastAPI backend development (reusing existing core engine)  
+
+**✅ COMPLETED FOUNDATION:**
+- ✅ **Core Engine (100%):** SystemInfo + AIManager + ConfigManager
+- ✅ **AI Integration:** Ollama working with 5 models (phi4, qwen3:4b, etc.)
+- ✅ **Real System Monitoring:** psutil-based comprehensive metrics
+- ✅ **Configuration System:** YAML-based with validation
+- ✅ **Proven Functionality:** 8,000+ char AI analysis in 25-30 seconds
+
+**🚀 UPCOMING SPRINT:**
+1. **FastAPI Backend** - Wrap existing engine with web API
+2. **Modern Frontend** - Beautiful web dashboard with live charts
+3. **Simplified TUI** - Lightweight terminal access tool
+
+**Architecture Benefits:**
+- 🎯 **Professional showcase** potential
+- 🎨 **Modern aesthetics** without terminal limitations  
+- 🔄 **Code reuse** maximization (90% transfer rate)
+- 📱 **Multi-platform access** (web, terminal, mobile)
+- 🚀 **Future extensibility** with web platform
+
+**Technical Debt:**
+- Need to implement FastAPI backend wrapper
+- Create modern web frontend
+- Simplify TUI to essential functionality
+
+---
+
+*This document tracks the evolution from pure TUI to hybrid web+TUI architecture for better user experience and modern aesthetics.* 

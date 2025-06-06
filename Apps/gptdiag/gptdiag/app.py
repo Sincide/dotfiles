@@ -26,13 +26,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.live import Live
 
-from .config import ConfigManager
-from .widgets.dashboard import DashboardWidget
-from .widgets.monitor import MonitorWidget  
-from .widgets.ai_diag import AIDiagWidget
-from .widgets.services import ServicesWidget
-from .widgets.logs import LogsWidget
-from .widgets.history import HistoryWidget
+from .config.manager import ConfigManager
+from .tui.widgets.dashboard import DashboardWidget
+from .tui.widgets.monitor import MonitorWidget  
+from .tui.widgets.ai_diag import AIDiagWidget
+from .tui.widgets.services import ServicesWidget
+from .tui.widgets.logs import LogsWidget
+from .tui.widgets.history import HistoryWidget
 from .utils.system import SystemInfo
 from .diagnostics.runner import DiagnosticRunner
 
@@ -40,7 +40,7 @@ from .diagnostics.runner import DiagnosticRunner
 class GPTDiagApp(App):
     """Main GPTDiag TUI Application."""
     
-    CSS_PATH = "styles.css"
+    CSS_PATH = "tui/styles.css"
     
     BINDINGS = [
         Binding("q", "quit", "Quit"),
@@ -61,11 +61,11 @@ class GPTDiagApp(App):
     system_status = reactive("loading")
     last_update = reactive(datetime.now())
     
-    def __init__(self, config_manager: ConfigManager, debug: bool = False):
+    def __init__(self, config_manager: ConfigManager, debug_mode: bool = False):
         """Initialize the GPTDiag application."""
         super().__init__()
         self.config_manager = config_manager
-        self.debug = debug
+        self.debug_mode = debug_mode
         self.system_info = SystemInfo()
         self.diagnostic_runner = DiagnosticRunner(config_manager)
         
@@ -80,42 +80,22 @@ class GPTDiagApp(App):
         
         with TabbedContent(initial="dashboard", id="main_tabs"):
             with TabPane("Dashboard", id="dashboard"):
-                yield DashboardWidget(
-                    system_info=self.system_info,
-                    config_manager=self.config_manager,
-                    id="dashboard_widget"
-                )
+                yield DashboardWidget(id="dashboard_widget")
             
             with TabPane("Monitor", id="monitor"):
-                yield MonitorWidget(
-                    system_info=self.system_info,
-                    id="monitor_widget"
-                )
+                yield MonitorWidget(id="monitor_widget")
             
             with TabPane("AI Diag", id="ai_diag"):
-                yield AIDiagWidget(
-                    config_manager=self.config_manager,
-                    diagnostic_runner=self.diagnostic_runner,
-                    id="ai_diag_widget"
-                )
+                yield AIDiagWidget(id="ai_diag_widget")
             
             with TabPane("Services", id="services"):
-                yield ServicesWidget(
-                    system_info=self.system_info,
-                    id="services_widget"
-                )
+                yield ServicesWidget(id="services_widget")
             
             with TabPane("Logs", id="logs"):
-                yield LogsWidget(
-                    config_manager=self.config_manager,
-                    id="logs_widget"
-                )
+                yield LogsWidget(id="logs_widget")
             
             with TabPane("History", id="history"):
-                yield HistoryWidget(
-                    diagnostic_runner=self.diagnostic_runner,
-                    id="history_widget"
-                )
+                yield HistoryWidget(id="history_widget")
         
         yield Footer()
     
@@ -150,7 +130,7 @@ class GPTDiagApp(App):
             
         except Exception as e:
             self.system_status = f"error: {e}"
-            if self.debug:
+            if self.debug_mode:
                 self.log(f"Error loading initial data: {e}")
     
     async def update_system_data(self) -> None:
@@ -168,7 +148,7 @@ class GPTDiagApp(App):
             self.notify_widgets_data_updated()
             
         except Exception as e:
-            if self.debug:
+            if self.debug_mode:
                 self.log(f"Error updating system data: {e}")
     
     def notify_widgets_data_updated(self) -> None:

@@ -86,29 +86,47 @@ cd ~/dotfiles/scripts/ai-diagnostics
 # Run quick health check (30 seconds)
 python ai_diagnostics.py --mode quick
 
-# Run interactive diagnostic session
-python ai_diagnostics.py --interactive
+# Run quick diagnostic with verbose output
+python ai_diagnostics.py --mode quick --verbose
 
-# Run deep analysis with stress testing
-python ai_diagnostics.py --mode deep --stress-test
+# Use different AI model for analysis
+python ai_diagnostics.py --mode quick --ai-model qwen3:4b
 
-# Export results to JSON
-python ai_diagnostics.py --mode quick --export json
-
-# View historical trends
-python ai_diagnostics.py --trends --days 30
+# Check dependencies and install if missing
+python ai_diagnostics.py --check-deps
+python ai_diagnostics.py --install-deps
 ```
 
-### Interactive Mode
+### Currently Implemented Features
 
-The interactive mode provides a keyboard-driven interface:
+✅ **Core Functionality**:
+- LLM engine with phi4/codellama models
+- Plugin system with environment checks
+- Dependency management (pacman/yay)
+- Quick diagnostic mode
+- Verbose logging
 
+🚧 **Planned Features** (not yet implemented):
+- Interactive terminal UI (`--interactive`)
+- Deep analysis mode (`--mode deep`)
+- Stress testing (`--stress-test`)
+- Export formats (`--export json/html`)
+- Historical trends (`--trends`)
+- Multiple plugins beyond environment check
+
+### Interactive Mode (🚧 Planned)
+
+**Current Status**: Interactive mode is not yet implemented. Running `--interactive` will show a placeholder message and fall back to quick mode.
+
+**Planned Features** for interactive mode:
 - **Arrow Keys**: Navigate between checks and options
 - **Enter**: Execute selected check or drill down into details
 - **Space**: Select/deselect fixes for batch application
 - **Tab**: Switch between panels (checks, results, logs)
 - **F1**: Show help and keyboard shortcuts
 - **Esc**: Return to previous screen or exit
+
+**Current Alternative**: Use `--verbose` flag for detailed output instead.
 
 ### Command Line Options
 
@@ -226,6 +244,21 @@ The system tracks trends including:
 
 ## 🔧 Troubleshooting
 
+### Recent Fixes (v2.1.5)
+
+**FIXED: Model Discovery Failed / Empty Model List**
+- **Issue**: `ERROR Model discovery failed: 'name'` or `Required model not available: phi4`
+- **Root Cause**: Ollama Python client returns Model objects with `.model` attribute, not dictionaries with `'name'` key
+- **Fix Applied**: Updated `_discover_models()` to use `getattr(model, 'model', '')` and handle both full names (`phi4:latest`) and base names (`phi4`)
+
+**FIXED: Missing Typing Imports**
+- **Issue**: `NameError: name 'Tuple' is not defined`
+- **Fix Applied**: Added missing `Tuple` import to `core/plugin_manager.py`
+
+**FIXED: Default Model Configuration**
+- **Issue**: System defaulted to unavailable `llama3.2` model
+- **Fix Applied**: Changed default explanation model to `codellama:7b-instruct` (available model)
+
 ### Common Issues
 
 **"AI models not responding"**
@@ -236,8 +269,32 @@ systemctl --user status ollama
 # Restart Ollama service
 systemctl --user restart ollama
 
-# Verify models are available
-ollama list
+# Verify models are available and discoverable
+curl -s http://127.0.0.1:11434/api/tags
+
+# Test with debug output
+python ai_diagnostics.py --mode quick --verbose
+```
+
+**"Model Loading Timeouts"**
+```bash
+# Test specific model manually
+ollama run phi4 "test message"
+
+# Check available memory (phi4 needs ~9GB)
+free -h
+
+# Use smaller model for testing
+python ai_diagnostics.py --ai-model qwen3:4b --mode quick
+```
+
+**"Dependencies not satisfied"**
+```bash
+# Auto-install missing dependencies
+python ai_diagnostics.py --install-deps
+
+# Manual dependency check
+python ai_diagnostics.py --check-deps
 ```
 
 **"Permission denied accessing logs"**
@@ -287,4 +344,11 @@ To add support for new LLM models:
 
 ## 📝 License
 
-This diagnostic system is part of the AI-enhanced theming environment and follows the same license as the parent project. 
+This diagnostic system is part of the AI-enhanced theming environment and follows the same license as the parent project.
+
+---
+
+**Last Updated**: June 6, 2025 - 09:50 CET  
+**Version**: 2.1.5 (Core Foundation Complete)  
+**Compatibility**: Arch Linux, Hyprland, Python 3.10+, Ollama  
+**Status**: ✅ Core architecture & foundation complete | 🚧 See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for detailed roadmap 

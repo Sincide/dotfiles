@@ -85,7 +85,7 @@ class LLMEngine:
         # Default configuration
         self.config = {
             "primary_model": "phi4",
-            "explanation_model": "llama3.2", 
+            "explanation_model": "codellama:7b-instruct",  # Use available model
             "timeout_seconds": 30,
             "max_context_length": 4096,
             "temperature": 0.1,
@@ -355,10 +355,31 @@ class LLMEngine:
         """Discover available models from Ollama."""
         try:
             models = await asyncio.to_thread(self.client.list)
-            self._available_models = [model['name'] for model in models.get('models', [])]
+            self.logger.debug(f"Raw Ollama response: {models}")
+            
+            # Extract model names and handle both "model:tag" and "model" formats
+            raw_models = models.get('models', [])
+            self.logger.debug(f"Raw models array: {raw_models}")
+            
+            self._available_models = []
+            
+            for model in raw_models:
+                self.logger.debug(f"Processing model: {model}")
+                # Extract model name from Model object (has .model attribute, not 'name' key)
+                model_name = getattr(model, 'model', '')
+                if model_name:
+                    # Add full name (e.g., "phi4:latest")
+                    self._available_models.append(model_name)
+                    # Also add base name (e.g., "phi4") for easier matching
+                    base_name = model_name.split(':')[0]
+                    if base_name not in self._available_models:
+                        self._available_models.append(base_name)
+                        
             self.logger.info(f"Discovered models: {self._available_models}")
         except Exception as e:
             self.logger.error(f"Model discovery failed: {e}")
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
     
     async def _validate_model_availability(self) -> bool:
         """Validate that required models are available."""

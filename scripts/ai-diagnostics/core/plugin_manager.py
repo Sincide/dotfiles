@@ -23,7 +23,7 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, List, Optional, Type, Any, Set
+from typing import Dict, List, Optional, Type, Any, Set, Tuple
 from dataclasses import dataclass
 
 from .models import DiagnosticResult, DiagnosticIssue, PluginMetadata, CheckStatus

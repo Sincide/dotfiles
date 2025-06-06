@@ -28,14 +28,23 @@ from rich.text import Text
 # Add the current directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
+# Import dependency manager first (doesn't require other dependencies)
+try:
+    from core.dependency_manager import DependencyManager
+except ImportError as e:
+    print(f"Critical error: Cannot import dependency manager: {e}")
+    sys.exit(1)
+
+# Try to import core modules, handling missing dependencies gracefully
 try:
     from core.models import DiagnosticSession, SystemSnapshot
     from core.llm_engine import LLMEngine
     from core.plugin_manager import PluginManager, PluginExecutionContext
+    DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
-    print(f"Import error: {e}")
-    print("Please ensure all dependencies are installed. See README.md for installation instructions.")
-    sys.exit(1)
+    # Dependencies not available, will be handled by dependency manager
+    DEPENDENCIES_AVAILABLE = False
+    IMPORT_ERROR = str(e)
 
 
 class DiagnosticApp:
@@ -44,6 +53,7 @@ class DiagnosticApp:
     def __init__(self):
         self.console = Console()
         self.logger = self._setup_logging()
+        self.dependency_manager = DependencyManager()
         self.llm_engine: Optional[LLMEngine] = None
         self.plugin_manager: Optional[PluginManager] = None
         self.current_session: Optional[DiagnosticSession] = None
@@ -57,6 +67,51 @@ class DiagnosticApp:
             handlers=[RichHandler(console=self.console, rich_tracebacks=True)]
         )
         return logging.getLogger("ai_diagnostics")
+    
+    async def check_and_install_dependencies(self, auto_install: bool = False) -> bool:
+        """
+        Check dependencies and offer to install missing ones.
+        
+        Args:
+            auto_install: If True, install dependencies without prompting
+            
+        Returns:
+            bool: True if all dependencies are available, False otherwise
+        """
+        self.console.print("[yellow]🔍 Checking system dependencies...[/yellow]")
+        
+        # Check which packages are missing
+        missing_packages, installed_packages = self.dependency_manager.check_all_dependencies()
+        
+        if not missing_packages:
+            self.console.print("[green]✅ All system dependencies are installed![/green]")
+            
+            # Also check Python imports
+            failed_imports = self.dependency_manager.check_python_imports()
+            if failed_imports:
+                self.console.print(f"[yellow]⚠️ Some Python packages not importable: {', '.join(failed_imports)}[/yellow]")
+                self.console.print("[yellow]This might be due to PATH issues or partial installations[/yellow]")
+                return False
+            
+            return True
+        
+        # Show dependency status
+        self.console.print(f"[yellow]📋 Found {len(missing_packages)} missing dependencies[/yellow]")
+        
+        # Install missing dependencies
+        success = await self.dependency_manager.install_missing_dependencies(
+            missing_packages, 
+            interactive=not auto_install
+        )
+        
+        if success:
+            self.console.print("\n[green]✅ Dependencies installed successfully![/green]")
+            self.console.print("[blue]🔄 Please restart the application to use the new dependencies[/blue]")
+            return False  # Return False to indicate restart needed
+        else:
+            self.console.print("\n[red]❌ Dependency installation failed or was cancelled[/red]")
+            self.dependency_manager.display_installation_help()
+            return False
     
     async def initialize(self) -> bool:
         """Initialize the diagnostic system components."""
@@ -220,8 +275,10 @@ class DiagnosticApp:
 @click.option('--trends', is_flag=True, help='Show historical trend analysis')
 @click.option('--days', default=30, help='Days of history for trend analysis')
 @click.option('--verbose', is_flag=True, help='Enable detailed logging')
+@click.option('--install-deps', is_flag=True, help='Automatically install missing dependencies')
+@click.option('--check-deps', is_flag=True, help='Check dependencies and exit')
 def main(mode: str, interactive: bool, ai_model: str, export: Optional[str], 
-         trends: bool, days: int, verbose: bool):
+         trends: bool, days: int, verbose: bool, install_deps: bool, check_deps: bool):
     """AI-Powered Theming System Diagnostics"""
     
     app = DiagnosticApp()
@@ -230,6 +287,24 @@ def main(mode: str, interactive: bool, ai_model: str, export: Optional[str],
         logging.getLogger().setLevel(logging.DEBUG)
     
     async def run_app():
+        # Always check dependencies first
+        deps_ok = await app.check_and_install_dependencies(auto_install=install_deps)
+        
+        if check_deps:
+            # Just check dependencies and exit
+            return deps_ok
+        
+        if not deps_ok:
+            app.console.print("\n[red]❌ Dependencies not satisfied. Use --install-deps to install automatically.[/red]")
+            return False
+        
+        # Check if core modules are available after dependency check
+        if not DEPENDENCIES_AVAILABLE:
+            app.console.print(f"\n[red]❌ Core modules not available: {IMPORT_ERROR}[/red]")
+            app.console.print("[yellow]💡 Try restarting the application after installing dependencies[/yellow]")
+            return False
+        
+        # Run the requested operation
         if trends:
             return await app.show_trends(days)
         elif interactive:
@@ -238,8 +313,18 @@ def main(mode: str, interactive: bool, ai_model: str, export: Optional[str],
             return await app.run_diagnostic(mode, export)
     
     # Run the async application
-    success = asyncio.run(run_app())
-    sys.exit(0 if success else 1)
+    try:
+        success = asyncio.run(run_app())
+        sys.exit(0 if success else 1)
+    except KeyboardInterrupt:
+        app.console.print("\n[yellow]🛑 Operation cancelled by user[/yellow]")
+        sys.exit(1)
+    except Exception as e:
+        app.console.print(f"\n[red]💥 Unexpected error: {e}[/red]")
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

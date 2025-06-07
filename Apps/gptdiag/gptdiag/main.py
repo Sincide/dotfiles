@@ -177,6 +177,35 @@ def headless_scan(ctx, quick, full, ai):
 
 
 @cli.command()
+@click.option('--host', default='127.0.0.1', help='Host to bind to')
+@click.option('--port', default=8000, type=int, help='Port to bind to')
+@click.option('--dev', is_flag=True, help='Enable development mode with auto-reload')
+@click.pass_context
+def web(ctx, host, port, dev):
+    """Launch GPTDiag web dashboard server."""
+    console.print("[bold blue]🚀 Starting GPTDiag Web Dashboard[/bold blue]")
+    
+    try:
+        from .web.server import run_server
+        
+        console.print(f"[green]Dashboard will be available at: http://{host}:{port}[/green]")
+        console.print("[yellow]Press Ctrl+C to stop the server[/yellow]")
+        
+        run_server(host=host, port=port, debug=dev or ctx.obj['debug'])
+        
+    except ImportError as e:
+        console.print(f"[red]Web dependencies not available: {e}[/red]")
+        console.print("[yellow]Install web dependencies with: sudo pacman -S python-fastapi uvicorn[/yellow]")
+        sys.exit(1)
+    except Exception as e:
+        if ctx.obj['debug']:
+            console.print_exception()
+        else:
+            console.print(f"[red]Failed to start web server: {e}[/red]")
+        sys.exit(1)
+
+
+@cli.command()
 @click.pass_context
 def system_info(ctx):
     """Display system information."""

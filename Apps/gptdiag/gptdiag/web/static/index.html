@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPTDiag 2.0 - AI System Intelligence Platform</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>🧠 GPTDiag 2.0</h1>
+                    <span class="subtitle">AI System Intelligence Platform</span>
+                </div>
+                <div class="header-status">
+                    <div class="ai-health-score" id="ai-health-score">
+                        <span class="health-label">AI Health Score</span>
+                        <span class="health-value" id="health-value">--</span>
+                        <span class="health-bar">
+                            <span class="health-fill" id="health-fill"></span>
+                        </span>
+                    </div>
+                    <div class="status-indicator" id="connection-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Connecting...</span>
+                    </div>
+                    <div class="ai-status" id="ai-status">
+                        <span class="ai-indicator">🤖</span>
+                        <span class="ai-text">AI Ready</span>
+                        <span class="ai-models" id="ai-models">5 models</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <div class="tab-container">
+                <button class="tab-btn active" data-tab="dashboard">
+                    <span class="tab-icon">🏠</span>
+                    <span class="tab-label">AI Dashboard</span>
+                </button>
+                <button class="tab-btn" data-tab="analytics">
+                    <span class="tab-icon">🔮</span>
+                    <span class="tab-label">Predictive Analytics</span>
+                </button>
+                <button class="tab-btn" data-tab="logs">
+                    <span class="tab-icon">📋</span>
+                    <span class="tab-label">Log Intelligence</span>
+                </button>
+                <button class="tab-btn" data-tab="performance">
+                    <span class="tab-icon">⚡</span>
+                    <span class="tab-label">Performance AI</span>
+                </button>
+                <button class="tab-btn" data-tab="maintenance">
+                    <span class="tab-icon">🛠️</span>
+                    <span class="tab-label">Maintenance AI</span>
+                </button>
+                <button class="tab-btn" data-tab="security">
+                    <span class="tab-icon">🛡️</span>
+                    <span class="tab-label">Security Intel</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <!-- Tab 1: AI Dashboard -->
+            <div class="tab-content active" id="tab-dashboard">
+                <div class="dashboard-grid">
+                    <!-- AI Health Overview -->
+                    <section class="ai-overview-section">
+                        <div class="section-header">
+                            <h2>🧠 AI System Intelligence</h2>
+                            <div class="last-analysis" id="last-analysis">Last analysis: --</div>
+                        </div>
+                        
+                        <div class="ai-cards-grid">
+                            <div class="ai-card critical-issues">
+                                <div class="ai-card-header">
+                                    <h3>🚨 Critical Issues</h3>
+                                    <span class="issue-count" id="critical-count">0</span>
+                                </div>
+                                <div class="ai-card-content" id="critical-issues">
+                                    <div class="no-issues">✅ No critical issues detected</div>
+                                </div>
+                            </div>
+                            
+                            <div class="ai-card predictive-alerts">
+                                <div class="ai-card-header">
+                                    <h3>📈 Predictive Alerts</h3>
+                                    <span class="alert-count" id="predictive-count">0</span>
+                                </div>
+                                <div class="ai-card-content" id="predictive-alerts">
+                                    <div class="no-alerts">🔮 No issues predicted</div>
+                                </div>
+                            </div>
+                            
+                            <div class="ai-card performance-ops">
+                                <div class="ai-card-header">
+                                    <h3>⚡ Performance Opportunities</h3>
+                                    <span class="ops-count" id="performance-count">0</span>
+                                </div>
+                                <div class="ai-card-content" id="performance-opportunities">
+                                    <div class="no-opportunities">⚡ System running optimally</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Quick System Metrics -->
+                    <section class="quick-metrics-section">
+                        <div class="metrics-row">
+                            <div class="metric-card compact cpu-card">
+                                <div class="metric-header">
+                                    <span class="metric-icon">⚡</span>
+                                    <span class="metric-label">CPU</span>
+                                </div>
+                                <div class="metric-value" id="cpu-value-compact">--</div>
+                                <div class="metric-trend" id="cpu-trend">--</div>
+                            </div>
+                            
+                            <div class="metric-card compact memory-card">
+                                <div class="metric-header">
+                                    <span class="metric-icon">💾</span>
+                                    <span class="metric-label">Memory</span>
+                                </div>
+                                <div class="metric-value" id="memory-value-compact">--</div>
+                                <div class="metric-trend" id="memory-trend">--</div>
+                            </div>
+                            
+                            <div class="metric-card compact disk-card">
+                                <div class="metric-header">
+                                    <span class="metric-icon">💿</span>
+                                    <span class="metric-label">Disk</span>
+                                </div>
+                                <div class="metric-value" id="disk-value-compact">--</div>
+                                <div class="metric-trend" id="disk-trend">--</div>
+                            </div>
+                            
+                            <div class="metric-card compact load-card">
+                                <div class="metric-header">
+                                    <span class="metric-icon">📊</span>
+                                    <span class="metric-label">Load</span>
+                                </div>
+                                <div class="metric-value" id="load-value-compact">--</div>
+                                <div class="metric-trend" id="load-trend">--</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- AI Recommendations -->
+                    <section class="ai-recommendations-section">
+                        <div class="section-header">
+                            <h2>🎯 Today's AI Recommendations</h2>
+                            <button class="btn btn-secondary" id="refresh-recommendations">
+                                <span class="btn-icon">🔄</span>
+                                Refresh Analysis
+                            </button>
+                        </div>
+                        
+                        <div class="recommendations-grid" id="recommendations-grid">
+                            <div class="recommendation-placeholder">
+                                <div class="placeholder-icon">🧠</div>
+                                <h3>AI Analysis in Progress</h3>
+                                <p>The AI is analyzing your system patterns to generate personalized recommendations...</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Tab 2: Predictive Analytics -->
+            <div class="tab-content" id="tab-analytics">
+                <div class="analytics-grid">
+                    <h2>🔮 Predictive Analytics</h2>
+                    <p class="coming-soon">Advanced AI forecasting and trend analysis coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Tab 3: Log Intelligence -->
+            <div class="tab-content" id="tab-logs">
+                <div class="logs-grid">
+                    <div class="section-header">
+                        <h2>📋 Log Intelligence</h2>
+                        <div class="log-controls">
+                            <button class="btn btn-primary" id="auto-scan-logs">
+                                <span class="btn-icon">🔍</span>
+                                Scan All Logs
+                            </button>
+                            <button class="btn btn-secondary" id="refresh-log-analysis">
+                                <span class="btn-icon">🔄</span>
+                                Refresh Analysis
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Auto-detected Issues -->
+                    <div class="log-section">
+                        <div class="log-section-header">
+                            <h3>🚨 Auto-Detected Issues</h3>
+                            <span class="issue-count-badge" id="log-issues-count">0</span>
+                        </div>
+                        <div class="log-issues-container" id="log-issues-container">
+                            <div class="log-placeholder">
+                                <div class="loading-icon">🧠</div>
+                                <p>AI scanning system logs for issues...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Errors & Warnings -->
+                    <div class="log-section">
+                        <div class="log-section-header">
+                            <h3>⚠️ Recent Errors & Warnings</h3>
+                            <span class="error-count-badge" id="log-errors-count">0</span>
+                        </div>
+                        <div class="log-errors-container" id="log-errors-container">
+                            <div class="log-placeholder">
+                                <div class="loading-icon">📋</div>
+                                <p>Analyzing recent log entries...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Insights -->
+                    <div class="log-section">
+                        <div class="log-section-header">
+                            <h3>⚡ Performance Insights</h3>
+                            <span class="insight-count-badge" id="log-insights-count">0</span>
+                        </div>
+                        <div class="log-insights-container" id="log-insights-container">
+                            <div class="log-placeholder">
+                                <div class="loading-icon">⚡</div>
+                                <p>Identifying performance patterns...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Manual Query Section -->
+                    <div class="log-section">
+                        <div class="log-section-header">
+                            <h3>🔍 Custom Log Query</h3>
+                        </div>
+                        <div class="log-query-container">
+                            <input type="text" class="log-search" placeholder="Ask AI about specific logs..." id="log-query">
+                            <button class="btn btn-primary" id="analyze-custom-logs">
+                                <span class="btn-icon">🔍</span>
+                                Analyze
+                            </button>
+                        </div>
+                        <div class="custom-log-result" id="custom-log-result">
+                            <div class="log-query-placeholder">
+                                <p>💬 Ask specific questions like:</p>
+                                <ul>
+                                    <li>"Why was my boot slow today?"</li>
+                                    <li>"Show me Firefox crashes from yesterday"</li>
+                                    <li>"Find network connection timeouts"</li>
+                                    <li>"Check for systemd service failures"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Performance AI -->
+            <div class="tab-content" id="tab-performance">
+                <div class="performance-grid">
+                    <h2>⚡ Performance AI</h2>
+                    <p class="coming-soon">AI-driven performance optimization coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Tab 5: Maintenance AI -->
+            <div class="tab-content" id="tab-maintenance">
+                <div class="maintenance-grid">
+                    <h2>🛠️ Maintenance AI</h2>
+                    <p class="coming-soon">Proactive system maintenance assistant coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Tab 6: Security Intelligence -->
+            <div class="tab-content" id="tab-security">
+                <div class="security-grid">
+                    <h2>🛡️ Security Intelligence</h2>
+                    <p class="coming-soon">AI-powered security monitoring coming soon...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- AI Chat Interface (Floating) -->
+        <div class="ai-chat-container" id="ai-chat-container">
+            <button class="ai-chat-toggle" id="ai-chat-toggle">
+                <span class="chat-icon">💬</span>
+                <span class="chat-label">Ask AI</span>
+            </button>
+            
+            <div class="ai-chat-panel" id="ai-chat-panel">
+                <div class="chat-header">
+                    <h3>🧠 AI Assistant</h3>
+                    <button class="chat-close" id="chat-close">×</button>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="ai-message">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <p>Hi! I'm your AI system assistant. Ask me anything about your system:</p>
+                            <ul>
+                                <li>"Why is my system slow?"</li>
+                                <li>"Show me disk usage trends"</li>
+                                <li>"What should I update today?"</li>
+                                <li>"Analyze my boot performance"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" placeholder="Ask your AI assistant..." id="chat-input">
+                    <button class="chat-send" id="chat-send">
+                        <span class="send-icon">🚀</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <span>GPTDiag 2.0</span>
+                    <span>•</span>
+                    <span>AI System Intelligence Platform</span>
+                    <span>•</span>
+                    <span>5 Ollama Models Active</span>
+                </div>
+                <div class="footer-tech">
+                    <span>Multi-Model AI • Real-time Analysis • Predictive Intelligence</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/ai-orchestrator.js"></script>
+    <script src="/static/js/dashboard-2.0.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/websocket.js"></script>
+</body>
+</html> 

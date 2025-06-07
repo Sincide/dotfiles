@@ -1,6 +1,6 @@
 # Arch Linux packages (install via pacman/yay)
 # pacman -S python-textual python-rich python-psutil python-aiohttp python-aiofiles
-# pacman -S python-click python-yaml python-dateutil python-tabulate
+# pacman -S python-click python-yaml python-dateutil python-tabulate python-fastapi uvicorn
 # yay -S python-plotext python-asyncio-mqtt
 
 # Core dependencies - available through pacman
@@ -13,6 +13,10 @@ python-click
 python-yaml
 python-dateutil
 python-tabulate
+python-fastapi
+uvicorn
+python-websockets
+python-jinja2
 
 # AUR dependencies - install via yay
 python-plotext

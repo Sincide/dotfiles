@@ -445,6 +445,29 @@ setup_ai_scripts() {
     print_substep "Creating ~/.local/bin directory..."
     mkdir -p "$HOME/.local/bin" || print_warning "Failed to create ~/.local/bin directory"
     
+    # Install dashboard dependencies and build it
+    print_substep "Building AI dashboard..."
+    if [ -f "$dotfiles_dir/scripts/ai/dashboard.go" ]; then
+        cd "$dotfiles_dir/scripts/ai"
+        print_progress "Installing dashboard dependencies..."
+        go get github.com/charmbracelet/bubbletea@v0.25.0
+        go get github.com/charmbracelet/lipgloss@v0.9.1
+        
+        print_progress "Building dashboard..."
+        go build -o dashboard dashboard.go
+        
+        print_progress "Making dashboard executable..."
+        chmod +x dashboard
+        
+        print_progress "Creating dashboard symlink..."
+        local dashboard_target="$HOME/.local/bin/ai-dashboard"
+        ln -sf "$dotfiles_dir/scripts/ai/dashboard" "$dashboard_target"
+        verify_symlink "$dotfiles_dir/scripts/ai/dashboard" "$dashboard_target" || print_warning "Failed to verify dashboard symlink"
+        print_success "AI dashboard installed and accessible as 'ai-dashboard'"
+    else
+        print_warning "Dashboard source not found, skipping dashboard installation"
+    fi
+    
     # Symlink the main AI configuration script for system-wide access
     if [ -f "$dotfiles_dir/scripts/ai/ai-config.sh" ]; then
         print_substep "Making ai-config accessible system-wide..."

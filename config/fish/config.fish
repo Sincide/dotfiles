@@ -217,3 +217,4 @@ end
 
 
 set -gx ENABLE_AI_OPTIMIZATION true
+set -gx PATH $HOME/.local/bin $PATH

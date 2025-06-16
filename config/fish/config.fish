@@ -127,6 +127,13 @@ alias update='sudo pacman -Syu'
 alias cleanup='sudo pacman -Rns $(pacman -Qtdq)'
 alias cleanall='sudo journalctl --vacuum-time=2weeks; sudo pacman -Sc --noconfirm'
 
+# Better grep with ripgrep if available
+if command -v rg > /dev/null
+    alias grep='rg'
+else
+    set -a missing_commands "ripgrep"
+end
+
 # Directory shortcuts
 alias dl='cd ~/Downloads'
 alias docs='cd ~/Documents'
@@ -215,6 +222,6 @@ function path
     echo $PATH | tr ' ' '\n' | tr ':' '\n'
 end 
 
+# === pyenv integration ===
+status --is-interactive; and pyenv init - | source
 
-set -gx ENABLE_AI_OPTIMIZATION true
-set -gx PATH $HOME/.local/bin $PATH

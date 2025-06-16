@@ -34,6 +34,30 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { print_error "Failed to cd to repo root: $REPO_ROOT"; exit 1; }
 print_status "Using repository root: $REPO_ROOT"
 
+cd "$REPO_ROOT" || { print_error "Failed to cd to repo root: $REPO_ROOT"; exit 1; }
+
+# Show current repo info
+REPO_NAME=$(basename -s .git "$(git remote get-url origin 2>/dev/null)" 2>/dev/null)
+REMOTE_URL=$(git remote get-url origin 2>/dev/null)
+
+echo
+echo -e "${YELLOW}==============================${NC}"
+echo -e "${YELLOW}  GIT REPOSITORY IN USE:${NC}"
+echo -e "${YELLOW}  → ${BLUE}${REPO_NAME:-<unknown>}${NC}"
+echo -e "${YELLOW}  → ${REMOTE_URL:-<no remote found>}${NC}"
+echo -e "${YELLOW}==============================${NC}"
+echo
+
+
+# Only allow [Enter] or [Y/y] to proceed
+read -n 1 -p "Press [Y] or [Enter] to continue, anything else to abort: " confirm
+echo
+if [[ -n "$confirm" && "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    print_error "Aborted by user."
+    exit 4
+fi
+
+
 # Function to generate commit message based on changes
 generate_commit_message() {
     local files_changed

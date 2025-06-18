@@ -650,6 +650,38 @@ set_default_shell() {
     return 0
 }
 
+# Install Astal (Aylur's GTK Shell)
+install_astal() {
+    section "Aylur's GTK Shell (Astal) Installation"
+    
+    if confirm "Would you like to install Aylur's GTK Shell (Astal)?" "n"; then
+        step "Installing Aylur's GTK Shell..."
+        
+        # Make sure the scripts directory exists
+        mkdir -p "$DOTFILES_DIR/scripts/setup"
+        
+        # Copy the installation script if it doesn't exist
+        if [[ ! -f "$DOTFILES_DIR/scripts/setup/install_astal.sh" ]]; then
+            log "Astal installation script not found. Please ensure it's present at scripts/setup/install_astal.sh"
+            print_warning "Skipping Astal installation. Script not found."
+            return 1
+        fi
+        
+        # Make the script executable
+        chmod +x "$DOTFILES_DIR/scripts/setup/install_astal.sh"
+        
+        # Run the installation script
+        if "$DOTFILES_DIR/scripts/setup/install_astal.sh"; then
+            print_success "Aylur's GTK Shell installed successfully"
+        else
+            print_warning "Failed to install Aylur's GTK Shell"
+            return 1
+        fi
+    else
+        log "Skipping Aylur's GTK Shell installation"
+    fi
+}
+
 # Install system packages using yay
 install_packages() {
     section "Package Installation"
@@ -784,6 +816,7 @@ main() {
     
     # Run installation steps
     install_packages
+    install_astal
     enable_services
     set_default_shell
     setup_dotfiles_dir

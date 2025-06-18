@@ -16,7 +16,22 @@ NC='\033[0m'  # No Color
 # Configuration
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 CONFIG_DIR="$HOME/.config"
-LOG_FILE="$DOTFILES_DIR/dotfiles.log"
+LOG_DIR="$DOTFILES_DIR/logs"
+LOG_FILE="$LOG_DIR/dotfiles-$(date +%Y%m%d).log"
+
+# Ensure log directory exists
+mkdir -p "$LOG_DIR" 2>/dev/null || {
+    echo "Failed to create log directory: $LOG_DIR" >&2
+    LOG_FILE="/tmp/dotfiles-$(date +%s).log"
+    echo "Using temporary log file: $LOG_FILE" >&2
+}
+
+# Ensure log file exists
+touch "$LOG_FILE" 2>/dev/null || {
+    LOG_FILE="/tmp/dotfiles-$(date +%s).log"
+    echo "Using temporary log file: $LOG_FILE" >&2
+    touch "$LOG_FILE"
+}
 
 # Ensure we're in the dotfiles directory
 cd "$DOTFILES_DIR" || {
@@ -26,8 +41,21 @@ cd "$DOTFILES_DIR" || {
 
 # Initialize logging
 init_logging() {
-    mkdir -p "$(dirname "$LOG_FILE")"
-    echo "=== $(date) - dotfiles.sh started ===" >> "$LOG_FILE"
+    # Ensure log directory exists
+    mkdir -p "$LOG_DIR" 2>/dev/null || {
+        LOG_FILE="/tmp/dotfiles-$(date +%s).log"
+        echo "Warning: Using temporary log file: $LOG_FILE" >&2
+    }
+    
+    # Create log file
+    touch "$LOG_FILE" 2>/dev/null || {
+        LOG_FILE="/tmp/dotfiles-$(date +%s).log"
+        echo "Warning: Using temporary log file: $LOG_FILE" >&2
+        touch "$LOG_FILE"
+    }
+    
+    echo -e "\n=== $(date) - dotfiles.sh started ===" >> "$LOG_FILE"
+    log "Log file: $LOG_FILE"
 }
 
 # Log a message
@@ -57,7 +85,13 @@ has_unstaged_changes() {
 stash_changes() {
     if has_unstaged_changes; then
         log "Stashing unstaged changes..."
-        git -C "$DOTFILES_DIR" stash push -m "Auto-stashed by dotfiles.sh $(date +%Y-%m-%d_%H-%M-%S)"
+        # Exclude log files from stashing
+        git -C "$DOTFILES_DIR" stash push --keep-index --include-untracked -- "$(git -C "$DOTFILES_DIR" rev-parse --show-toplevel | tr -d '\n')" \
+            -- "$(git -C "$DOTFILES_DIR" ls-files --others --exclude-standard | grep -v "\.log$" | tr '\n' ' ')" \
+            -m "Auto-stashed by dotfiles.sh $(date +%Y-%m-%d_%H-%M-%S)" || {
+            log "Warning: Failed to stash changes. Continuing anyway..."
+            return 1
+        }
         return 0  # Changes were stashed
     fi
     return 1  # No changes to stash

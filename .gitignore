@@ -1,0 +1,27 @@
+# Log files
+*.log
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Local development files
+.env
+.env.local
+
+# Temporary files
+/tmp/
+/temp/
+
+# Ignore the dotfiles log file specifically
+dotfiles.log
+
+# Ignore the scripts directory (if you don't want to track script changes)
+# /scripts/

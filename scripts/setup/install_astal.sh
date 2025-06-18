@@ -29,6 +29,32 @@ log() {
     echo "[$timestamp] $1" >> "$LOG_FILE"
 }
 
+# Confirm action with user
+confirm() {
+    local prompt default response
+    prompt="$1"
+    default="${2:-y}"  # Default to 'y' if not provided
+    
+    # Set the prompt
+    if [ "$default" = "y" ]; then
+        prompt="$prompt [Y/n] "
+    else
+        prompt="$prompt [y/N] "
+    fi
+    
+    # Read the response
+    read -r -p "$prompt" response
+    
+    # Set default if empty
+    [ -z "$response" ] && response="$default"
+    
+    # Convert to lowercase and check
+    case "${response,,}" in
+        y|yes) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 # Check if running as root
 check_root() {
     if [ "$(id -u)" -eq 0 ]; then
@@ -97,6 +123,7 @@ check_requirements() {
     fi
     
     print_success "System requirements check completed"
+}
 
 # Install Astal package
 install_astal() {
@@ -108,66 +135,226 @@ install_astal() {
     fi
 }
 
-# Create basic configuration
+# Create basic Astal configuration
 setup_config() {
     local config_dir="$HOME/.config/ags"
+    local config_file="$config_dir/app.ts"
+    local styles_dir="$config_dir/styles"
     
     log "Setting up Astal configuration..."
     
     # Create config directory if it doesn't exist
     mkdir -p "$config_dir"
+    mkdir -p "$styles_dir"
     
     # Create basic config file if it doesn't exist
-    if [[ ! -f "$config_dir/config.js" ]]; then
+    if [[ ! -f "$config_file" ]]; then
         log "Creating default configuration..."
-        cat > "$config_dir/config.js" << 'EOL'
+        
+        # Create main app.ts
+        cat > "$config_file" << 'EOL'
 // Astal Configuration
-// This is a basic configuration file for Astal
+// This is a basic TypeScript configuration file for Astal
 
-// Import required modules
-const { exec } = require('resource:///com/github/Aylur/ags/utils.js');
+import { App } from 'resource:///com/github/Aylur/ags/app.js';
+import { Widget } from 'resource:///com/github/Aylur/ags/widget.js';
 
-// Configuration object
-const Config = {
-    // General settings
-    style: 'default',
-    theme: 'default',
-    
-    // Bar configuration
-    bar: {
-        position: 'top',  // top or bottom
-        height: 42,
-        // ... add more bar settings as needed
-    },
-    
-    // Modules to load
-    modules: [
-        'bar',
-        'dashboard',
-        'notifications',
-        // Add more modules as needed
+// Import styles
+import './styles/main.scss';
+
+// Define your widgets
+function Bar(monitor = 0) {
+    return Widget.Window({
+        name: `bar-${monitor}`,
+        className: 'bar',
+        monitor,
+        anchor: ['top', 'left', 'right'],
+        child: Widget.CenterBox({
+            className: 'bar-content',
+            startWidget: Widget.Label({
+                className: 'clock',
+                label: 'Welcome to Astal!',
+            }),
+            centerWidget: Widget.Box({}),
+            endWidget: Widget.Box({
+                children: [
+                    Widget.Label({
+                        className: 'workspaces',
+                        label: '1 2 3 4 5',
+                    }),
+                    Widget.Label({
+                        className: 'tray',
+                        label: 'Tray',
+                    }),
+                ],
+            }),
+        }),
+    });
+}
+
+// Initialize the application
+App.config({
+    style: './styles/main.scss',
+    windows: [
+        Bar(0), // Create bar for primary monitor
+        // Add more windows/widgets here
     ],
-    
-    // Keybindings
-    keybinds: {
-        // Example keybindings
-        'super+space': 'show-applications',
-        'super+return': 'open-terminal',
-    },
-    
-    // Initialize function
-    init: () => {
-        // Initialization code here
-        log('Astal configuration loaded');
-    }
-};
+});
 
-// Export the configuration
-module.exports = Config;
+export {};
 EOL
-        print_success "Created default configuration at $config_dir/config.js"
+        print_success "Created default configuration at $config_file"
+        
+        # Create SCSS styles
+        cat > "$styles_dir/main.scss" << 'EOL'
+// Main styles for Astal
+
+* {
+    all: unset;
+    font-family: 'JetBrainsMono Nerd Font';
+    font-size: 14px;
+}
+
+.bar {
+    background-color: rgba(30, 30, 46, 0.9);
+    color: #cdd6f4;
+    padding: 0 16px;
+}
+
+.bar-content {
+    min-height: 40px;
+}
+
+.clock {
+    font-weight: bold;
+    color: #f5e0dc;
+}
+
+.workspaces {
+    padding: 0 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 0 4px;
+}
+
+.tray {
+    padding: 0 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 0 4px;
+}
+EOL
+        print_success "Created default styles at $styles_dir/main.scss"
+        
+        # Create tsconfig.json for TypeScript
+        cat > "$config_dir/tsconfig.json" << 'EOL'
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "resource:///com/github/Aylur/ags",
+    "baseUrl": ".",
+    "paths": {
+      "resource://*": ["node_modules/types-ags/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
+EOL
+        print_success "Created TypeScript configuration at $config_dir/tsconfig.json"
+        
+        # Create package.json for TypeScript support
+        cat > "$config_dir/package.json" << 'EOL'
+{
+  "name": "ags-config",
+  "version": "1.0.0",
+  "description": "AGS Configuration for Astal",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@girs/gobject-2.0": "^1.0.0",
+    "@girs/gtk-3.0": "^1.0.0",
+    "@girs/gtk-4.0": "^1.0.0",
+    "@girs/gtk-3.0-ambient": "^1.0.0",
+    "@girs/gtk-4.0-ambient": "^1.0.0",
+    "@girs/gdk-3.0": "^1.0.0",
+    "@girs/gdk-4.0": "^1.0.0",
+    "@girs/gdkpixbuf-2.0": "^1.0.0",
+    "@girs/glib-2.0": "^1.0.0",
+    "@girs/gio-2.0": "^1.0.0",
+    "@girs/graphene-1.0": "^1.0.0",
+    "@girs/harfbuzz-0.0": "^0.0.0",
+    "@girs/pango-1.0": "^1.0.0",
+    "@girs/cairo-1.0": "^1.0.0",
+    "@girs/atk-1.0": "^1.0.0",
+    "@girs/graphene-1.0-ambient": "^1.0.0",
+    "@girs/harfbuzz-0.0-ambient": "^0.0.0",
+    "@girs/pango-1.0-ambient": "^1.0.0",
+    "@girs/cairo-1.0-ambient": "^1.0.0",
+    "@girs/atk-1.0-ambient": "^1.0.0",
+    "@girs/glib-2.0-ambient": "^1.0.0",
+    "@girs/gio-2.0-ambient": "^1.0.0",
+    "@girs/gobject-2.0-ambient": "^1.0.0",
+    "@girs/gdk-3.0-ambient": "^1.0.0",
+    "@girs/gdk-4.0-ambient": "^1.0.0",
+    "@girs/gdkpixbuf-2.0-ambient": "^1.0.0",
+    "typescript": "^5.0.0",
+    "sass": "^1.62.0",
+    "esbuild": "^0.17.0"
+  }
+}
+EOL
+        print_success "Created package.json for TypeScript support"
+        
+        # Create a simple README
+        cat > "$config_dir/README.md" << 'EOL'
+# Astal Configuration
+
+This directory contains the configuration for Astal, a GTK-based shell for Wayland.
+
+## Development
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Build the TypeScript files:
+   ```bash
+   npm run build
+   ```
+
+3. Run Astal with your configuration:
+   ```bash
+   ags -c app.ts
+   ```
+
+## File Structure
+
+- `app.ts` - Main configuration file
+- `styles/` - SCSS styles for theming
+- `tsconfig.json` - TypeScript configuration
+- `package.json` - Project dependencies and scripts
+
+## Documentation
+
+- [Astal Documentation](https://aylur.github.io/astal/)
+- [TypeScript Guide](https://aylur.github.io/astal/guide/typescript/)
+- [Widget Reference](https://aylur.github.io/libastal/)
+EOL
+        print_success "Created README.md with usage instructions"
+        
     else
-        print_warning "Configuration file already exists at $config_dir/config.js"
+        print_warning "Configuration file already exists at $config_file"
     fi
 }
 
@@ -191,8 +378,9 @@ main() {
     echo -e "\n${GREEN}Astal (Aylur's GTK Shell) installation completed successfully!${NC}"
     echo -e "\n${YELLOW}Next steps:${NC}"
     echo "1. Log out and log back in to ensure all components are properly loaded"
-    echo "2. Configure Astal by editing ~/.config/ags/config.js"
-    echo "3. Add 'ags &' to your Hyprland autostart to launch Astal on login"
+    echo "2. Configure Astal by editing ~/.config/ags/app.ts"
+    echo '3. Run "ags --run-js \"console.log(\'"'"'Hello from AGS!'"'"')\"" to test the configuration'
+    echo "4. Add 'ags &' to your Hyprland autostart to launch Astal on login"
     echo -e "\n${YELLOW}Log file: $LOG_FILE${NC}"
 }
 

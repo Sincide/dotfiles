@@ -573,6 +573,7 @@ create_symlinks() {
         "fish"
         "dunst"
         "nvim"
+        "ags"
     )
     
     # Create symlinks
@@ -778,10 +779,46 @@ print_summary() {
     echo -e "\nYou will be prompted before each major step."
 }
 
+# Process command line arguments
+process_args() {
+    local symlinks_only=false
+    
+    for arg in "$@"; do
+        case "$arg" in
+            --symlinks)
+                symlinks_only=true
+                ;;
+            --help|-h)
+                echo "Usage: $0 [options]"
+                echo "Options:"
+                echo "  --symlinks   Only create symlinks for dotfiles"
+                echo "  --help, -h   Show this help message"
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $arg"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+    
+    if $symlinks_only; then
+        log "Running in symlinks-only mode"
+        create_symlinks
+        log "Symlinks creation completed"
+        echo -e "\n${GREEN}Symlinks created successfully!${NC}"
+        exit 0
+    fi
+}
+
 # Main function
 main() {
     echo -e "${GREEN}Arch Linux Post-Install Script${NC}"
     echo -e "This script will help set up a new Arch Linux installation\n"
+    
+    # Process command line arguments
+    process_args "$@"
     
     # Initialize logging
     init_logging

@@ -36,15 +36,67 @@ check_root() {
     fi
 }
 
-# Check for required commands
-check_commands() {
-    local commands=("yay" "git")
-    for cmd in "${commands[@]}"; do
+# Check system requirements and compatibility
+check_requirements() {
+    log "Checking system requirements for Astal..."
+    
+    # 1. Check for required commands
+    local required_commands=("yay" "git")
+    local recommended_commands=("node" "sassc" "typescript" "esbuild")
+    
+    # Check required commands
+    for cmd in "${required_commands[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
             print_error "Required command '$cmd' is not installed."
         fi
     done
-}
+    
+    # Check recommended commands
+    local missing_commands=()
+    for cmd in "${recommended_commands[@]}"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            missing_commands+=("$cmd")
+        fi
+    done
+    
+    if [ ${#missing_commands[@]} -gt 0 ]; then
+        print_warning "Recommended build tools missing: ${missing_commands[*]}"
+        if ! confirm "Continue without recommended tools?" "y"; then
+            print_error "Installation aborted. Please install missing tools first."
+        fi
+    fi
+    
+    # 2. Check for Wayland session
+    if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_SESSION_TYPE" != "wayland" ]; then
+        print_warning "Astal works best on Wayland. You're currently not in a Wayland session."
+        if ! confirm "Continue with installation anyway?" "n"; then
+            print_error "Installation aborted. Please switch to a Wayland session."
+        fi
+    fi
+    
+    # 3. Check for required libraries
+    local required_libs=("gtk4" "libadwaita-1" "gjs")
+    local missing_libs=()
+    
+    for lib in "${required_libs[@]}"; do
+        if ! pkg-config --exists "$lib" 2>/dev/null; then
+            missing_libs+=("$lib")
+        fi
+    done
+    
+    if [ ${#missing_libs[@]} -gt 0 ]; then
+        print_warning "Missing required libraries: ${missing_libs[*]}"
+        if confirm "Install missing libraries now?" "y"; then
+            log "Installing required libraries..."
+            if ! yay -S --needed --noconfirm "${missing_libs[@]}"; then
+                print_error "Failed to install required libraries"
+            fi
+        else
+            print_error "Installation aborted. Required libraries are missing."
+        fi
+    fi
+    
+    print_success "System requirements check completed"
 
 # Install Astal package
 install_astal() {
@@ -125,7 +177,9 @@ main() {
     
     # Check prerequisites
     check_root
-    check_commands
+    
+    # Check system requirements and install dependencies
+    check_requirements
     
     # Install Astal
     install_astal
@@ -133,9 +187,13 @@ main() {
     # Setup configuration
     setup_config
     
-    print_success "Astal installation completed successfully!"
-    print_warning "Please restart your session to apply all changes."
-    print_warning "Log file: $LOG_FILE"
+    # Print completion message
+    echo -e "\n${GREEN}Astal (Aylur's GTK Shell) installation completed successfully!${NC}"
+    echo -e "\n${YELLOW}Next steps:${NC}"
+    echo "1. Log out and log back in to ensure all components are properly loaded"
+    echo "2. Configure Astal by editing ~/.config/ags/config.js"
+    echo "3. Add 'ags &' to your Hyprland autostart to launch Astal on login"
+    echo -e "\n${YELLOW}Log file: $LOG_FILE${NC}"
 }
 
 # Run main function

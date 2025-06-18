@@ -14,7 +14,8 @@ alias dot='$HOME/dotfiles/scripts/git/dotfiles.sh'
 alias dots='$HOME/dotfiles/scripts/git/dotfiles.sh sync'
 alias dotst='$HOME/dotfiles/scripts/git/dotfiles.sh status'
 alias dotd='$HOME/dotfiles/scripts/git/dotfiles.sh diff'
-
+alias dotr='$HOME/dotfiles/scripts/git/dotfiles.sh --remote=ssh'
+alias dotrh='$HOME/dotfiles/scripts/git/dotfiles.sh --remote=https'
 # Aliases
 alias ll='ls -alF'
 alias la='ls -A'

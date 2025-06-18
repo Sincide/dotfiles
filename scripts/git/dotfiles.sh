@@ -14,7 +14,7 @@ print_warning()   { echo -e "${YELLOW}[!]${NC} $1"; }
 
 print_help() {
     cat <<EOF
-Usage: $(basename "$0") <command> [options]
+Usage: $(basename "$0") [--remote=ssh|https] <command> [options]
 
 Commands:
   status, st         Show status of dotfiles (local and remote sync info)
@@ -34,7 +34,21 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || { print_error "Failed to cd to repo root: $REPO_ROOT"; exit 1; }
 print_status "Using repository root: $REPO_ROOT"
 
-cd "$REPO_ROOT" || { print_error "Failed to cd to repo root: $REPO_ROOT"; exit 1; }
+# Parse and apply remote override early
+for arg in "$@"; do
+    case "$arg" in
+        --remote=ssh)
+            git remote set-url origin git@github.com:$(git remote get-url origin | sed -E 's|https://github.com/||;s|^.*:||')
+            print_success "Remote set to SSH"
+            shift
+            ;;
+        --remote=https)
+            git remote set-url origin https://github.com/$(git remote get-url origin | sed -E 's|.*github.com[:/]||')
+            print_success "Remote set to HTTPS"
+            shift
+            ;;
+    esac
+done
 
 # Show current repo info
 REPO_NAME=$(basename -s .git "$(git remote get-url origin 2>/dev/null)" 2>/dev/null)
@@ -48,7 +62,6 @@ echo -e "${YELLOW}  → ${REMOTE_URL:-<no remote found>}${NC}"
 echo -e "${YELLOW}==============================${NC}"
 echo
 
-
 # Only allow [Enter] or [Y/y] to proceed
 read -n 1 -p "Press [Y] or [Enter] to continue, anything else to abort: " confirm
 echo
@@ -56,7 +69,6 @@ if [[ -n "$confirm" && "$confirm" != "y" && "$confirm" != "Y" ]]; then
     print_error "Aborted by user."
     exit 4
 fi
-
 
 # Function to generate commit message based on changes
 generate_commit_message() {

@@ -9,6 +9,12 @@ set -gx EDITOR nano
 # Add ~/.local/bin to PATH
 fish_add_path ~/.local/bin
 
+# Dotfiles management aliases
+alias dot='$HOME/dotfiles/scripts/git/dotfiles.sh'
+alias dots='$HOME/dotfiles/scripts/git/dotfiles.sh sync'
+alias dotst='$HOME/dotfiles/scripts/git/dotfiles.sh status'
+alias dotd='$HOME/dotfiles/scripts/git/dotfiles.sh diff'
+
 # Aliases
 alias ll='ls -alF'
 alias la='ls -A'

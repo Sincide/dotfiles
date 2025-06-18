@@ -141,7 +141,7 @@ sync_dotfiles() {
             print_error "Failed to commit changes"
             return 1
         else
-            print_success "Changes committed: $commit_msg"
+            echo -e "${YELLOW}[✓] Changes committed: $commit_msg${NC}"
         fi
     else
         print_warning "No local changes to commit!"

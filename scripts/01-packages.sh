@@ -36,7 +36,7 @@ sudo pacman -S --noconfirm \
     nano \
     openssh \
     fish \
-    #wayland \
+    wayland \
     wl-clipboard \
     unzip \
     polkit-gnome \

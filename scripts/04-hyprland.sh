@@ -26,7 +26,7 @@ EOF
 ascii_art
 
 HYPRDIR="$HOME/.config/hypr"
-mkdir -p "$HYPRDIR"
+#mkdir -p "$HYPRDIR"
 
 log "Writing minimal Hyprland config..."
 

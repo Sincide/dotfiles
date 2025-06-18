@@ -38,12 +38,18 @@ print_status "Using repository root: $REPO_ROOT"
 for arg in "$@"; do
     case "$arg" in
         --remote=ssh)
-            git remote set-url origin git@github.com:$(git remote get-url origin | sed -E 's|https://github.com/||;s|^.*:||')
+            repo_url=$(git remote get-url origin)
+            domain=$(echo "$repo_url" | sed -E 's|.*@([^:]+):.*|\1|;s|https?://([^/]+)/.*|\1|')
+            repo_path=$(echo "$repo_url" | sed -E 's|.*[:/](.+/.+)(\.git)?$|\1|')
+            git remote set-url origin "git@$domain:$repo_path"
             print_success "Remote set to SSH"
             shift
             ;;
         --remote=https)
-            git remote set-url origin https://github.com/$(git remote get-url origin | sed -E 's|.*github.com[:/]||')
+            repo_url=$(git remote get-url origin)
+            domain=$(echo "$repo_url" | sed -E 's|.*@([^:]+):.*|\1|;s|https?://([^/]+)/.*|\1|')
+            repo_path=$(echo "$repo_url" | sed -E 's|.*[:/](.+/.+)(\.git)?$|\1|')
+            git remote set-url origin "https://$domain/$repo_path"
             print_success "Remote set to HTTPS"
             shift
             ;;

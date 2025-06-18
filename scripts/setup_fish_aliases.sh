@@ -18,31 +18,38 @@ cat > "$ALIAS_FILE" << 'EOL'
 # Dotfiles management aliases
 # This file is auto-generated. Do not edit directly.
 
-# Aliases for dotfiles management
-function dots --wraps='$HOME/dotfiles/scripts/git/dotfiles.sh' --description 'Manage dotfiles'
-    $HOME/dotfiles/scripts/git/dotfiles.sh $argv
+# Main dotfiles command (defaults to sync)
+function dots --wraps='$HOME/dotfiles/scripts/git/dotfiles.sh' --description 'Sync dotfiles (pull + add + commit + push)'
+    if test (count $argv) -eq 0
+        $HOME/dotfiles/scripts/git/dotfiles.sh sync
+    else
+        $HOME/dotfiles/scripts/git/dotfiles.sh $argv
+    end
 end
 
 # Status
-alias dotst='dots status'
+alias dotst='$HOME/dotfiles/scripts/git/dotfiles.sh status'
 
-# Add and commit
-alias dota='dots add'
+# Add changes
+alias dota='$HOME/dotfiles/scripts/git/dotfiles.sh add'
 
-# Push
-alias dotp='dots push'
+# Commit changes
+alias dotc='$HOME/dotfiles/scripts/git/dotfiles.sh commit'
 
-# Pull
-alias dotpl='dots pull'
+# Push changes
+alias dotp='$HOME/dotfiles/scripts/git/dotfiles.sh push'
 
-# Diff
-alias dotd='dots diff'
+# Pull changes
+alias dotpl='$HOME/dotfiles/scripts/git/dotfiles.sh pull'
 
-# Log
-alias dotl='dots log'
+# Show diff
+alias dotd='$HOME/dotfiles/scripts/git/dotfiles.sh diff'
+
+# Show log
+alias dotl='$HOME/dotfiles/scripts/git/dotfiles.sh log'
 
 # Sync (pull + add + commit + push)
-alias dotsync='dots sync'
+alias dotsync='$HOME/dotfiles/scripts/git/dotfiles.sh sync'
 EOL
 
 # Make the script executable

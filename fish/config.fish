@@ -3,6 +3,9 @@
 # Set greeting
 set fish_greeting ""
 
+set -gx EDITOR nano
+
+
 # Add ~/.local/bin to PATH
 fish_add_path ~/.local/bin
 
@@ -61,6 +64,7 @@ function extract
         echo "'$argv[1]' is not a valid file"
     end
 end
+
 
 # Starship prompt (if installed)
 if command -v starship > /dev/null

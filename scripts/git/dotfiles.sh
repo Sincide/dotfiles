@@ -16,22 +16,7 @@ NC='\033[0m'  # No Color
 # Configuration
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 CONFIG_DIR="$HOME/.config"
-LOG_DIR="$DOTFILES_DIR/logs"
-LOG_FILE="$LOG_DIR/dotfiles-$(date +%Y%m%d).log"
-
-# Ensure log directory exists
-mkdir -p "$LOG_DIR" 2>/dev/null || {
-    echo "Failed to create log directory: $LOG_DIR" >&2
-    LOG_FILE="/tmp/dotfiles-$(date +%s).log"
-    echo "Using temporary log file: $LOG_FILE" >&2
-}
-
-# Ensure log file exists
-touch "$LOG_FILE" 2>/dev/null || {
-    LOG_FILE="/tmp/dotfiles-$(date +%s).log"
-    echo "Using temporary log file: $LOG_FILE" >&2
-    touch "$LOG_FILE"
-}
+LOG_FILE="$DOTFILES_DIR/dotfiles.log"
 
 # Ensure we're in the dotfiles directory
 cd "$DOTFILES_DIR" || {
@@ -41,21 +26,8 @@ cd "$DOTFILES_DIR" || {
 
 # Initialize logging
 init_logging() {
-    # Ensure log directory exists
-    mkdir -p "$LOG_DIR" 2>/dev/null || {
-        LOG_FILE="/tmp/dotfiles-$(date +%s).log"
-        echo "Warning: Using temporary log file: $LOG_FILE" >&2
-    }
-    
-    # Create log file
-    touch "$LOG_FILE" 2>/dev/null || {
-        LOG_FILE="/tmp/dotfiles-$(date +%s).log"
-        echo "Warning: Using temporary log file: $LOG_FILE" >&2
-        touch "$LOG_FILE"
-    }
-    
-    echo -e "\n=== $(date) - dotfiles.sh started ===" >> "$LOG_FILE"
-    log "Log file: $LOG_FILE"
+    mkdir -p "$(dirname "$LOG_FILE")"
+    echo "=== $(date) - dotfiles.sh started ===" >> "$LOG_FILE"
 }
 
 # Log a message
@@ -85,13 +57,7 @@ has_unstaged_changes() {
 stash_changes() {
     if has_unstaged_changes; then
         log "Stashing unstaged changes..."
-        # Exclude log files from stashing
-        git -C "$DOTFILES_DIR" stash push --keep-index --include-untracked -- "$(git -C "$DOTFILES_DIR" rev-parse --show-toplevel | tr -d '\n')" \
-            -- "$(git -C "$DOTFILES_DIR" ls-files --others --exclude-standard | grep -v "\.log$" | tr '\n' ' ')" \
-            -m "Auto-stashed by dotfiles.sh $(date +%Y-%m-%d_%H-%M-%S)" || {
-            log "Warning: Failed to stash changes. Continuing anyway..."
-            return 1
-        }
+        git -C "$DOTFILES_DIR" stash push -m "Auto-stashed by dotfiles.sh $(date +%Y-%m-%d_%H-%M-%S)"
         return 0  # Changes were stashed
     fi
     return 1  # No changes to stash
@@ -109,42 +75,108 @@ apply_stashed_changes() {
     return 0
 }
 
-# Generate a commit message based on changes
+# Categorize files by type
+categorize_files() {
+    local file="$1"
+    case "$file" in
+        *.conf|*rc|*.ini|*.json|*.toml|*.yml|*.yaml)
+            echo "config"
+            ;;
+        *.sh|*.py|*.pl|*.rb|*.js|*.ts|*.lua)
+            echo "script"
+            ;;
+        *.fish|*.zsh|*.bash)
+            echo "shell"
+            ;;
+        *.md|*.txt|*.rst|*.adoc)
+            echo "doc"
+            ;;
+        *.png|*.jpg|*.jpeg|*.gif|*.svg|*.ico)
+            echo "image"
+            ;;
+        *)
+            echo "other"
+            ;;
+    esac
+}
+
+# Generate a descriptive commit message based on changes
 generate_commit_message() {
-    local message=""
+    # Get list of changed files with status
+    local changes
+    changes=$(git -C "$DOTFILES_DIR" status --porcelain 2>/dev/null)
     
-    # Get list of changed files
-    local changed_files
-    changed_files=$(git -C "$DOTFILES_DIR" status --porcelain | awk '{print $2}')
-    
-    if [ -z "$changed_files" ]; then
-        echo "chore: update dotfiles"
+    if [ -z "$changes" ]; then
+        echo "chore: 🔄 No changes detected"
         return 0
     fi
     
-    # Count changes by type
+    # Initialize counters and arrays
     local added=0 modified=0 deleted=0 renamed=0
-    while read -r status file; do
+    declare -A file_types
+    declare -a modified_apps
+    
+    # Process each change
+    while IFS= read -r line; do
+        local status="${line:0:2}"
+        local file="${line:3}"
+        
+        # Skip empty lines
+        [ -z "${file// }" ] && continue
+        
+        # Get file type and app name (first directory in path)
+        local file_type=$(categorize_files "$file")
+        local app_name=$(echo "$file" | cut -d'/' -f1)
+        
+        # Update counters
         case "$status" in
-            "A") ((added++)) ;;
-            "M") ((modified++)) ;;
-            "D") ((deleted++)) ;;
-            "R") ((renamed++)) ;;
+            "A "|"A\t") ((added++)) ;;
+            "M "|"M\t") ((modified++)) ;;
+            "D "|"D\t") ((deleted++)) ;;
+            "R "|"R\t") ((renamed++)) ;;
         esac
-    done < <(git -C "$DOTFILES_DIR" status --porcelain)
+        
+        # Track file types and modified apps
+        [ -n "$file_type" ] && ((file_types["$file_type"]++))
+        if [[ "$app_name" != "$file" && " $app_name " != *" "*"$app_name"*"* ]]; then
+            modified_apps+=("$app_name")
+        fi
+    done <<< "$changes"
     
     # Build commit message
-    message="chore: "
-    [ "$added" -gt 0 ] && message+="add $added files, "
-    [ "$modified" -gt 0 ] && message+="modify $modified files, "
-    [ "$deleted" -gt 0 ] && message+="delete $deleted files, "
-    [ "$renamed" -gt 0 ] && message+="rename $renamed files, "
+    local message_parts=()
     
-    # Remove trailing comma and space
-    message="${message%, }"
+    # Add change type summary
+    [ "$added" -gt 0 ] && message_parts+=("➕ $added")
+    [ "$modified" -gt 0 ] && message_parts+=("✏️ $modified")
+    [ "$deleted" -gt 0 ] && message_parts+=("🗑️ $deleted")
+    [ "$renamed" -gt 0 ] && message_parts+=("🏷️ $renamed")
     
-    # If no changes were detected (shouldn't happen)
-    [ "$message" = "chore:" ] && message="chore: update dotfiles"
+    # Add file type summary
+    local type_summary=()
+    for type in "${!file_types[@]}"; do
+        type_summary+=("$type:${file_types[$type]}")
+    done
+    
+    # Add modified apps summary (unique, sorted)
+    local apps_summary=""
+    if [ ${#modified_apps[@]} -gt 0 ]; then
+        apps_summary=" (${modified_apps[*]})"
+    fi
+    
+    # Combine everything
+    local message="🔧 ${message_parts[*]} ${type_summary[*]}$apps_summary"
+    
+    # Ensure message is not too long
+    if [ ${#message} -gt 100 ]; then
+        message="${message:0:97}..."
+    fi
+    
+    # Remove any double spaces and trim
+    message=$(echo "$message" | tr -s ' ' | xargs)
+    
+    # Fallback if something went wrong
+    [ -z "$message" ] && message="🔧 Update dotfiles"
     
     echo "$message"
 }

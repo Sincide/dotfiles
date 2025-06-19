@@ -309,8 +309,8 @@ Located in `scripts/theming/`:
 cd ~/dotfiles
 matugen image /path/to/wallpaper.jpg
 
-# Restart themed applications
-~/dotfiles/scripts/theming/restart_theme_apps.sh
+# Restart cursor/themed applications  
+~/dotfiles/scripts/theming/restart_cursor_apps.sh
 ```
 
 ### 🔧 **Waybar Customization**
@@ -373,7 +373,7 @@ bind = SUPER SHIFT, Q, exit                # Exit Hyprland
 # System controls
 bind = SUPER, L, exec, screen lock         # Lock screen
 bind = SUPER SHIFT, L, exec, unlock screen # Unlock screen
-bind = SUPER SHIFT, W, exec, restart_theme_apps.sh  # Restart theme
+bind = SUPER SHIFT, W, exec, restart_cursor_apps.sh   # Restart cursor/theme
 ```
 
 ### 🌈 **Color Customization**
@@ -553,8 +553,8 @@ chmod +x ~/dotfiles/install.sh
 cd ~/dotfiles
 matugen image ~/dotfiles/assets/wallpapers/space/dark_space.jpg
 
-# Restart applications
-~/dotfiles/scripts/theming/restart_theme_apps.sh
+# Restart cursor/themed applications
+~/dotfiles/scripts/theming/restart_cursor_apps.sh
 ```
 
 **GTK Applications Not Themed**

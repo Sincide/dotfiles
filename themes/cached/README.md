@@ -37,21 +37,21 @@ themes/cached/
 ## What Gets Cached
 
 **Git-based themes** (downloaded and cached):
-- Nordic (GTK)
-- Orchis-Green-Dark (GTK)
-- Ultimate-Dark (GTK)
-- WhiteSur-Light (GTK)
-- Graphite-Dark (GTK)
-- Tela-circle-green (Icons)
-- WhiteSur (Icons)
-- Qogir-dark (Icons)
+- ~~Nordic (GTK)~~ - **Deprecated** (replaced with Graphite-Dark)
+- Orchis-Green-Dark (GTK) - **Active** (nature category)
+- ~~Ultimate-Dark (GTK)~~ - **Deprecated** (replaced with Graphite-Dark)
+- WhiteSur-Light (GTK) - **Active** (minimal category)
+- Graphite-Dark (GTK) - **Primary** (space, gaming, dark categories)
+- Tela-circle-green (Icons) - **Active** (nature category)
+- WhiteSur (Icons) - **Active** (minimal category)
+- ~~Qogir-dark (Icons)~~ - **Deprecated** (replaced with Papirus-Dark)
 
 **AUR packages** (installed directly, not cached):
-- Yaru-Colors
-- Papirus/Papirus-Dark
-- Numix-Circle
-- All Bibata cursor themes
-- Capitaine-Cursors
+- ~~Yaru-Colors~~ - **Deprecated** (replaced with Graphite)
+- Papirus/Papirus-Dark - **Primary** (most categories)
+- ~~Numix-Circle~~ - **Deprecated** (replaced with Papirus)
+- All Bibata cursor themes - **Primary** (hyprcursor support)
+- Capitaine-Cursors - **Active** (minimal category)
 
 ## Benefits
 

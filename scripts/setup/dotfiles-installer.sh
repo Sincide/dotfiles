@@ -28,7 +28,7 @@ if ! command -v gum &>/dev/null; then
 fi
 
 # Gum styling
-readonly GUM_STYLE_HEADER="--foreground=212 --border-foreground=212 --border=double --align=center --width=60 --margin=1 2 --padding=2 4"
+readonly GUM_STYLE_HEADER="--foreground=212 --border-foreground=212 --border=double --align=center --width=60 --margin=1 --padding=2"
 readonly GUM_STYLE_SECTION="--foreground=39 --bold"
 readonly GUM_STYLE_SUCCESS="--foreground=46"
 readonly GUM_STYLE_ERROR="--foreground=196"

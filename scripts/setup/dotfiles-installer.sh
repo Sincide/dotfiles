@@ -46,6 +46,7 @@ declare -A INSTALL_STATE=(
     [dotfiles_deployment]=false
     [user_setup]=false
     [system_optimization]=false
+    [external_drives]=false
 )
 
 # Initialize logging
@@ -1463,6 +1464,159 @@ EOF
     gum_success "Theming system setup completed!"
 }
 
+# Auto-mount external drives with labels
+setup_external_drives() {
+    show_section "External Drive Setup"
+    
+    gum_info "Scanning for external drives..."
+    
+    # Get all block devices with labels (excluding system drives)
+    local external_drives=()
+    local system_root_uuid
+    system_root_uuid=$(findmnt -n -o UUID /)
+    local boot_uuid
+    boot_uuid=$(findmnt -n -o UUID /boot 2>/dev/null || echo "")
+    
+    # Find drives that are not mounted and have labels, excluding system partitions
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            external_drives+=("$line")
+        fi
+    done < <(lsblk -rno NAME,LABEL,FSTYPE,UUID,MOUNTPOINT | \
+             awk -v root_uuid="$system_root_uuid" -v boot_uuid="$boot_uuid" '
+             $3 != "" && $3 != "swap" && $2 != "" && $2 != "vfat" && $2 != "btrfs" && 
+             $4 != root_uuid && $4 != boot_uuid && $5 == "" && 
+             $1 !~ /nvme0n1p/ && $1 !~ /sda[0-9]/ {
+                 print $1 "|" $2 "|" $3 "|" $4
+             }')
+    
+    if [[ ${#external_drives[@]} -eq 0 ]]; then
+        gum_info "No unmounted external drives with labels found"
+        return 0
+    fi
+    
+    gum_info "Found ${#external_drives[@]} external drive(s) with labels:"
+    echo
+    
+    for drive_info in "${external_drives[@]}"; do
+        IFS='|' read -r device label fstype uuid <<< "$drive_info"
+        gum style --foreground=46 "  📱 /dev/$device"
+        gum style --foreground=245 "     Label: $label"
+        gum style --foreground=245 "     Type:  $fstype"
+        echo
+    done
+    
+    if ! gum_confirm "Auto-mount these external drives?"; then
+        gum_info "Skipping external drive setup"
+        return 0
+    fi
+    
+    # Create mount points and mount drives
+    local mount_base="/mnt"
+    local mounted_drives=()
+    
+    for drive_info in "${external_drives[@]}"; do
+        IFS='|' read -r device label fstype uuid <<< "$drive_info"
+        
+        # Clean label for use as directory name
+        local clean_label
+        clean_label=$(echo "$label" | tr ' ' '_' | tr -cd '[:alnum:]_-')
+        local mount_point="$mount_base/$clean_label"
+        
+        gum_info "📁 Setting up mount point: $mount_point"
+        
+        # Create mount point
+        if sudo mkdir -p "$mount_point"; then
+            gum_success "  ✓ Created mount point: $mount_point"
+        else
+            gum_warning "  ⚠ Failed to create mount point: $mount_point"
+            continue
+        fi
+        
+        # Mount the drive
+        gum_info "🔗 Mounting /dev/$device to $mount_point..."
+        if sudo mount "/dev/$device" "$mount_point"; then
+            gum_success "  ✓ Mounted: /dev/$device → $mount_point"
+            mounted_drives+=("$device|$mount_point|$uuid")
+            
+            # Set proper permissions
+            sudo chown "$USER:$USER" "$mount_point" 2>/dev/null || true
+        else
+            gum_warning "  ⚠ Failed to mount /dev/$device"
+            sudo rmdir "$mount_point" 2>/dev/null || true
+        fi
+        echo
+    done
+    
+    if [[ ${#mounted_drives[@]} -eq 0 ]]; then
+        gum_warning "No drives were successfully mounted"
+        return 0
+    fi
+    
+    # Add to /etc/fstab for persistent mounting
+    if gum_confirm "Add mounted drives to /etc/fstab for automatic mounting on boot?"; then
+        gum_info "📝 Adding entries to /etc/fstab..."
+        
+        local fstab_backup="/etc/fstab.backup.$(date +%s)"
+        sudo cp /etc/fstab "$fstab_backup"
+        gum_info "  ✓ Backed up /etc/fstab to $fstab_backup"
+        
+        for drive_info in "${mounted_drives[@]}"; do
+            IFS='|' read -r device mount_point uuid <<< "$drive_info"
+            
+            # Check if entry already exists
+            if grep -q "$uuid" /etc/fstab; then
+                gum_info "  ℹ Entry for $device already exists in /etc/fstab"
+                continue
+            fi
+            
+            # Add fstab entry
+            local fstab_entry="UUID=$uuid $mount_point auto defaults,user,noauto,x-systemd.automount,x-systemd.device-timeout=10 0 2"
+            echo "$fstab_entry" | sudo tee -a /etc/fstab > /dev/null
+            gum_success "  ✓ Added /dev/$device to /etc/fstab"
+        done
+        
+        # Reload systemd
+        sudo systemctl daemon-reload
+        gum_success "  ✓ Reloaded systemd configuration"
+    fi
+    
+    # Create convenient symlinks in home directory
+    if gum_confirm "Create symlinks in your home directory for easy access?"; then
+        gum_info "🔗 Creating convenience symlinks..."
+        
+        for drive_info in "${mounted_drives[@]}"; do
+            IFS='|' read -r device mount_point uuid <<< "$drive_info"
+            local drive_name
+            drive_name=$(basename "$mount_point")
+            local symlink_path="$HOME/$drive_name"
+            
+            if [[ -L "$symlink_path" ]] || [[ -e "$symlink_path" ]]; then
+                gum_warning "  ⚠ $symlink_path already exists, skipping"
+                continue
+            fi
+            
+            ln -s "$mount_point" "$symlink_path"
+            gum_success "  ✓ Created: ~/$drive_name → $mount_point"
+        done
+    fi
+    
+    # Summary
+    echo
+    gum_success "🎉 External drive setup completed!"
+    gum_info "Mounted drives:"
+    for drive_info in "${mounted_drives[@]}"; do
+        IFS='|' read -r device mount_point uuid <<< "$drive_info"
+        local drive_name
+        drive_name=$(basename "$mount_point")
+        echo "  📱 /dev/$device → $mount_point"
+        echo "     Access via: ~/$drive_name"
+        echo
+    done
+    
+    INSTALL_STATE["external_drives"]=true
+}
+
 # Installation summary with gum
 show_summary() {
     show_section "Installation Summary"
@@ -1543,6 +1697,12 @@ main() {
     echo
     if gum_confirm "Configure theming system?"; then
         theming_setup
+    fi
+    
+    # Auto-mount external drives
+    echo
+    if gum_confirm "Setup external drives?"; then
+        setup_external_drives
     fi
     
     # Final summary

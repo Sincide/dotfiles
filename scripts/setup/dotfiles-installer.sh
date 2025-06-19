@@ -1166,8 +1166,18 @@ install_dynamic_themes() {
     )
     
     for package in "${essential_packages[@]}"; do
-        gum spin --spinner=line --title="Installing $package" -- \
-            yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+        gum_info "Installing $package..."
+        if yay -S --needed --noconfirm "$package"; then
+            gum_success "  ✓ $package installed successfully"
+        else
+            gum_error "  ✗ Failed to install $package"
+            gum_info "  → Trying with pacman for official packages..."
+            if pacman -S --needed --noconfirm "$package" 2>/dev/null; then
+                gum_success "  ✓ $package installed via pacman"
+            else
+                gum_warning "  ⚠ $package installation failed completely"
+            fi
+        fi
     done
     
     # GTK themes
@@ -1180,8 +1190,18 @@ install_dynamic_themes() {
     
     for theme in "${gtk_themes[@]}"; do
         if gum_confirm "Install $theme?"; then
-            gum spin --spinner=line --title="Installing $theme" -- \
-                yay -S --needed --noconfirm "$theme" 2>/dev/null || gum_warning "Failed to install $theme"
+            gum_info "Installing $theme..."
+            if yay -S --needed --noconfirm "$theme"; then
+                gum_success "  ✓ $theme installed successfully"
+            else
+                gum_error "  ✗ Failed to install $theme"
+                gum_info "  → Trying with pacman for official packages..."
+                if pacman -S --needed --noconfirm "$theme" 2>/dev/null; then
+                    gum_success "  ✓ $theme installed via pacman"
+                else
+                    gum_warning "  ⚠ $theme installation failed completely"
+                fi
+            fi
         fi
     done
     
@@ -1194,8 +1214,12 @@ install_dynamic_themes() {
     
     for package in "${theme_suites[@]}"; do
         if gum_confirm "Install $package (macOS-like theme suite)?"; then
-            gum spin --spinner=line --title="Installing $package" -- \
-                yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+            gum_info "Installing $package..."
+            if yay -S --needed --noconfirm "$package"; then
+                gum_success "  ✓ $package installed successfully"
+            else
+                gum_warning "  ⚠ $package installation failed (may not exist in AUR)"
+            fi
         fi
     done
     

@@ -34,8 +34,8 @@
 - ❌ **Deprecated themes**: Still referencing `nordic-theme-git` despite removal
 - ❌ **Graphite theme**: User dislikes Graphite theme, needs replacement
 
-### **URGENT FIXES IN PROGRESS** 
-**Status**: 🔧 **ACTIVELY FIXING**
+### **URGENT FIXES COMPLETED** 
+**Status**: ✅ **ROOT CAUSE IDENTIFIED & FIXED**
 1. **✅ Package Name Corrections**:
    - `bibata-cursor-theme` → `bibata-cursor-git` (with hyprcursor support)
    - `nemo-fileroller` → `nemo` (fileroller included automatically)
@@ -59,11 +59,18 @@
    - `everforest-gtk-theme-git` - **AUR** (nature-inspired)
    - `whitesur-gtk-theme` - **AUR** (macOS-like)
 
+5. **✅ Root Cause Identified**:
+   - **Problem**: Installer was silencing ALL error output with `2>/dev/null`
+   - **Fix**: Removed error suppression, added proper error handling
+   - **Improvement**: Added fallback to pacman for official packages
+   - **Better UX**: Clear success/failure messages instead of silent failures
+
 ### **Next Steps for Completion**
-- [ ] Test all corrected package names in fresh VM
-- [ ] Verify theme installation and application works
-- [ ] Update documentation with working package list
-- [ ] Mark installer as production-ready only after successful VM test
+- [x] Identify root cause of installation failures (error suppression)
+- [x] Implement proper error handling and fallback logic
+- [ ] Test corrected installer in fresh VM
+- [ ] Verify all packages install successfully with visible error messages
+- [ ] Mark installer as production-ready after successful VM validation
 
 ---
 

@@ -551,8 +551,125 @@ install_simple_category() {
     # Install packages directly without showing the list (for simplicity)
     install_packages_list "${packages[@]}"
     
+    # Post-installation setup for specific packages
+    post_install_setup "$category" "${packages[@]}"
+    
     INSTALL_STATE["packages_${category}"]=true
     gum_success "$category packages installation completed"
+}
+
+# Post-installation setup for specific packages
+post_install_setup() {
+    local category="$1"
+    shift
+    local packages=("$@")
+    
+    # Check for packages that need special setup
+    for package in "${packages[@]}"; do
+        case "$package" in
+            "virt-manager")
+                setup_virt_manager
+                ;;
+            "docker")
+                setup_docker
+                ;;
+            "qemu")
+                setup_qemu
+                ;;
+        esac
+    done
+}
+
+# Setup Virtual Machine Manager (virt-manager)
+setup_virt_manager() {
+    if ! pacman -Qi virt-manager &>/dev/null; then
+        return 0  # Not installed, skip setup
+    fi
+    
+    gum_step "🖥️ Setting up Virtual Machine Manager"
+    
+    # Install additional virtualization packages
+    local virt_packages=(
+        "qemu-desktop"
+        "libvirt"
+        "edk2-ovmf"
+        "bridge-utils"
+        "dnsmasq"
+        "openbsd-netcat"
+    )
+    
+    gum_info "Installing virtualization dependencies..."
+    for pkg in "${virt_packages[@]}"; do
+        if ! pacman -Qi "$pkg" &>/dev/null; then
+            if sudo pacman -S --needed --noconfirm "$pkg" &>/dev/null; then
+                gum style --foreground=46 "  ✓ $pkg"
+            else
+                gum_error "  ✗ Failed to install: $pkg"
+            fi
+        else
+            gum style --foreground=245 "  ✓ $pkg (already installed)"
+        fi
+    done
+    
+    # Add user to libvirt group
+    gum_info "Adding user to libvirt group..."
+    if sudo usermod -aG libvirt "$USER"; then
+        gum style --foreground=46 "  ✓ User added to libvirt group"
+    else
+        gum_error "  ✗ Failed to add user to libvirt group"
+    fi
+    
+    # Enable and start libvirt services
+    gum_info "Enabling virtualization services..."
+    local services=("libvirtd" "virtlogd")
+    for service in "${services[@]}"; do
+        if sudo systemctl enable "$service" &>/dev/null && sudo systemctl start "$service" &>/dev/null; then
+            gum style --foreground=46 "  ✓ $service enabled and started"
+        else
+            gum_error "  ✗ Failed to enable/start $service"
+        fi
+    done
+    
+    # Configure libvirt network
+    gum_info "Configuring default network..."
+    if sudo virsh net-start default &>/dev/null && sudo virsh net-autostart default &>/dev/null; then
+        gum style --foreground=46 "  ✓ Default network configured"
+    else
+        gum_warning "  ⚠ Default network may need manual configuration"
+    fi
+    
+    # Set up UEFI firmware path
+    gum_info "Configuring UEFI firmware..."
+    if [[ -f /usr/share/edk2-ovmf/x64/OVMF_CODE.fd ]]; then
+        gum style --foreground=46 "  ✓ UEFI firmware available"
+    else
+        gum_warning "  ⚠ UEFI firmware may not be properly configured"
+    fi
+    
+    gum_success "🖥️ Virtual Machine Manager setup completed!"
+    gum_info "💡 Note: You may need to log out and back in for group changes to take effect"
+}
+
+# Setup Docker (placeholder for future)
+setup_docker() {
+    if ! pacman -Qi docker &>/dev/null; then
+        return 0
+    fi
+    
+    gum_info "🐳 Setting up Docker..."
+    sudo usermod -aG docker "$USER"
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    gum_success "🐳 Docker setup completed!"
+}
+
+# Setup QEMU (placeholder for future)
+setup_qemu() {
+    if ! pacman -Qi qemu &>/dev/null; then
+        return 0
+    fi
+    
+    gum_info "⚙️ QEMU detected - configuration handled by virt-manager setup"
 }
 
 # Install a list of packages (shared function)

@@ -33,14 +33,13 @@ fd
 fzf
 eza
 bat
-delta
 zoxide
 starship
 
 # Database tools
-#sqlite
-#postgresql
-#redis
+# sqlite
+# postgresql
+# redis
 
 # Container tools
 docker

@@ -32,12 +32,12 @@ vkd3d
 goverlay
 corectrl
 discord
-protonup-qt
+#protonup-qt
 #appimage-launcher
 
 # Controller support
-xpadneo-dkms
-ds4drv
+#xpadneo-dkms
+#ds4drv
 
 # Performance monitoring
 #nvtop

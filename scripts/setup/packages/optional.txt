@@ -21,7 +21,7 @@ rclone
 #virtualbox
 #virtualbox-host-modules-arch
 qemu
-virt-manager
+virt-manager  # Auto-configures: libvirt, groups, services, networking
 
 # System utilities
 #bleachbit
@@ -67,9 +67,9 @@ whatsapp-for-linux
 #qalculate-gtk
 
 # System information
-hardinfo
+#hardinfo
 cpu-x
-hwinfo
+#hwinfo
 
 # Backup tools
 #timeshift

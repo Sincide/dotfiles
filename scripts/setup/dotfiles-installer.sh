@@ -611,7 +611,7 @@ install_packages_list() {
             
             local choices=("Continue with remaining packages" "Abort installation")
             local choice
-            choice=$(gum choose --header="What would you like to do?" "${choices[@]}")
+            choice=$(gum choose --header="What would you like to do?" "${choices[@]}" < /dev/tty)
             
             case "$choice" in
                 "Continue with remaining packages")
@@ -659,7 +659,7 @@ install_packages_list() {
             
             local choices=("Continue with remaining packages" "Abort installation")
             local choice
-            choice=$(gum choose --header="What would you like to do?" "${choices[@]}")
+            choice=$(gum choose --header="What would you like to do?" "${choices[@]}" < /dev/tty)
             
             case "$choice" in
                 "Continue with remaining packages")

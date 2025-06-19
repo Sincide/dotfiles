@@ -1,0 +1,17 @@
+# Gaming Tools & Utilities
+wine-staging
+dxvk-bin
+vkd3d
+goverlay
+corectrl
+discord
+protonup-qt
+appimage-launcher
+
+# Controller support
+xpadneo-dkms
+ds4drv
+
+# Performance monitoring
+nvtop
+radeontop 

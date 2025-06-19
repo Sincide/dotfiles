@@ -53,8 +53,8 @@ nmap
 tcpdump
 
 # API tools
-postman-bin
-insomnia
+#postman-bin
+#insomnia
 
 # Terminal tools
 kitty

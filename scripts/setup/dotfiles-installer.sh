@@ -435,7 +435,17 @@ main() {
     confirm "Development packages (programming tools)?" && install_package_category "development"
     confirm "Theming packages (matugen, themes, fonts)?" && install_package_category "theming"
     confirm "Multimedia packages (media tools)?" && install_package_category "multimedia"
-    confirm "Gaming packages (Steam, gaming tools)?" && install_package_category "gaming"
+    
+    # Gaming packages with subcategories
+    if confirm "Gaming packages?"; then
+        install_package_category "gaming"  # Essential gaming (Steam, gamemode, wine)
+        
+        echo -e "${BLUE}Optional gaming components:${NC}"
+        confirm "  Additional gaming platforms (Lutris, Heroic, Bottles, Minecraft)?" && install_package_category "gaming-platforms"
+        confirm "  Gaming emulators (RetroArch, Dolphin, PCSX2, etc.)?" && install_package_category "gaming-emulators"
+        confirm "  Advanced gaming tools (Discord, OBS, CoreCtrl, controllers)?" && install_package_category "gaming-tools"
+    fi
+    
     confirm "Optional packages (nice-to-have tools)?" && install_package_category "optional"
     
     # Configuration

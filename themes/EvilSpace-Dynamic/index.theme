@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=EvilSpace Dynamic
+Comment=Dynamic Material Design 3 theme for Evil Space dotfiles
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=EvilSpace-Dynamic
+MetacityTheme=EvilSpace-Dynamic
+IconTheme=Papirus-Dark
+CursorTheme=Adwaita
+ButtonLayout=close,minimize,maximize: 

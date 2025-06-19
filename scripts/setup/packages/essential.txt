@@ -13,6 +13,7 @@ btop
 fastfetch
 gum
 bc
+pacman-contrib
 
 # Network and system utilities
 networkmanager
@@ -58,8 +59,9 @@ ttf-dejavu
 
 # File management
 ranger
-thunar
-thunar-volman
+nemo
+nemo-fileroller
+cinnamon-desktop
 tumbler
 file-roller
 

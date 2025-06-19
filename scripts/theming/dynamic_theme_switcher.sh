@@ -1,0 +1,244 @@
+#!/bin/bash
+
+# Dynamic Theme Switcher for Wallpaper Categories
+# Automatically switches GTK themes, icons, and cursors based on wallpaper type
+
+# Configuration file for theme mappings
+THEME_CONFIG="$HOME/.config/dynamic-themes.conf"
+
+# Theme mappings based on research of best 2025 themes
+declare -A THEMES=(
+    # Space wallpapers - Dark, futuristic themes
+    ["space_gtk"]="Nordic"
+    ["space_icons"]="Papirus-Dark"
+    ["space_cursor"]="Bibata-Modern-Ice"
+    
+    # Nature wallpapers - Organic, natural themes  
+    ["nature_gtk"]="Orchis-Green-Dark"
+    ["nature_icons"]="Tela-circle-green"
+    ["nature_cursor"]="Bibata-Modern-Amber"
+    
+    # Gaming wallpapers - High contrast, RGB themes
+    ["gaming_gtk"]="Ultimate-Dark"
+    ["gaming_icons"]="Papirus"
+    ["gaming_cursor"]="Bibata-Modern-Classic"
+    
+    # Minimal wallpapers - Clean, simple themes
+    ["minimal_gtk"]="WhiteSur-Light"
+    ["minimal_icons"]="WhiteSur"
+    ["minimal_cursor"]="Capitaine-Cursors"
+    
+    # Dark wallpapers - Pure dark themes
+    ["dark_gtk"]="Graphite-Dark"
+    ["dark_icons"]="Qogir-dark"
+    ["dark_cursor"]="Bibata-Modern-Classic"
+    
+    # Abstract wallpapers - Colorful, artistic themes
+    ["abstract_gtk"]="Yaru-Colors"
+    ["abstract_icons"]="Numix-Circle"
+    ["abstract_cursor"]="Bibata-Modern-Amber"
+)
+
+# Function to detect wallpaper category from path
+detect_category() {
+    local wallpaper_path="$1"
+    
+    if [[ "$wallpaper_path" =~ space ]]; then
+        echo "space"
+    elif [[ "$wallpaper_path" =~ nature ]]; then
+        echo "nature"
+    elif [[ "$wallpaper_path" =~ gaming ]]; then
+        echo "gaming"
+    elif [[ "$wallpaper_path" =~ minimal ]]; then
+        echo "minimal"
+    elif [[ "$wallpaper_path" =~ dark ]]; then
+        echo "dark"
+    elif [[ "$wallpaper_path" =~ abstract ]]; then
+        echo "abstract"
+    else
+        echo "minimal"  # Default fallback
+    fi
+}
+
+# Function to apply theme based on category
+apply_theme() {
+    local category="$1"
+    local wallpaper_path="$2"
+    local gtk_theme="${THEMES[${category}_gtk]}"
+    local icon_theme="${THEMES[${category}_icons]}"
+    local cursor_theme="${THEMES[${category}_cursor]}"
+    
+    echo "🎨 Applying $category theme configuration..."
+    echo "   GTK: $gtk_theme"
+    echo "   Icons: $icon_theme" 
+    echo "   Cursor: $cursor_theme"
+    
+    # Apply GTK theme
+    if command -v gsettings >/dev/null 2>&1; then
+        gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme"
+        gsettings set org.gnome.desktop.wm.preferences theme "$gtk_theme"
+        gsettings set org.gnome.desktop.interface icon-theme "$icon_theme"
+        gsettings set org.gnome.desktop.interface cursor-theme "$cursor_theme"
+        
+        # Apply to GTK4 apps (if supported)
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
+        
+        echo "✅ Theme packages applied successfully!"
+    else
+        echo "❌ gsettings not found, cannot apply themes"
+        return 1
+    fi
+    
+    # Generate Material You colors with matugen for fuzzel, waybar, kitty, etc.
+    if [[ -n "$wallpaper_path" ]]; then
+        echo "🌈 Generating Material You colors..."
+        if command -v matugen >/dev/null 2>&1; then
+            local dotfiles_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+            if [[ -f "$dotfiles_dir/matugen/config.toml" ]]; then
+                matugen image --config "$dotfiles_dir/matugen/config.toml" "$wallpaper_path" || echo "⚠️  Failed to generate colors with matugen"
+                echo "✅ Material You colors generated!"
+            else
+                echo "⚠️  Matugen config not found, using default settings"
+                matugen image "$wallpaper_path" || echo "⚠️  Failed to generate colors with matugen"
+            fi
+        else
+            echo "⚠️  Matugen not found, skipping color generation"
+        fi
+    fi
+}
+
+# Function to install themes if missing (using cache manager)
+install_missing_themes() {
+    echo "🔍 Checking for missing themes..."
+    
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local cache_manager="$script_dir/theme_cache_manager.sh"
+    
+    if [[ ! -f "$cache_manager" ]]; then
+        echo "❌ Theme cache manager not found: $cache_manager"
+        return 1
+    fi
+    
+    # Make cache manager executable
+    chmod +x "$cache_manager"
+    
+    # Check and install missing themes using cache manager
+    for theme_type in gtk icons cursor; do
+        for category in space nature gaming minimal dark abstract; do
+            local theme_name="${THEMES[${category}_${theme_type}]}"
+            if ! check_theme_installed "$theme_name" "$theme_type"; then
+                echo "📦 Installing missing $theme_type theme: $theme_name"
+                bash "$cache_manager" install "$theme_name" || echo "⚠️  Failed to install $theme_name"
+            fi
+        done
+    done
+}
+
+# Function to check if theme is installed
+check_theme_installed() {
+    local theme_name="$1"
+    local theme_type="$2"
+    
+    case "$theme_type" in
+        "gtk")
+            [[ -d "$HOME/.themes/$theme_name" ]] || [[ -d "/usr/share/themes/$theme_name" ]]
+            ;;
+        "icons")
+            [[ -d "$HOME/.icons/$theme_name" ]] || [[ -d "/usr/share/icons/$theme_name" ]]
+            ;;
+        "cursor")
+            [[ -d "$HOME/.icons/$theme_name" ]] || [[ -d "/usr/share/icons/$theme_name" ]]
+            ;;
+    esac
+}
+
+# Function to create theme configuration file
+create_config() {
+    cat > "$THEME_CONFIG" << EOF
+# Dynamic Theme Configuration
+# Edit these mappings to customize themes for each wallpaper category
+
+[space]
+gtk=Nordic
+icons=Papirus-Dark
+cursor=Bibata-Modern-Ice
+
+[nature]
+gtk=Orchis-Green-Dark
+icons=Tela-circle-green
+cursor=Bibata-Modern-Amber
+
+[gaming]
+gtk=Ultimate-Dark
+icons=Papirus
+cursor=Bibata-Modern-Classic
+
+[minimal]
+gtk=WhiteSur-Light
+icons=WhiteSur
+cursor=Capitaine-Cursors
+
+[dark]
+gtk=Graphite-Dark
+icons=Qogir-dark
+cursor=Bibata-Modern-Classic
+
+[abstract]
+gtk=Yaru-Colors
+icons=Numix-Circle
+cursor=Bibata-Modern-Amber
+EOF
+    echo "📝 Created theme configuration at $THEME_CONFIG"
+}
+
+# Main function
+main() {
+    case "$1" in
+        "install")
+            echo "🚀 Installing dynamic theme system..."
+            create_config
+            install_missing_themes
+            echo "✅ Dynamic theme system installed!"
+            ;;
+        "apply")
+            if [[ -z "$2" ]]; then
+                echo "Usage: $0 apply <wallpaper_path>"
+                exit 1
+            fi
+            
+            local wallpaper_path="$2"
+            local category=$(detect_category "$wallpaper_path")
+            
+            echo "🖼️  Wallpaper: $wallpaper_path"
+            echo "📂 Category: $category"
+            
+            apply_theme "$category" "$wallpaper_path"
+            ;;
+        "list")
+            echo "📋 Available theme categories:"
+            for category in space nature gaming minimal dark abstract; do
+                echo "  $category:"
+                echo "    GTK: ${THEMES[${category}_gtk]}"
+                echo "    Icons: ${THEMES[${category}_icons]}"
+                echo "    Cursor: ${THEMES[${category}_cursor]}"
+                echo
+            done
+            ;;
+        "config")
+            create_config
+            echo "Edit $THEME_CONFIG to customize theme mappings"
+            ;;
+        *)
+            echo "Dynamic Theme Switcher"
+            echo "Usage: $0 {install|apply|list|config}"
+            echo
+            echo "Commands:"
+            echo "  install           - Install all required themes"
+            echo "  apply <wallpaper> - Apply theme based on wallpaper path"
+            echo "  list              - Show all theme mappings"
+            echo "  config            - Create/recreate configuration file"
+            ;;
+    esac
+}
+
+main "$@" 

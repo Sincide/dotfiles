@@ -403,6 +403,12 @@ deploy_dotfiles() {
         "matugen"
     )
     
+    # Also create themes symlink for custom GTK theme
+    if [[ -d "${DOTFILES_DIR}/themes" ]]; then
+        ln -sf "${DOTFILES_DIR}/themes" "$HOME/.themes"
+        gum_success "Linked: themes directory"
+    fi
+    
     gum_info "Deploying ${#dirs_to_link[@]} configuration directories"
     echo
     
@@ -440,6 +446,9 @@ deploy_dotfiles() {
         ln -sf "$source" "$target"
         gum_success "Linked: $dir"
     done
+    
+    # Note: GTK themes are now handled by the dynamic theme system
+    gum_info "GTK themes will be managed by the dynamic theme switcher"
     
     INSTALL_STATE["dotfiles_deployment"]=true
     gum_success "All dotfiles deployed successfully"
@@ -1135,6 +1144,151 @@ system_optimization() {
     gum_success "System optimization completed!"
 }
 
+# Dynamic theme system installation
+install_dynamic_themes() {
+    show_section "Dynamic Theme System Installation"
+    
+    gum_info "Installing comprehensive dynamic theming system..."
+    echo
+    
+    if ! gum_confirm "Install dynamic theme system? This will download multiple theme packages." "Yes"; then
+        gum_warning "Skipping dynamic theme installation"
+        return 0
+    fi
+    
+    # Essential themes and dependencies
+    gum_step "Installing essential theming packages"
+    local essential_packages=(
+        "papirus-icon-theme"
+        "bibata-cursor-theme"
+        "cinnamon-desktop"  # Fixes Nemo warnings
+        "nemo-fileroller"   # Additional Nemo support
+    )
+    
+    for package in "${essential_packages[@]}"; do
+        gum spin --spinner=line --title="Installing $package" -- \
+            yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+    done
+    
+    # GTK themes
+    gum_step "Installing GTK themes"
+    local gtk_themes=(
+        "nordic-theme-git"
+        "orchis-theme-git"
+        "graphite-gtk-theme-git"
+    )
+    
+    for theme in "${gtk_themes[@]}"; do
+        if gum_confirm "Install $theme?"; then
+            gum spin --spinner=line --title="Installing $theme" -- \
+                yay -S --needed --noconfirm "$theme" 2>/dev/null || gum_warning "Failed to install $theme"
+        fi
+    done
+    
+    # Install WhiteSur theme manually (more reliable)
+    gum_step "Installing WhiteSur theme suite"
+    if gum_confirm "Install WhiteSur (macOS-like) theme suite?"; then
+        local temp_dir=$(mktemp -d)
+        cd "$temp_dir"
+        
+        # GTK theme
+        gum spin --spinner=line --title="Installing WhiteSur GTK theme" -- \
+            bash -c "git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git && cd WhiteSur-gtk-theme && ./install.sh -c light -c dark"
+        
+        # Icon theme
+        gum spin --spinner=line --title="Installing WhiteSur icon theme" -- \
+            bash -c "git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git && cd WhiteSur-icon-theme && ./install.sh"
+        
+        cd "$DOTFILES_DIR"
+        rm -rf "$temp_dir"
+        gum_success "  ✓ WhiteSur theme suite installed"
+    fi
+    
+    # Additional icon themes
+    gum_step "Installing additional icon themes"
+    local icon_packages=(
+        "tela-icon-theme"
+        "numix-circle-icon-theme-git"
+        "qogir-icon-theme"
+    )
+    
+    for package in "${icon_packages[@]}"; do
+        if gum_confirm "Install $package?"; then
+            gum spin --spinner=line --title="Installing $package" -- \
+                yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+        fi
+    done
+    
+    # Cursor themes
+    gum_step "Installing additional cursor themes"
+    local cursor_packages=(
+        "capitaine-cursors"
+        "oreo-cursors-git"
+    )
+    
+    for package in "${cursor_packages[@]}"; do
+        if gum_confirm "Install $package?"; then
+            gum spin --spinner=line --title="Installing $package" -- \
+                yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+        fi
+    done
+    
+    # Setup theme cache system
+    gum_step "Setting up theme cache system"
+    local cache_manager="$DOTFILES_DIR/scripts/theming/theme_cache_manager.sh"
+    if [[ -f "$cache_manager" ]]; then
+        chmod +x "$cache_manager"
+        
+        # Option to pre-cache themes
+        if gum_confirm "Pre-cache themes to avoid re-downloading on fresh installs?"; then
+            gum_info "📦 Caching git-based themes to ~/dotfiles/themes/cached/"
+            gum_info "This will save themes locally for faster future installations."
+            echo
+            
+            gum spin --spinner=line --title="Downloading and caching themes..." -- \
+                bash "$cache_manager" cache-all
+            
+            gum_success "  ✓ Themes cached successfully"
+            
+            # Show cache status
+            echo
+            gum_info "Cache summary:"
+            bash "$cache_manager" list
+        fi
+    else
+        gum_warning "  ⚠ Theme cache manager not found"
+    fi
+
+    # Setup dynamic theme switcher
+    gum_step "Configuring dynamic theme system"
+    local theme_switcher="$DOTFILES_DIR/scripts/theming/dynamic_theme_switcher.sh"
+    if [[ -f "$theme_switcher" ]]; then
+        chmod +x "$theme_switcher"
+        
+        # Create configuration
+        gum spin --spinner=dot --title="Creating theme configuration" -- \
+            bash "$theme_switcher" config
+        
+        gum_success "  ✓ Dynamic theme switcher configured"
+        
+        # Test the system
+        if gum_confirm "Test dynamic theme system with space wallpaper?"; then
+            local test_wallpaper="$DOTFILES_DIR/assets/wallpapers/space/dark_space.jpg"
+            if [[ -f "$test_wallpaper" ]]; then
+                gum spin --spinner=line --title="Testing theme application" -- \
+                    bash "$theme_switcher" apply "$test_wallpaper"
+                gum_success "  ✓ Theme system test completed"
+            else
+                gum_warning "  ⚠ Test wallpaper not found"
+            fi
+        fi
+    else
+        gum_error "  ✗ Dynamic theme switcher not found"
+    fi
+    
+    gum_success "Dynamic theme system installation completed!"
+}
+
 # Theming system setup
 theming_setup() {
     show_section "Theming System Configuration"
@@ -1147,6 +1301,8 @@ theming_setup() {
         "$HOME/.config/matugen"
         "$HOME/.config/matugen/templates"
         "$HOME/.local/share/wallpapers"
+        "$HOME/.themes"
+        "$HOME/.icons"
     )
     
     for dir in "${theme_dirs[@]}"; do
@@ -1166,19 +1322,40 @@ theming_setup() {
         gum_warning "  ⚠ Wallpaper collection not found"
     fi
     
+    # Install dynamic themes
+    install_dynamic_themes
+    
     # Create theme restart script
     gum_step "Installing theme utilities"
+    mkdir -p "$HOME/.local/bin"
     local theme_script="$HOME/.local/bin/restart-theme"
     cat > "$theme_script" << 'EOF'
 #!/bin/bash
-# Restart theming applications after matugen update
-pkill waybar && waybar &
-pkill dunst && dunst &
-hyprctl reload
-notify-send "Theme Updated" "All applications reloaded with new theme"
+# Restart theming applications after theme change
+pkill waybar 2>/dev/null || true
+pkill dunst 2>/dev/null || true
+sleep 0.5
+waybar > /dev/null 2>&1 &
+waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css > /dev/null 2>&1 &
+dunst > /dev/null 2>&1 &
+hyprctl reload 2>/dev/null || true
+notify-send "Theme Updated" "All applications reloaded with new theme" 2>/dev/null || true
 EOF
     chmod +x "$theme_script"
     gum_success "  ✓ Theme restart utility installed"
+    
+    # Fix Nemo file manager integration
+    gum_step "Configuring Nemo file manager"
+    if command -v nemo >/dev/null 2>&1; then
+        # Install missing Nemo dependencies
+        yay -S --needed --noconfirm cinnamon-desktop nemo-fileroller 2>/dev/null || true
+        
+        # Set Nemo as default file manager
+        if gum_confirm "Set Nemo as default file manager?"; then
+            xdg-mime default nemo.desktop inode/directory 2>/dev/null || true
+            gum_success "  ✓ Nemo configured as default file manager"
+        fi
+    fi
     
     INSTALL_STATE["theming"]=true
     gum_success "Theming system setup completed!"

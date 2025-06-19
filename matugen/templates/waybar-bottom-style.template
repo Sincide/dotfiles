@@ -1,0 +1,190 @@
+@import url("colors.css");
+
+/* ═══════════════════════════════════════════════════════════ */
+/*         EVIL SPACE BOTTOM BAR WITH MATUGEN COLORS          */
+/* ═══════════════════════════════════════════════════════════ */
+
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 11px;
+    font-weight: 400;
+    min-height: 0;
+}
+
+/* Main bottom window */
+window#waybar {
+    background: @surface;
+    border: 1px solid @outline;
+    border-radius: 12px;
+    box-shadow: 0 -2px 8px @shadow;
+    color: @onSurface;
+    transition: all 200ms ease;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+/* All modules base styling */
+#custom-amdgpu-temp,
+#custom-amdgpu-fan,
+#custom-amdgpu-usage,
+#custom-amdgpu-vram,
+#custom-amdgpu-power,
+#cpu,
+#memory,
+#disk,
+#custom-updates,
+#temperature,
+#custom-load,
+#custom-uptime,
+#custom-system-info {
+    background: @surface;
+    border: 1px solid @outline;
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin: 2px 1px;
+    color: @onSurface;
+    box-shadow: 0 2px 8px @shadow;
+    transition: all 150ms ease;
+}
+
+/* Hover effects */
+#custom-amdgpu-temp:hover,
+#custom-amdgpu-fan:hover,
+#custom-amdgpu-usage:hover,
+#custom-amdgpu-vram:hover,
+#custom-amdgpu-power:hover,
+#cpu:hover,
+#memory:hover,
+#disk:hover,
+#custom-updates:hover,
+#temperature:hover,
+#custom-load:hover,
+#custom-uptime:hover,
+#custom-system-info:hover {
+    background: @surfaceVariant;
+    border: 1px solid @primary;
+    color: @onSurfaceVariant;
+}
+
+/* AMDGPU modules - Adaptive wallpaper-based colors */
+#custom-amdgpu-temp {
+    background: @surfaceVariant;
+    color: @onSurfaceVariant;
+    border: 1px solid @outline;
+}
+
+#custom-amdgpu-fan {
+    background: @surfaceVariant;
+    color: @onSurfaceVariant;
+    border: 1px solid @outline;
+}
+
+#custom-amdgpu-usage {
+    background: @surfaceVariant;
+    color: @onSurfaceVariant;
+    border: 1px solid @outline;
+}
+
+#custom-amdgpu-vram {
+    background: @surfaceVariant;
+    color: @onSurfaceVariant;
+    border: 1px solid @outline;
+}
+
+#custom-amdgpu-power {
+    background: @surfaceVariant;
+    color: @onSurfaceVariant;
+    border: 1px solid @outline;
+    font-weight: 500;
+}
+
+/* CPU monitoring - primary theme */
+#cpu {
+    background: @primaryContainer;
+    color: @onPrimaryContainer;
+    border: 1px solid @primary;
+    font-weight: 500;
+}
+
+/* Memory - secondary theme */
+#memory {
+    background: @secondaryContainer;
+    color: @onSecondaryContainer;
+    border: 1px solid @secondary;
+}
+
+/* Disk - tertiary theme */
+#disk {
+    background: @tertiaryContainer;
+    color: @onTertiaryContainer;
+    border: 1px solid @tertiary;
+}
+
+/* Updates - special highlighting when updates available */
+#custom-updates {
+    background: @surfaceVariant;
+    color: @onSurfaceVariant;
+    border: 1px solid @outline;
+}
+
+/* Temperature monitoring - error theme for heat */
+#temperature {
+    background: @errorContainer;
+    color: @onErrorContainer;
+    border: 1px solid @error;
+}
+
+#temperature.critical {
+    background: @error;
+    color: @onError;
+    animation: temperature-critical 1s ease-in-out infinite alternate;
+}
+
+/* Load monitoring - primary theme */
+#custom-load {
+    background: @primaryContainer;
+    color: @onPrimaryContainer;
+    border: 1px solid @primary;
+}
+
+/* Uptime - tertiary theme */
+#custom-uptime {
+    background: @tertiaryContainer;
+    color: @onTertiaryContainer;
+    border: 1px solid @tertiary;
+}
+
+/* System info - special accent */
+#custom-system-info {
+    background: @inverseSurface;
+    color: @inverseOnSurface;
+    border: 1px solid @inversePrimary;
+    font-weight: 500;
+}
+
+#custom-system-info:hover {
+    background: @inversePrimary;
+    color: @inverseOnSurface;
+}
+
+/* Simple pulse animation for critical states */
+@keyframes critical-pulse {
+    0% { 
+        box-shadow: 0 2px 8px @shadow;
+    }
+    100% { 
+        box-shadow: 0 4px 16px @error;
+    }
+}
+
+/* Tooltip styling */
+tooltip {
+    border-radius: 8px;
+    background: @surface;
+    border: 1px solid @outline;
+    color: @onSurface;
+} 

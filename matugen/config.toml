@@ -16,6 +16,10 @@ output_path = "~/dotfiles/hypr/conf/colors.conf"
 input_path = "~/dotfiles/matugen/templates/waybar.template"
 output_path = "~/dotfiles/waybar/colors.css"
 
+[templates.waybar-config]
+input_path = "~/dotfiles/matugen/templates/waybar-config.template"
+output_path = "~/dotfiles/waybar/config"
+
 [templates.fuzzel]
 input_path = "~/dotfiles/matugen/templates/fuzzel.template"
 output_path = "~/dotfiles/fuzzel/fuzzel.ini"
@@ -27,3 +31,21 @@ output_path = "~/dotfiles/dunst/dunstrc"
 [templates.kitty]
 input_path = "~/dotfiles/matugen/templates/kitty.template"
 output_path = "~/dotfiles/kitty/theme-dynamic.conf"
+
+# GTK theming templates
+[templates.gtk3]
+input_path = "~/dotfiles/matugen/templates/gtk3.template"
+output_path = "~/dotfiles/gtk-3.0/colors.css"
+
+[templates.gtk4]
+input_path = "~/dotfiles/matugen/templates/gtk4.template"
+output_path = "~/dotfiles/gtk-4.0/colors.css"
+
+# Bottom Waybar templates
+[templates.waybar-bottom-config]
+input_path = "~/dotfiles/matugen/templates/waybar-bottom-config.template"
+output_path = "~/dotfiles/waybar/config-bottom"
+
+[templates.waybar-bottom-style]
+input_path = "~/dotfiles/matugen/templates/waybar-bottom-style.template"
+output_path = "~/dotfiles/waybar/style-bottom.css"

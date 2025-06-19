@@ -1460,6 +1460,8 @@ EOF
         fi
     fi
     
+
+    
     INSTALL_STATE["theming"]=true
     gum_success "Theming system setup completed!"
 }
@@ -1617,6 +1619,52 @@ setup_external_drives() {
     INSTALL_STATE["external_drives"]=true
 }
 
+# Brave Browser Backup/Restore System (requires external drives to be mounted)
+setup_brave_backup() {
+    show_section "Brave Browser Backup & Restore"
+    
+    gum_info "🦁 Brave Browser backup system available"
+    gum_info "📱 Uses your external drives for seamless reinstall workflow"
+    echo
+    
+    if gum_confirm "Set up Brave backup/restore system?"; then
+        local brave_script="$DOTFILES_DIR/scripts/backup/brave-backup-restore.sh"
+        
+        if [[ -f "$brave_script" ]]; then
+            chmod +x "$brave_script"
+            
+            gum_info "📦 Brave backup system configured!"
+            echo
+            gum_info "Available commands:"
+            echo "  • $brave_script backup    - Create backup to external drive"
+            echo "  • $brave_script restore   - Restore from external drive"
+            echo "  • $brave_script list      - List available backups"
+            echo "  • $brave_script           - Interactive menu (default)"
+            echo
+            
+            # Ask if user wants to create backup now
+            if [[ -d "$HOME/.config/BraveSoftware/Brave-Browser" ]]; then
+                gum_info "🔍 Brave Browser configuration detected"
+                if gum_confirm "Create backup now before continuing installation?"; then
+                    gum_info "🚀 Launching Brave backup system..."
+                    "$brave_script" backup
+                    gum_success "Backup completed! Continuing with installation..."
+                    echo
+                fi
+            else
+                gum_info "ℹ️  No existing Brave config found - backup available after Brave installation"
+            fi
+        else
+            gum_warning "Brave backup script not found at $brave_script"
+        fi
+    else
+        gum_info "Skipped Brave backup system setup"
+    fi
+    echo
+    
+    INSTALL_STATE["brave_backup"]=true
+}
+
 # Installation summary with gum
 show_summary() {
     show_section "Installation Summary"
@@ -1703,6 +1751,12 @@ main() {
     echo
     if gum_confirm "Setup external drives?"; then
         setup_external_drives
+    fi
+    
+    # Brave backup system (after external drives are mounted)
+    echo
+    if gum_confirm "Setup Brave backup system?"; then
+        setup_brave_backup
     fi
     
     # Final summary

@@ -145,6 +145,47 @@ Graphite-Dark   → arc-gtk-theme (replaced per user preference)
 - ✅ Removed non-essential packages causing conflicts
 - ✅ Theme system works without manual git authentication
 
+### 9. External Drive Brave Backup/Restore System ✅ **COMPLETED**
+
+**Problem**: Need seamless way to backup/restore Brave data during system reinstalls using external drives with tons of space.
+
+**Solution Implemented**: Created comprehensive external drive backup/restore system:
+
+**New Script**: `scripts/backup/brave-backup-restore.sh` (450+ lines)
+
+**Key Features**:
+- **Auto-detects external drives** with available space (Media, Stuff drives)
+- **Three backup types**:
+  - Essential only (~1MB) - bookmarks, passwords, settings
+  - Essential + Extensions (~90MB) - includes all extensions  
+  - Complete backup (~100MB) - everything including sessions
+- **Interactive drive selection** with space indicators
+- **Compressed archives** with metadata and restore instructions
+- **Smart restore** with conflict detection and existing config backup
+- **Command line interface**: backup, restore, list, menu modes
+
+**Integration with Installer**:
+- Installer asks if you want to set up the backup system
+- **Pre-installation backup** - detects existing Brave config and offers immediate backup
+- **Post-installation restore** - can restore from external drives after fresh install
+
+**Usage Examples**:
+```bash
+# Before reinstall - backup to external drive
+~/dotfiles/scripts/backup/brave-backup-restore.sh backup
+
+# After reinstall - restore from external drive  
+~/dotfiles/scripts/backup/brave-backup-restore.sh restore
+
+# Interactive menu
+~/dotfiles/scripts/backup/brave-backup-restore.sh menu
+```
+
+**Perfect for Reinstall Workflow**:
+1. Run backup before wiping system → saves to external drive
+2. Fresh install with dotfiles installer  
+3. Restore from external drive → all data back instantly
+
 ---
 
 ## 🎯 Current State
@@ -457,7 +498,7 @@ Graphite-Dark   → arc-gtk-theme (replaced per user preference)
   - Encrypted cloud backup for sensitive configurations
   - Multi-device synchronization with conflict resolution
   - Automated backup verification and integrity checking
-  - Remote configuration management and deployment
+      - Remote configuration management and deployment
 
 ---
 

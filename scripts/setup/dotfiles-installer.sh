@@ -573,39 +573,81 @@ install_packages_list() {
     
     gum_info "Official packages: ${#official_packages[@]} | AUR packages: ${#aur_packages[@]}"
     
-    # Install official packages
+    # Install official packages one by one
     if [[ ${#official_packages[@]} -gt 0 ]]; then
         gum_step "Installing ${#official_packages[@]} official packages"
+        local failed_official=()
         
-        if gum spin --spinner=line --title="Installing official packages" -- \
-            sudo pacman -S --needed --noconfirm "${official_packages[@]}"; then
-            gum_success "Official packages installed successfully"
-        else
-            gum_error "Failed to install some official packages"
-            if gum_confirm "Continue with installation despite failures?"; then
-                gum_warning "Continuing with partial installation"
-            else
-                gum_error "Installation aborted by user"
-                exit 1
+        for package in "${official_packages[@]}"; do
+            if ! sudo pacman -S --needed --noconfirm "$package" 2>>"$LOG_FILE"; then
+                failed_official+=("$package")
+                gum_error "Failed to install official package: $package"
             fi
+        done
+        
+        if [[ ${#failed_official[@]} -gt 0 ]]; then
+            echo
+            gum_error "❌ INSTALLATION FAILED ❌"
+            gum_info "Failed official packages (${#failed_official[@]}):"
+            for pkg in "${failed_official[@]}"; do
+                echo "  • $pkg"
+            done
+            echo
+            
+            local choices=("Continue anyway" "Abort installation")
+            local choice
+            choice=$(gum choose --header="What would you like to do?" "${choices[@]}")
+            
+            case "$choice" in
+                "Continue anyway")
+                    gum_warning "Continuing with failed packages skipped"
+                    ;;
+                "Abort installation")
+                    gum_error "Installation aborted by user"
+                    exit 1
+                    ;;
+            esac
+        else
+            gum_success "All official packages installed successfully"
         fi
     fi
     
-    # Install AUR packages
+    # Install AUR packages one by one
     if [[ ${#aur_packages[@]} -gt 0 ]]; then
         gum_step "Installing ${#aur_packages[@]} AUR packages"
+        local failed_aur=()
         
-        if gum spin --spinner=line --title="Installing AUR packages" -- \
-            yay -S --needed --noconfirm "${aur_packages[@]}"; then
-            gum_success "AUR packages installed successfully"
-        else
-            gum_error "Failed to install some AUR packages"
-            if gum_confirm "Continue with installation despite failures?"; then
-                gum_warning "Continuing with partial installation"
-            else
-                gum_error "Installation aborted by user"
-                exit 1
+        for package in "${aur_packages[@]}"; do
+            if ! yay -S --needed --noconfirm "$package" 2>>"$LOG_FILE"; then
+                failed_aur+=("$package")
+                gum_error "Failed to install AUR package: $package"
             fi
+        done
+        
+        if [[ ${#failed_aur[@]} -gt 0 ]]; then
+            echo
+            gum_error "❌ INSTALLATION FAILED ❌"
+            gum_info "Failed AUR packages (${#failed_aur[@]}):"
+            for pkg in "${failed_aur[@]}"; do
+                echo "  • $pkg"
+            done
+            echo
+            
+            local choices=("Continue anyway" "Abort installation")
+            local choice
+            choice=$(gum choose --header="What would you like to do?" "${choices[@]}")
+            
+            case "$choice" in
+                "Continue anyway")
+                    gum_warning "Continuing with failed packages skipped"
+                    ;;
+                "Abort installation")
+                    gum_error "Installation aborted by user"
+                    exit 1
+                    ;;
+            esac
+        else
+            gum_success "All AUR packages installed successfully"
         fi
     fi
 }

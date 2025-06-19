@@ -471,14 +471,16 @@ Graphite-Dark   → arc-gtk-theme (replaced per user preference)
 
 ## 💾 Backup & Migration
 
-### ✅ Completed (Smart Browser Backup)
-- **🌐 Brave Browser Backup System** - Intelligent data preservation for fresh installs
-  - ✅ Smart backup script (`scripts/backup/brave-backup.sh`) with 97% size reduction
-  - ✅ Essential files only: bookmarks, passwords, settings, extensions (~800KB-94MB vs 1-3GB)
-  - ✅ Excludes cache, history, temporary files for optimal backup sizes
-  - ✅ Compressed archives with detailed restore instructions
-  - ✅ Multiple backup scenarios: minimal, standard, complete
-  - ✅ Automatic conflict detection and safe restore procedures
+### ✅ Completed (Production-Ready Browser Backup)
+- **🌐 Brave Browser Backup & Restore System** - Complete data preservation solution
+  - ✅ Advanced backup script (`scripts/backup/brave-backup-restore.sh`) with 99% space efficiency
+  - ✅ Three backup types: Essential (~1MB), Essential+Extensions (~90MB), Complete (~100MB)
+  - ✅ Compressed archives only (no redundant folders) for optimal storage
+  - ✅ Intuitive restore interface with detailed backup listings (date, type, drive)
+  - ✅ External drive auto-detection and mounting integration
+  - ✅ Complete installer workflow integration (runs after drive setup)
+  - ✅ Archive extraction with temporary cleanup and safe restoration
+  - ✅ Fixed all installation order issues and drive detection bugs
 
 ### 🎯 High Priority (Next Migration Features)
 - [ ] **Dotfiles Backup & Sync**
@@ -644,6 +646,130 @@ Graphite-Dark   → arc-gtk-theme (replaced per user preference)
 - ✅ Complete troubleshooting guides available
 
 **The system is ready for production use and can be confidently installed on fresh Arch systems.**
+
+---
+
+## 🌅 TOMORROW'S DEVELOPMENT PLAN (June 20, 2025)
+
+### 🎯 **PRIMARY OBJECTIVES**
+
+#### 1. **🏠 Advanced Waybar System Center** (High Priority)
+- [ ] **Research Phase**: Investigate keybind-triggered sidebar waybar
+  - Study waybar's overlay/layer capabilities for system center
+  - Research CSS animations for smooth slide-in/slide-out effects
+  - Investigate integration with existing top/bottom waybar setup
+- [ ] **System Center Design**: Plan the interface layout
+  - Quick settings panel (brightness, volume, network)
+  - System monitoring widgets (CPU, memory, temperature)
+  - Theme controls and wallpaper management
+  - Application launcher integration
+- [ ] **Implementation Planning**: Technical architecture
+  - Hyprland keybind integration for toggle functionality
+  - Waybar configuration structure for overlay mode
+  - CSS styling approach for modern glassmorphism effects
+
+#### 2. **📊 Enhanced Bottom Waybar** (Medium Priority)
+- [ ] **Performance Monitoring Expansion**
+  - Add CPU usage module with real-time percentage
+  - Memory usage indicator with available/total display
+  - Disk usage monitoring for root and home partitions
+  - Network bandwidth monitoring (up/down speeds)
+- [ ] **Visual Improvements**
+  - Enhanced styling to match cosmic theme
+  - Better spacing and typography for readability
+  - Hover effects and interactive elements
+- [ ] **Integration Testing**
+  - Test with existing GPU monitoring
+  - Ensure proper resource usage (low CPU impact)
+  - Validate theme consistency across all modules
+
+#### 3. **🔧 System Maintenance Automation** (Medium Priority)
+- [ ] **Automated Health Monitoring**
+  - Create system health check script
+  - Log cleanup automation (size-based rotation)
+  - Package cache management with intelligent cleanup
+  - Disk space monitoring with alerts
+- [ ] **Performance Analysis Tools**
+  - Boot time analysis and optimization suggestions
+  - Memory usage profiling and cleanup recommendations
+  - GPU performance logging and trend analysis
+  - System resource usage reporting
+
+### 🛠️ **TECHNICAL RESEARCH AREAS**
+
+#### **Waybar System Center Investigation**
+- [ ] Study waybar's `layer` and `position` options for overlay functionality
+- [ ] Research CSS transforms and transitions for smooth animations
+- [ ] Investigate Hyprland's window management for sidebar behavior
+- [ ] Plan integration with existing waybar configurations (top/bottom)
+
+#### **Performance Monitoring Architecture**
+- [ ] Research efficient system monitoring libraries (proc, sysfs)
+- [ ] Plan update intervals to balance responsiveness vs resource usage
+- [ ] Design data collection and caching strategies
+- [ ] Investigate waybar's custom module capabilities
+
+### 🎨 **VISUAL DESIGN GOALS**
+
+#### **System Center Aesthetics**
+- [ ] Modern glassmorphism design matching cosmic theme
+- [ ] Smooth slide-in animations (300ms transition)
+- [ ] Proper blur effects and transparency layers
+- [ ] Consistent color scheme with existing waybar setup
+
+#### **Enhanced Monitoring Display**
+- [ ] Clean, readable performance metrics
+- [ ] Color-coded status indicators (green/yellow/red)
+- [ ] Minimalist design that doesn't clutter the bottom bar
+- [ ] Proper scaling for different screen resolutions
+
+### 🔍 **TESTING & VALIDATION PLAN**
+
+#### **System Center Testing**
+- [ ] Test keybind responsiveness and toggle reliability
+- [ ] Validate overlay positioning across different screen sizes
+- [ ] Check integration with existing waybar instances
+- [ ] Performance impact assessment (CPU/memory usage)
+
+#### **Monitoring Module Testing**
+- [ ] Accuracy validation against system tools (top, htop, etc.)
+- [ ] Resource usage impact measurement
+- [ ] Visual consistency across different system loads
+- [ ] Long-term stability testing
+
+### 📚 **DOCUMENTATION UPDATES**
+
+#### **New Documentation Required**
+- [ ] System Center usage guide and customization options
+- [ ] Performance monitoring configuration and tuning
+- [ ] Advanced waybar setup documentation
+- [ ] Troubleshooting guide for new features
+
+### 🚀 **SUCCESS CRITERIA FOR TOMORROW**
+
+#### **Minimum Viable Results**
+- [ ] Working research documentation on waybar system center approach
+- [ ] Basic CPU/memory modules added to bottom waybar
+- [ ] System health check script with basic automation
+- [ ] Updated documentation reflecting new capabilities
+
+#### **Stretch Goals**
+- [ ] Functional system center prototype with basic toggle
+- [ ] Complete performance monitoring suite in bottom waybar
+- [ ] Automated maintenance scripts with scheduling
+- [ ] Professional-grade documentation for all new features
+
+### 🎯 **PRIORITY ORDER**
+1. **System Center Research** - Foundation for advanced features
+2. **Bottom Waybar Enhancement** - Immediate visual improvement
+3. **Maintenance Automation** - Long-term system health
+4. **Documentation Updates** - User experience completion
+
+---
+
+*Development Plan Created: June 19, 2025 - 11:05 PM*
+*Target Completion: June 20, 2025*
+*Focus: Advanced Features & System Center Implementation*
 
 ---
 

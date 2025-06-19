@@ -12,6 +12,7 @@ htop
 btop
 neofetch
 fastfetch
+gum
 
 # Network and system utilities
 networkmanager

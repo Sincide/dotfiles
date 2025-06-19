@@ -1,79 +1,18 @@
-# Multimedia Packages
-# Media players, editors, codecs, and creative tools
+# Multimedia Packages - Essential Only
+# Core media tools and codecs
 
-# Media players
+# Essential media players
 mpv
-vlc
-celluloid
-
-# Audio players
-spotify
-audacious
-rhythmbox
-
-# Image viewers and editors
 feh
-imv
-gimp
-inkscape
-krita
 
-# Video editing
-kdenlive
-blender
-davinci-resolve
-
-# Audio editing
-audacity
-reaper
-
-# Codecs and multimedia libraries
+# Essential codecs
 ffmpeg
 gstreamer
 gst-plugins-base
 gst-plugins-good
-gst-plugins-bad
-gst-plugins-ugly
-gst-libav
 
-# Image formats
+# Basic image formats
 webp-pixbuf-loader
-libheif
-libavif
 
-# 3D and modeling
-freecad
-openscad
-
-# Design tools
-figma-linux
-
-# Photo management
-digikam
-shotwell
-
-# PDF tools
-zathura
-zathura-pdf-mupdf
-evince
-
-# Office suite
-libreoffice-fresh
-
-# E-book readers
-calibre
-foliate
-
-# Media utilities
-youtube-dl
-yt-dlp
-mediainfo
-exiftool
-
-# Screen recording
-simplescreenrecorder
-
-# Audio production
-ardour
-hydrogen
-lmms 
+# Basic media utilities
+yt-dlp 

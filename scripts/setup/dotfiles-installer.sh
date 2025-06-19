@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Comprehensive Dotfiles Installation System
+# Beautiful Gum-powered Dotfiles Installation System
 # Author: Martin's Dotfiles
-# Description: Interactive installer for complete Arch Linux + Hyprland dotfiles setup
+# Description: Interactive installer using gum for beautiful TUI experience
 
 set -euo pipefail
 
@@ -13,15 +13,27 @@ readonly LOG_DIR="${DOTFILES_DIR}/logs"
 readonly PACKAGES_DIR="${DOTFILES_DIR}/scripts/setup/packages"
 readonly LOG_FILE="${LOG_DIR}/installer_$(date +%Y%m%d_%H%M%S).log"
 
-# Colors for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly PURPLE='\033[0;35m'
-readonly CYAN='\033[0;36m'
-readonly BOLD='\033[1m'
-readonly NC='\033[0m'
+# Auto-install gum if not available
+if ! command -v gum &>/dev/null; then
+    echo "🎨 Installing gum for a beautiful installer experience..."
+    if sudo pacman -S --needed --noconfirm gum; then
+        echo "✓ gum installed successfully!"
+        echo "Starting beautiful installer..."
+        echo
+        exec "$0" "$@"
+    else
+        echo "✗ Failed to install gum. Please install manually: sudo pacman -S gum"
+        exit 1
+    fi
+fi
+
+# Gum styling
+readonly GUM_STYLE_HEADER="--foreground=212 --border-foreground=212 --border=double --align=center --width=60 --margin=1 2 --padding=2 4"
+readonly GUM_STYLE_SECTION="--foreground=39 --bold"
+readonly GUM_STYLE_SUCCESS="--foreground=46"
+readonly GUM_STYLE_ERROR="--foreground=196"
+readonly GUM_STYLE_WARNING="--foreground=226"
+readonly GUM_STYLE_INFO="--foreground=75"
 
 # Installation state
 declare -A INSTALL_STATE=(
@@ -40,214 +52,250 @@ declare -A INSTALL_STATE=(
 init_logging() {
     mkdir -p "$LOG_DIR"
     echo "Starting dotfiles installation - $(date)" >> "$LOG_FILE"
-    log "Installer started from: $SCRIPT_DIR"
-    log "Dotfiles directory: $DOTFILES_DIR"
-    log "Packages directory: $PACKAGES_DIR"
+    echo "[LOG] Installer started from: $SCRIPT_DIR" >> "$LOG_FILE"
 }
 
-# Logging functions
-log() {
+# Gum logging functions
+log_to_file() {
     local timestamp
     timestamp=$(date +'%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] $1" >> "$LOG_FILE"
-    echo -e "${CYAN}[LOG]${NC} $1"
 }
 
-success() {
-    local timestamp
-    timestamp=$(date +'%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] [SUCCESS] $1" >> "$LOG_FILE"
-    echo -e "${GREEN}✓${NC} $1"
+gum_success() {
+    gum style $GUM_STYLE_SUCCESS "✓ $1"
+    log_to_file "[SUCCESS] $1"
 }
 
-warning() {
-    local timestamp
-    timestamp=$(date +'%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] [WARNING] $1" >> "$LOG_FILE"
-    echo -e "${YELLOW}⚠${NC} $1"
+gum_error() {
+    gum style $GUM_STYLE_ERROR "✗ $1"
+    log_to_file "[ERROR] $1"
 }
 
-error() {
-    local timestamp
-    timestamp=$(date +'%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] [ERROR] $1" >> "$LOG_FILE"
-    echo -e "${RED}✗${NC} $1" >&2
+gum_warning() {
+    gum style $GUM_STYLE_WARNING "⚠ $1"
+    log_to_file "[WARNING] $1"
 }
 
-# Print styled headers
-print_header() {
+gum_info() {
+    gum style $GUM_STYLE_INFO "ℹ $1"
+    log_to_file "[INFO] $1"
+}
+
+gum_step() {
+    gum style --foreground=212 --bold "→ $1"
+    log_to_file "[STEP] $1"
+}
+
+# Beautiful headers
+show_header() {
+    clear
+    gum style $GUM_STYLE_HEADER "🚀 Martin's Dotfiles Installer"
+    gum style --foreground=245 --align=center "Comprehensive Arch Linux + Hyprland Setup"
     echo
-    echo -e "${BOLD}${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BOLD}${BLUE}║${NC} ${BOLD}$1${NC} ${BOLD}${BLUE}║${NC}"
-    echo -e "${BOLD}${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+}
+
+show_section() {
+    echo
+    gum style $GUM_STYLE_SECTION "═══ $1 ═══"
     echo
 }
 
-print_section() {
-    echo
-    echo -e "${BOLD}${PURPLE}==> ${1}${NC}"
-}
-
-# Interactive confirmation
-confirm() {
-    local prompt="${1:-Continue?}"
-    local default="${2:-n}"
+# Enhanced confirm with gum
+gum_confirm() {
+    local prompt="$1"
+    local default="${2:-No}"
     
-    while true; do
-        if [[ "$default" == "y" ]]; then
-            read -rp "${prompt} [Y/n]: " response
-        else
-            read -rp "${prompt} [y/N]: " response
-        fi
-        
-        case "${response,,}" in
-            y|yes) return 0 ;;
-            n|no) return 1 ;;
-            "") [[ "$default" == "y" ]] && return 0 || return 1 ;;
-            *) echo -e "${RED}Please answer yes or no.${NC}" ;;
-        esac
-    done
+    if [[ "$default" == "Yes" ]]; then
+        gum confirm "$prompt" --default=true
+    else
+        gum confirm "$prompt" --default=false
+    fi
 }
 
-# System checks
-check_arch_linux() {
-    if [[ ! -f /etc/arch-release ]]; then
-        error "This installer is designed for Arch Linux only"
+# System checks with gum feedback
+check_system() {
+    show_section "System Validation"
+    
+    local checks=(
+        "Checking Arch Linux"
+        "Verifying user privileges"
+        "Testing internet connection"
+        "Validating sudo access"
+    )
+    
+    # Arch Linux check
+    gum spin --spinner=dot --title="${checks[0]}" -- sleep 0.5
+    if [[ -f /etc/arch-release ]]; then
+        gum_success "Running on Arch Linux"
+    else
+        gum_error "Not running on Arch Linux"
         exit 1
     fi
-    success "Running on Arch Linux"
-}
-
-check_not_root() {
+    
+    # User check
+    gum spin --spinner=dot --title="${checks[1]}" -- sleep 0.3
     if [[ $EUID -eq 0 ]]; then
-        error "Do not run this script as root"
+        gum_error "Do not run as root"
+        exit 1
+    else
+        gum_success "Running as regular user"
+    fi
+    
+    # Internet check
+    gum spin --spinner=dot --title="${checks[2]}" -- sleep 0.5
+    if ping -c 1 archlinux.org &>/dev/null; then
+        gum_success "Internet connection available"
+    else
+        gum_error "No internet connection"
         exit 1
     fi
-    success "Running as regular user"
-}
-
-check_internet() {
-    if ! ping -c 1 archlinux.org &>/dev/null; then
-        error "Internet connection required"
+    
+    # Sudo check
+    gum spin --spinner=dot --title="${checks[3]}" -- sleep 0.3
+    if sudo -n true 2>/dev/null; then
+        gum_success "Sudo access available"
+    elif sudo -v &>/dev/null; then
+        gum_warning "Sudo requires password"
+    else
+        gum_error "No sudo access"
         exit 1
     fi
-    success "Internet connection available"
 }
 
-check_sudo() {
-    if ! sudo -n true 2>/dev/null; then
-        echo -e "${YELLOW}This installer requires sudo privileges${NC}"
-        sudo -v || {
-            error "Failed to obtain sudo privileges"
-            exit 1
-        }
-    fi
-    success "Sudo access available"
-}
-
-# AUR helper installation
+# Install yay with beautiful progress
 install_yay() {
     if command -v yay &>/dev/null; then
-        success "yay is already installed"
+        gum_success "yay is already installed"
         return 0
     fi
     
-    print_section "Installing yay AUR helper"
+    show_section "Installing yay AUR Helper"
     
-    # Install dependencies
-    sudo pacman -S --needed --noconfirm base-devel git
+    gum_step "Installing build dependencies"
+    gum spin --spinner=line --title="Installing base-devel and git" -- \
+        sudo pacman -S --needed --noconfirm base-devel git
     
-    # Clone and build yay-bin
+    gum_step "Building yay from AUR"
     local temp_dir
     temp_dir=$(mktemp -d)
     cd "$temp_dir"
     
-    git clone https://aur.archlinux.org/yay-bin.git
+    gum spin --spinner=line --title="Cloning yay-bin repository" -- \
+        git clone https://aur.archlinux.org/yay-bin.git
+    
     cd yay-bin
-    makepkg -si --noconfirm
+    gum spin --spinner=line --title="Building and installing yay" -- \
+        makepkg -si --noconfirm
     
     cd "$DOTFILES_DIR"
     rm -rf "$temp_dir"
     
     if command -v yay &>/dev/null; then
-        success "yay installed successfully"
+        gum_success "yay installed successfully"
     else
-        error "yay installation failed"
+        gum_error "yay installation failed"
         return 1
     fi
 }
 
-# Package installation functions
+# Beautiful package installation
 install_package_category() {
     local category="$1"
     local package_file="${PACKAGES_DIR}/${category}.txt"
     
     if [[ ! -f "$package_file" ]]; then
-        error "Package file not found: $package_file"
+        gum_error "Package file not found: $package_file"
         return 1
     fi
     
-    print_section "Installing $category packages"
+    show_section "Installing ${category^} Packages"
     
     local packages
     mapfile -t packages < <(grep -v '^#' "$package_file" | grep -v '^$')
     
     if [[ ${#packages[@]} -eq 0 ]]; then
-        warning "No packages found in $category"
+        gum_warning "No packages found in $category"
         return 0
     fi
     
-    echo -e "${BLUE}Packages to install:${NC}"
-    printf '  - %s\n' "${packages[@]}"
+    # Show package preview with gum
+    gum_info "Found ${#packages[@]} packages in $category category"
+    echo
+    gum style --foreground=245 --border=rounded --border-foreground=245 --padding="1 2" \
+        "$(printf '%s\n' "${packages[@]}")"
     echo
     
-    if ! confirm "Install these packages?"; then
-        warning "Skipping $category packages"
+    if ! gum_confirm "Install these ${#packages[@]} packages?"; then
+        gum_warning "Skipping $category packages"
         return 0
     fi
     
-    # Separate official and AUR packages
+    # Analyze packages with beautiful progress
+    gum_step "Analyzing package sources"
     local official_packages=()
     local aur_packages=()
     
     for package in "${packages[@]}"; do
-        if pacman -Si "$package" &>/dev/null; then
+        if pacman -Si "$package" &>/dev/null 2>&1; then
             official_packages+=("$package")
         else
             aur_packages+=("$package")
         fi
     done
     
+    gum_info "Official packages: ${#official_packages[@]} | AUR packages: ${#aur_packages[@]}"
+    echo
+    
     # Install official packages
     if [[ ${#official_packages[@]} -gt 0 ]]; then
-        log "Installing official packages: ${official_packages[*]}"
-        sudo pacman -S --needed --noconfirm "${official_packages[@]}" || {
-            error "Failed to install official packages"
-            return 1
-        }
+        gum_step "Installing ${#official_packages[@]} official packages"
+        gum style --foreground=245 "${official_packages[*]}"
+        
+        if gum spin --spinner=line --title="Installing official packages" -- \
+            sudo pacman -S --needed --noconfirm "${official_packages[@]}"; then
+            gum_success "Official packages installed successfully"
+        else
+            gum_error "Failed to install some official packages"
+            if gum_confirm "Continue with installation despite failures?"; then
+                gum_warning "Continuing with partial installation"
+            else
+                gum_error "Installation aborted by user"
+                exit 1
+            fi
+        fi
     fi
     
     # Install AUR packages
     if [[ ${#aur_packages[@]} -gt 0 ]]; then
-        log "Installing AUR packages: ${aur_packages[*]}"
-        yay -S --needed --noconfirm "${aur_packages[@]}" || {
-            error "Failed to install AUR packages"
-            return 1
-        }
+        gum_step "Installing ${#aur_packages[@]} AUR packages"
+        gum style --foreground=245 "${aur_packages[*]}"
+        
+        if gum spin --spinner=line --title="Installing AUR packages" -- \
+            yay -S --needed --noconfirm "${aur_packages[@]}"; then
+            gum_success "AUR packages installed successfully"
+        else
+            gum_error "Failed to install some AUR packages"
+            if gum_confirm "Continue with installation despite failures?"; then
+                gum_warning "Continuing with partial installation"
+            else
+                gum_error "Installation aborted by user"
+                exit 1
+            fi
+        fi
     fi
     
     INSTALL_STATE["packages_${category}"]=true
-    success "$category packages installed"
+    gum_success "$category packages installation completed"
 }
 
-# Dotfiles deployment
+# Beautiful dotfiles deployment
 deploy_dotfiles() {
-    print_section "Deploying dotfiles"
+    show_section "Deploying Dotfiles"
     
     local config_dir="$HOME/.config"
     mkdir -p "$config_dir"
     
-    # Symlink directories
     local dirs_to_link=(
         "hypr"
         "waybar"
@@ -260,142 +308,165 @@ deploy_dotfiles() {
         "matugen"
     )
     
+    gum_info "Deploying ${#dirs_to_link[@]} configuration directories"
+    echo
+    
     for dir in "${dirs_to_link[@]}"; do
         local source="${DOTFILES_DIR}/${dir}"
         local target="${config_dir}/${dir}"
         
         if [[ ! -d "$source" ]]; then
-            warning "Source directory not found: $source"
+            gum_warning "Source directory not found: $source"
             continue
         fi
         
         if [[ -L "$target" ]]; then
-            log "Symlink already exists: $target"
+            gum_info "Symlink already exists: $dir"
             continue
         fi
         
         if [[ -d "$target" ]]; then
-            if confirm "Backup existing config: $target?"; then
+            gum_warning "Config directory already exists: $dir"
+            if gum_confirm "Backup existing config and replace?"; then
                 mv "$target" "${target}.backup.$(date +%s)"
-                log "Backed up existing config: $target"
+                gum_success "Backed up existing config: $dir"
             else
-                warning "Skipping: $target (directory exists)"
+                gum_warning "Skipping: $dir"
                 continue
             fi
         fi
         
         ln -sf "$source" "$target"
-        success "Linked: $source -> $target"
+        gum_success "Linked: $dir"
     done
     
     INSTALL_STATE["dotfiles_deployment"]=true
-    success "Dotfiles deployed"
+    gum_success "All dotfiles deployed successfully"
 }
 
-# User setup
-setup_user_environment() {
-    print_section "Setting up user environment"
+# Beautiful package selection menu
+select_packages() {
+    show_section "Package Selection"
     
-    # Set fish as default shell
-    if confirm "Set fish as default shell?"; then
-        sudo chsh -s /usr/bin/fish "$USER"
-        success "Default shell set to fish"
-    fi
-    
-    # Git configuration
-    if confirm "Configure git?"; then
-        read -rp "Git username: " git_username
-        read -rp "Git email: " git_email
-        
-        git config --global user.name "$git_username"
-        git config --global user.email "$git_email"
-        git config --global init.defaultBranch main
-        
-        success "Git configured"
-    fi
-    
-    # SSH key generation
-    if confirm "Generate SSH key?"; then
-        if [[ ! -f "$HOME/.ssh/id_ed25519" ]]; then
-            ssh-keygen -t ed25519 -C "$git_email" -f "$HOME/.ssh/id_ed25519" -N ""
-            success "SSH key generated"
-        else
-            warning "SSH key already exists"
-        fi
-    fi
-    
-    INSTALL_STATE["user_setup"]=true
-    success "User environment configured"
-}
-
-# System optimization
-optimize_system() {
-    print_section "Applying system optimizations"
-    
-    # Enable systemd services
-    local services=(
-        "bluetooth.service"
-        "NetworkManager.service"
+    local categories=(
+        "Essential packages (core system tools)"
+        "Development packages (programming tools)"
+        "Theming packages (matugen, themes, fonts)"
+        "Multimedia packages (media tools)"
+        "Gaming packages (Steam, gamemode, wine)"
+        "Optional packages (nice-to-have tools)"
     )
     
-    for service in "${services[@]}"; do
-        if confirm "Enable $service?"; then
-            sudo systemctl enable --now "$service"
-            success "Enabled: $service"
-        fi
-    done
-    
-    # GPU optimization
-    if confirm "Apply GPU optimizations?"; then
-        # Check for NVIDIA
-        if lspci | grep -i nvidia &>/dev/null; then
-            log "NVIDIA GPU detected"
-            if confirm "Install NVIDIA drivers?"; then
-                sudo pacman -S --needed --noconfirm nvidia nvidia-utils nvidia-settings
-                success "NVIDIA drivers installed"
-            fi
-        fi
-        
-        # Check for AMD
-        if lspci | grep -i amd &>/dev/null; then
-            log "AMD GPU detected"
-            if confirm "Install AMD drivers?"; then
-                sudo pacman -S --needed --noconfirm mesa vulkan-radeon libva-mesa-driver
-                success "AMD drivers installed"
-            fi
-        fi
-    fi
-    
-    # Apply performance tweaks
-    if confirm "Apply performance tweaks?"; then
-        # Update makepkg.conf for faster builds
-        sudo sed -i 's/#MAKEFLAGS="-j2"/MAKEFLAGS="-j$(nproc)"/' /etc/makepkg.conf
-        sudo sed -i 's/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -z - --threads=0)/' /etc/makepkg.conf
-        
-        success "Performance tweaks applied"
-    fi
-    
-    INSTALL_STATE["system_optimization"]=true
-    success "System optimized"
-}
-
-# Installation summary
-show_summary() {
-    print_header "Installation Summary"
-    
-    echo -e "${BOLD}Installation Results:${NC}"
-    for component in "${!INSTALL_STATE[@]}"; do
-        local status_icon="${RED}✗${NC}"
-        [[ "${INSTALL_STATE[$component]}" == "true" ]] && status_icon="${GREEN}✓${NC}"
-        
-        echo -e "  $status_icon $(echo "$component" | tr '_' ' ')"
-    done
+    local selected_categories
+    selected_categories=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
+        --header="Select package categories to install:" "${categories[@]}")
     
     echo
-    echo -e "${YELLOW}Log file: $LOG_FILE${NC}"
-    echo -e "${BLUE}Dotfiles directory: $DOTFILES_DIR${NC}"
+    gum_info "Selected categories:"
+    echo "$selected_categories"
+    echo
     
-    if confirm "Reboot system to apply all changes?"; then
+    if ! gum_confirm "Install selected package categories?"; then
+        gum_warning "Package installation cancelled"
+        return 0
+    fi
+    
+    # Install selected categories
+    while IFS= read -r category; do
+        case "$category" in
+            "Essential packages"*)
+                install_package_category "essential" ;;
+            "Development packages"*)
+                install_package_category "development" ;;
+            "Theming packages"*)
+                install_package_category "theming" ;;
+            "Multimedia packages"*)
+                install_package_category "multimedia"
+                
+                # Multimedia subcategories
+                echo
+                gum_info "Optional multimedia components:"
+                local multimedia_options=(
+                    "Creative tools (GIMP, Blender, Audacity, etc.)"
+                    "Additional players (VLC, Spotify, LibreOffice, etc.)"
+                )
+                
+                local multimedia_selected
+                multimedia_selected=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
+                    --header="Select optional multimedia components:" "${multimedia_options[@]}" || true)
+                
+                if [[ -n "$multimedia_selected" ]]; then
+                    while IFS= read -r multimedia_cat; do
+                        case "$multimedia_cat" in
+                            "Creative tools"*)
+                                install_package_category "multimedia-creative" ;;
+                            "Additional players"*)
+                                install_package_category "multimedia-players" ;;
+                        esac
+                    done <<< "$multimedia_selected"
+                fi
+                ;;
+            "Gaming packages"*)
+                install_package_category "gaming"
+                
+                # Gaming subcategories
+                echo
+                gum_info "Optional gaming components:"
+                local gaming_options=(
+                    "Additional gaming platforms (Lutris, Heroic, Bottles, Minecraft)"
+                    "Gaming emulators (RetroArch, Dolphin, PCSX2, etc.)"
+                    "Advanced gaming tools (Discord, CoreCtrl, controllers)"
+                )
+                
+                local gaming_selected
+                gaming_selected=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
+                    --header="Select optional gaming components:" "${gaming_options[@]}" || true)
+                
+                if [[ -n "$gaming_selected" ]]; then
+                    while IFS= read -r gaming_cat; do
+                        case "$gaming_cat" in
+                            "Additional gaming platforms"*)
+                                install_package_category "gaming-platforms" ;;
+                            "Gaming emulators"*)
+                                install_package_category "gaming-emulators" ;;
+                            "Advanced gaming tools"*)
+                                install_package_category "gaming-tools" ;;
+                        esac
+                    done <<< "$gaming_selected"
+                fi
+                ;;
+            "Optional packages"*)
+                install_package_category "optional" ;;
+        esac
+    done <<< "$selected_categories"
+}
+
+# Installation summary with gum
+show_summary() {
+    show_section "Installation Summary"
+    
+    local results=""
+    for component in "${!INSTALL_STATE[@]}"; do
+        local status_icon="✗"
+        local status_color="196"
+        if [[ "${INSTALL_STATE[$component]}" == "true" ]]; then
+            status_icon="✓"
+            status_color="46"
+        fi
+        
+        local formatted_name
+        formatted_name=$(echo "$component" | tr '_' ' ' | sed 's/packages //')
+        results+="$(gum style --foreground=$status_color "$status_icon $formatted_name")\n"
+    done
+    
+    echo -e "$results"
+    echo
+    gum style --foreground=245 "Log file: $LOG_FILE"
+    gum style --foreground=245 "Dotfiles directory: $DOTFILES_DIR"
+    echo
+    
+    if gum_confirm "Installation complete! Reboot system to apply all changes?"; then
+        gum spin --spinner=dot --title="Rebooting system in 3 seconds..." -- sleep 3
         sudo reboot
     fi
 }
@@ -404,56 +475,37 @@ show_summary() {
 main() {
     # Initialize
     init_logging
+    show_header
     
-    print_header "Dotfiles Installation System"
-    echo -e "${BOLD}Welcome to Martin's Comprehensive Dotfiles Installer${NC}"
-    echo
-    echo "This installer will help you set up a complete Arch Linux + Hyprland environment"
-    echo "with theming, development tools, and optimizations."
+    # Welcome screen
+    gum style --foreground=75 --align=center \
+        "Welcome to Martin's Comprehensive Dotfiles Installer" \
+        "" \
+        "This installer will help you set up a complete Arch Linux + Hyprland environment" \
+        "with theming, development tools, and optimizations."
     echo
     
-    if ! confirm "Continue with installation?"; then
-        echo "Installation cancelled"
+    if ! gum_confirm "Continue with installation?" "Yes"; then
+        gum style --foreground=245 "Installation cancelled"
         exit 0
     fi
     
     # System checks
-    print_section "System Checks"
-    check_arch_linux
-    check_not_root
-    check_internet
-    check_sudo
+    check_system
     
     # Install yay
     install_yay
     
-    # Package installation menu
-    print_section "Package Installation"
-    echo "Select package categories to install:"
+    # Package selection and installation
+    select_packages
     
-    confirm "Essential packages (core system tools)?" && install_package_category "essential"
-    confirm "Development packages (programming tools)?" && install_package_category "development"
-    confirm "Theming packages (matugen, themes, fonts)?" && install_package_category "theming"
-    confirm "Multimedia packages (media tools)?" && install_package_category "multimedia"
-    
-    # Gaming packages with subcategories
-    if confirm "Gaming packages?"; then
-        install_package_category "gaming"  # Essential gaming (Steam, gamemode, wine)
-        
-        echo -e "${BLUE}Optional gaming components:${NC}"
-        confirm "  Additional gaming platforms (Lutris, Heroic, Bottles, Minecraft)?" && install_package_category "gaming-platforms"
-        confirm "  Gaming emulators (RetroArch, Dolphin, PCSX2, etc.)?" && install_package_category "gaming-emulators"
-        confirm "  Advanced gaming tools (Discord, OBS, CoreCtrl, controllers)?" && install_package_category "gaming-tools"
+    # Configuration options
+    echo
+    if gum_confirm "Deploy dotfiles configurations?"; then
+        deploy_dotfiles
     fi
     
-    confirm "Optional packages (nice-to-have tools)?" && install_package_category "optional"
-    
-    # Configuration
-    confirm "Deploy dotfiles configurations?" && deploy_dotfiles
-    confirm "Set up user environment?" && setup_user_environment
-    confirm "Apply system optimizations?" && optimize_system
-    
-    # Summary
+    # Final summary
     show_summary
 }
 

@@ -574,7 +574,7 @@ create_symlinks() {
         "dunst"
         "nvim"
         "matugen"
-        "ags"
+        "quickshell"
     )
     
     # Create symlinks

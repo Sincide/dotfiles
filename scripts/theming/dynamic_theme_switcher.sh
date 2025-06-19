@@ -202,7 +202,7 @@ create_config() {
 # Edit these mappings to customize themes for each wallpaper category
 
 [space]
-gtk=Nordic
+gtk=Graphite-Dark
 icons=Papirus-Dark
 cursor=Bibata-Modern-Ice
 
@@ -212,7 +212,7 @@ icons=Tela-circle-green
 cursor=Bibata-Modern-Amber
 
 [gaming]
-gtk=Ultimate-Dark
+gtk=Graphite-Dark
 icons=Papirus
 cursor=Bibata-Modern-Classic
 
@@ -223,12 +223,12 @@ cursor=Capitaine-Cursors
 
 [dark]
 gtk=Graphite-Dark
-icons=Qogir-dark
+icons=Papirus-Dark
 cursor=Bibata-Modern-Classic
 
 [abstract]
-gtk=Yaru-Colors
-icons=Numix-Circle
+gtk=Graphite
+icons=Papirus
 cursor=Bibata-Modern-Amber
 EOF
     echo "📝 Created theme configuration at $THEME_CONFIG"

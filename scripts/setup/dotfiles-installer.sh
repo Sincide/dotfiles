@@ -508,28 +508,50 @@ custom_package_selection() {
     fi
     
     # Install selected categories
+    local all_installed_packages=()
     while IFS= read -r category; do
         echo
         gum_info "🚀 Processing category: $category"
+        local category_packages=()
         case "$category" in
             "Essential packages")
-                install_simple_category "essential" ;;
+                install_simple_category_no_setup "essential" 
+                mapfile -t category_packages < <(grep -v '^#' "${PACKAGES_DIR}/essential.txt" | grep -v '^$')
+                ;;
             "Development packages")
-                install_simple_category "development" ;;
+                install_simple_category_no_setup "development"
+                mapfile -t category_packages < <(grep -v '^#' "${PACKAGES_DIR}/development.txt" | grep -v '^$')
+                ;;
             "Theming packages")
-                install_simple_category "theming" ;;
+                install_simple_category_no_setup "theming"
+                mapfile -t category_packages < <(grep -v '^#' "${PACKAGES_DIR}/theming.txt" | grep -v '^$')
+                ;;
             "Multimedia packages")
-                install_simple_category "multimedia" ;;
+                install_simple_category_no_setup "multimedia"
+                mapfile -t category_packages < <(grep -v '^#' "${PACKAGES_DIR}/multimedia.txt" | grep -v '^$')
+                ;;
             "Gaming packages")
-                install_simple_category "gaming" ;;
+                install_simple_category_no_setup "gaming"
+                mapfile -t category_packages < <(grep -v '^#' "${PACKAGES_DIR}/gaming.txt" | grep -v '^$')
+                ;;
             "Optional packages")
-                install_simple_category "optional" ;;
+                install_simple_category_no_setup "optional"
+                mapfile -t category_packages < <(grep -v '^#' "${PACKAGES_DIR}/optional.txt" | grep -v '^$')
+                ;;
         esac
+        all_installed_packages+=("${category_packages[@]}")
         gum_info "✅ Finished processing: $category"
     done <<< "$selected_categories"
     
     echo
     gum_success "🎉 All selected categories have been processed!"
+    
+    # Run post-installation setup once for all packages
+    if [[ ${#all_installed_packages[@]} -gt 0 ]]; then
+        echo
+        gum_info "🔧 Running post-installation setup for all packages..."
+        post_install_setup "all" "${all_installed_packages[@]}"
+    fi
 }
 
 # Simplified category installation (no subcategory selection)
@@ -559,6 +581,35 @@ install_simple_category() {
     
     # Post-installation setup for specific packages
     post_install_setup "$category" "${packages[@]}"
+    
+    INSTALL_STATE["packages_${category}"]=true
+    gum_success "$category packages installation completed"
+}
+
+# Category installation without post-setup (for multi-category processing)
+install_simple_category_no_setup() {
+    local category="$1"
+    local package_file="${PACKAGES_DIR}/${category}.txt"
+    
+    if [[ ! -f "$package_file" ]]; then
+        gum_error "Package file not found: $package_file"
+        return 1
+    fi
+    
+    show_section "Installing ${category^} Packages"
+    
+    local packages
+    mapfile -t packages < <(grep -v '^#' "$package_file" | grep -v '^$')
+    
+    if [[ ${#packages[@]} -eq 0 ]]; then
+        gum_warning "No packages found in $category"
+        return 0
+    fi
+    
+    gum_info "Installing ${#packages[@]} $category packages..."
+    
+    # Install packages directly without showing the list (for simplicity)
+    install_packages_list "${packages[@]}"
     
     INSTALL_STATE["packages_${category}"]=true
     gum_success "$category packages installation completed"
@@ -691,9 +742,18 @@ setup_qemu() {
     gum_info "⚙️ QEMU detected - configuration handled by virt-manager setup"
 }
 
+# Global flag to prevent multiple ollama setups
+OLLAMA_SETUP_DONE=false
+
 # Setup Ollama and AI models
 setup_ollama() {
     gum_info "🔍 setup_ollama() called - checking ollama installation..."
+    
+    # Check if we've already done ollama setup
+    if [[ "$OLLAMA_SETUP_DONE" == "true" ]]; then
+        gum_info "⏭️ Ollama setup already completed, skipping..."
+        return 0
+    fi
     
     # Debug: Check ollama status
     if pacman -Qi ollama &>/dev/null; then
@@ -750,6 +810,9 @@ setup_ollama() {
     else
         gum_info "⏭️ Skipping model installation"
     fi
+    
+    # Mark ollama setup as completed
+    OLLAMA_SETUP_DONE=true
 }
 
 # Install Ollama models with interactive selection

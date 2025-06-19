@@ -439,9 +439,39 @@ deploy_dotfiles() {
     gum_success "All dotfiles deployed successfully"
 }
 
-# Beautiful package selection menu
+# Simple package selection menu
 select_packages() {
     show_section "Package Selection"
+    
+    gum_info "Choose installation approach:"
+    echo
+    
+    local install_type
+    install_type=$(gum choose \
+        "Quick install (recommended packages only)" \
+        "Custom install (choose specific packages)" \
+        "Skip packages (dotfiles only)")
+    
+    case "$install_type" in
+        "Quick install"*)
+            # Install essential packages only
+            gum_info "Installing essential packages for Arch Linux + Hyprland..."
+            install_package_category "essential"
+            ;;
+        "Custom install"*)
+            # Show all package categories for custom selection
+            custom_package_selection
+            ;;
+        "Skip packages"*)
+            gum_info "Skipping package installation"
+            ;;
+    esac
+}
+
+# Custom package selection with simple categories
+custom_package_selection() {
+    gum_info "Select package categories you want to install:"
+    echo
     
     local categories=(
         "Essential packages (core system tools)"
@@ -454,86 +484,130 @@ select_packages() {
     
     local selected_categories
     selected_categories=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
-        --header="Select package categories to install:" "${categories[@]}")
+        --header="Select categories to install:" "${categories[@]}" || true)
+    
+    if [[ -z "$selected_categories" ]]; then
+        gum_warning "No categories selected"
+        return 0
+    fi
     
     echo
     gum_info "Selected categories:"
     echo "$selected_categories"
     echo
     
-    if ! gum_confirm "Install selected package categories?"; then
+    if ! gum_confirm "Install selected categories with their default packages?"; then
         gum_warning "Package installation cancelled"
         return 0
     fi
     
-    # Install selected categories
+    # Install selected categories (simplified - no subcategory selection)
     while IFS= read -r category; do
         case "$category" in
             "Essential packages"*)
-                install_package_category "essential" ;;
+                install_simple_category "essential" ;;
             "Development packages"*)
-                install_package_category "development" ;;
+                install_simple_category "development" ;;
             "Theming packages"*)
-                install_package_category "theming" ;;
+                install_simple_category "theming" ;;
             "Multimedia packages"*)
-                install_package_category "multimedia"
-                
-                # Multimedia subcategories
-                echo
-                gum_info "Optional multimedia components:"
-                local multimedia_options=(
-                    "Creative tools (GIMP, Blender, Audacity, etc.)"
-                    "Additional players (VLC, Spotify, LibreOffice, etc.)"
-                )
-                
-                local multimedia_selected
-                multimedia_selected=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
-                    --header="Select optional multimedia components:" "${multimedia_options[@]}" || true)
-                
-                if [[ -n "$multimedia_selected" ]]; then
-                    while IFS= read -r multimedia_cat; do
-                        case "$multimedia_cat" in
-                            "Creative tools"*)
-                                install_package_category "multimedia-creative" ;;
-                            "Additional players"*)
-                                install_package_category "multimedia-players" ;;
-                        esac
-                    done <<< "$multimedia_selected"
-                fi
-                ;;
+                install_simple_category "multimedia" ;;
             "Gaming packages"*)
-                install_package_category "gaming"
-                
-                # Gaming subcategories
-                echo
-                gum_info "Optional gaming components:"
-                local gaming_options=(
-                    "Additional gaming platforms (Lutris, Heroic, Bottles, Minecraft)"
-                    "Gaming emulators (RetroArch, Dolphin, PCSX2, etc.)"
-                    "Advanced gaming tools (Discord, CoreCtrl, controllers)"
-                )
-                
-                local gaming_selected
-                gaming_selected=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
-                    --header="Select optional gaming components:" "${gaming_options[@]}" || true)
-                
-                if [[ -n "$gaming_selected" ]]; then
-                    while IFS= read -r gaming_cat; do
-                        case "$gaming_cat" in
-                            "Additional gaming platforms"*)
-                                install_package_category "gaming-platforms" ;;
-                            "Gaming emulators"*)
-                                install_package_category "gaming-emulators" ;;
-                            "Advanced gaming tools"*)
-                                install_package_category "gaming-tools" ;;
-                        esac
-                    done <<< "$gaming_selected"
-                fi
-                ;;
+                install_simple_category "gaming" ;;
             "Optional packages"*)
-                install_package_category "optional" ;;
+                install_simple_category "optional" ;;
         esac
     done <<< "$selected_categories"
+}
+
+# Simplified category installation (no subcategory selection)
+install_simple_category() {
+    local category="$1"
+    local package_file="${PACKAGES_DIR}/${category}.txt"
+    
+    if [[ ! -f "$package_file" ]]; then
+        gum_error "Package file not found: $package_file"
+        return 1
+    fi
+    
+    show_section "Installing ${category^} Packages"
+    
+    local packages
+    mapfile -t packages < <(grep -v '^#' "$package_file" | grep -v '^$')
+    
+    if [[ ${#packages[@]} -eq 0 ]]; then
+        gum_warning "No packages found in $category"
+        return 0
+    fi
+    
+    gum_info "Installing ${#packages[@]} $category packages..."
+    
+    # Install packages directly without showing the list (for simplicity)
+    install_packages_list "${packages[@]}"
+    
+    INSTALL_STATE["packages_${category}"]=true
+    gum_success "$category packages installation completed"
+}
+
+# Install a list of packages (shared function)
+install_packages_list() {
+    local packages=("$@")
+    
+    if [[ ${#packages[@]} -eq 0 ]]; then
+        gum_warning "No packages to install"
+        return 0
+    fi
+    
+    # Analyze packages
+    gum_step "Analyzing package sources"
+    local official_packages=()
+    local aur_packages=()
+    
+    for package in "${packages[@]}"; do
+        if pacman -Si "$package" &>/dev/null 2>&1; then
+            official_packages+=("$package")
+        else
+            aur_packages+=("$package")
+        fi
+    done
+    
+    gum_info "Official packages: ${#official_packages[@]} | AUR packages: ${#aur_packages[@]}"
+    
+    # Install official packages
+    if [[ ${#official_packages[@]} -gt 0 ]]; then
+        gum_step "Installing ${#official_packages[@]} official packages"
+        
+        if gum spin --spinner=line --title="Installing official packages" -- \
+            sudo pacman -S --needed --noconfirm "${official_packages[@]}"; then
+            gum_success "Official packages installed successfully"
+        else
+            gum_error "Failed to install some official packages"
+            if gum_confirm "Continue with installation despite failures?"; then
+                gum_warning "Continuing with partial installation"
+            else
+                gum_error "Installation aborted by user"
+                exit 1
+            fi
+        fi
+    fi
+    
+    # Install AUR packages
+    if [[ ${#aur_packages[@]} -gt 0 ]]; then
+        gum_step "Installing ${#aur_packages[@]} AUR packages"
+        
+        if gum spin --spinner=line --title="Installing AUR packages" -- \
+            yay -S --needed --noconfirm "${aur_packages[@]}"; then
+            gum_success "AUR packages installed successfully"
+        else
+            gum_error "Failed to install some AUR packages"
+            if gum_confirm "Continue with installation despite failures?"; then
+                gum_warning "Continuing with partial installation"
+            else
+                gum_error "Installation aborted by user"
+                exit 1
+            fi
+        fi
+    fi
 }
 
 # Installation summary with gum

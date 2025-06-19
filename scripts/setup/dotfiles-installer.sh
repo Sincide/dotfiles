@@ -683,7 +683,8 @@ setup_qemu() {
 
 # Setup Ollama and AI models
 setup_ollama() {
-    if ! pacman -Qi ollama &>/dev/null; then
+    # Check if ollama is installed by looking for the package OR if the binary exists
+    if ! pacman -Qi ollama &>/dev/null && ! command -v ollama &>/dev/null; then
         return 0
     fi
     
@@ -694,7 +695,13 @@ setup_ollama() {
     sudo systemctl start ollama
     
     # Wait for service to be ready
-    sleep 3
+    sleep 5
+    
+    # Verify service is running
+    if ! systemctl is-active --quiet ollama; then
+        gum_error "❌ Ollama service failed to start"
+        return 1
+    fi
     
     gum_success "🚀 Ollama service enabled and started"
     

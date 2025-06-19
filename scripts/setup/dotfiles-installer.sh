@@ -199,7 +199,42 @@ install_yay() {
     fi
 }
 
-# Beautiful package installation
+# Parse package file into subcategories
+parse_package_subcategories() {
+    local package_file="$1"
+    local -n subcategories_ref="$2"
+    local -n packages_ref="$3"
+    
+    local current_category=""
+    local line_num=0
+    
+    while IFS= read -r line; do
+        line_num=$((line_num + 1))
+        
+        # Skip empty lines
+        [[ -z "$line" ]] && continue
+        
+        # Check if line is a comment (subcategory)
+        if [[ "$line" =~ ^#[[:space:]]*(.+)$ ]]; then
+            local comment="${BASH_REMATCH[1]}"
+            # Skip the main header comment
+            if [[ $line_num -gt 3 ]]; then
+                current_category="$comment"
+                subcategories_ref["$current_category"]=""
+            fi
+        elif [[ "$line" =~ ^[^#] ]] && [[ -n "$current_category" ]]; then
+            # Add package to current subcategory
+            if [[ -n "${subcategories_ref[$current_category]}" ]]; then
+                subcategories_ref["$current_category"]+=" $line"
+            else
+                subcategories_ref["$current_category"]="$line"
+            fi
+            packages_ref["$line"]="$current_category"
+        fi
+    done < "$package_file"
+}
+
+# Beautiful package installation with subcategory selection
 install_package_category() {
     local category="$1"
     local package_file="${PACKAGES_DIR}/${category}.txt"
@@ -211,24 +246,84 @@ install_package_category() {
     
     show_section "Installing ${category^} Packages"
     
-    local packages
-    mapfile -t packages < <(grep -v '^#' "$package_file" | grep -v '^$')
+    # Parse subcategories from package file
+    declare -A subcategories
+    declare -A package_to_category
+    parse_package_subcategories "$package_file" subcategories package_to_category
     
-    if [[ ${#packages[@]} -eq 0 ]]; then
-        gum_warning "No packages found in $category"
-        return 0
-    fi
-    
-    # Show package preview with gum
-    gum_info "Found ${#packages[@]} packages in $category category"
-    echo
-    gum style --foreground=245 --border=rounded --border-foreground=245 --padding="1 2" \
-        "$(printf '%s\n' "${packages[@]}")"
-    echo
-    
-    if ! gum_confirm "Install these ${#packages[@]} packages?"; then
-        gum_warning "Skipping $category packages"
-        return 0
+    # If no subcategories found, fall back to old behavior
+    if [[ ${#subcategories[@]} -eq 0 ]]; then
+        local packages
+        mapfile -t packages < <(grep -v '^#' "$package_file" | grep -v '^$')
+        
+        if [[ ${#packages[@]} -eq 0 ]]; then
+            gum_warning "No packages found in $category"
+            return 0
+        fi
+        
+        gum_info "Found ${#packages[@]} packages in $category category"
+        echo
+        gum style --foreground=245 --border=rounded --border-foreground=245 --padding="1 2" \
+            "$(printf '%s\n' "${packages[@]}")"
+        echo
+        
+        if ! gum_confirm "Install these ${#packages[@]} packages?"; then
+            gum_warning "Skipping $category packages"
+            return 0
+        fi
+        
+        # Continue with old logic for packages without subcategories
+        local selected_packages=("${packages[@]}")
+    else
+        # Show subcategories for selection
+        local subcategory_options=()
+        for subcat in "${!subcategories[@]}"; do
+            local pkg_count
+            pkg_count=$(echo "${subcategories[$subcat]}" | wc -w)
+            subcategory_options+=("$subcat ($pkg_count packages)")
+        done
+        
+        gum_info "Found ${#subcategory_options[@]} subcategories in $category"
+        echo
+        
+        local selected_subcategories
+        selected_subcategories=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
+            --header="Select subcategories to install:" "${subcategory_options[@]}" || true)
+        
+        if [[ -z "$selected_subcategories" ]]; then
+            gum_warning "No subcategories selected, skipping $category"
+            return 0
+        fi
+        
+        # Collect packages from selected subcategories
+        local selected_packages=()
+        while IFS= read -r selected_option; do
+            # Extract subcategory name (remove package count)
+            local subcat_name="${selected_option% (*}"
+            
+            # Add packages from this subcategory
+            local subcat_packages
+            read -ra subcat_packages <<< "${subcategories[$subcat_name]}"
+            selected_packages+=("${subcat_packages[@]}")
+        done <<< "$selected_subcategories"
+        
+        if [[ ${#selected_packages[@]} -eq 0 ]]; then
+            gum_warning "No packages selected, skipping $category"
+            return 0
+        fi
+        
+        # Show final package list
+        echo
+        gum_info "Selected ${#selected_packages[@]} packages for installation:"
+        echo
+        gum style --foreground=245 --border=rounded --border-foreground=245 --padding="1 2" \
+            "$(printf '%s\n' "${selected_packages[@]}")"
+        echo
+        
+        if ! gum_confirm "Install these ${#selected_packages[@]} packages?"; then
+            gum_warning "Skipping $category packages"
+            return 0
+        fi
     fi
     
     # Analyze packages with beautiful progress
@@ -236,7 +331,7 @@ install_package_category() {
     local official_packages=()
     local aur_packages=()
     
-    for package in "${packages[@]}"; do
+    for package in "${selected_packages[@]}"; do
         if pacman -Si "$package" &>/dev/null 2>&1; then
             official_packages+=("$package")
         else

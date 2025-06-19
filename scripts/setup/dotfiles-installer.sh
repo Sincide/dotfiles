@@ -365,14 +365,30 @@ install_package_category() {
     if [[ ${#aur_packages[@]} -gt 0 ]]; then
         gum_step "Installing ${#aur_packages[@]} AUR packages"
         gum style --foreground=245 "${aur_packages[*]}"
+        echo
         
-        if gum spin --spinner=line --title="Installing AUR packages" -- \
-            yay -S --needed --noconfirm "${aur_packages[@]}"; then
-            gum_success "AUR packages installed successfully"
+        gum_info "📦 Building AUR packages (this may take several minutes)..."
+        gum_info "⏳ Large packages may take 5-15 minutes to compile"
+        echo
+        
+        # Show what's happening during installation
+        echo "📋 Package build queue:"
+        for pkg in "${aur_packages[@]}"; do
+            echo "  • $pkg"
+        done
+        echo
+        
+        gum_info "🔨 Starting AUR build process..."
+        echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+        echo "  📊 Progress will be shown by yay..."
+        echo
+        
+        if yay -S --needed --noconfirm "${aur_packages[@]}"; then
+            gum_success "✅ All AUR packages built and installed successfully"
         else
-            gum_error "Failed to install some AUR packages"
+            gum_error "❌ Failed to install some AUR packages"
             if gum_confirm "Continue with installation despite failures?"; then
-                gum_warning "Continuing with partial installation"
+                gum_warning "⚠️  Continuing with partial installation"
             else
                 gum_error "Installation aborted by user"
                 exit 1
@@ -1222,15 +1238,22 @@ install_dynamic_themes() {
         "whitesur-icon-theme"    # Matching icon theme
     )
     
+    gum_info "📦 Installing macOS-like theme suite (${#theme_suites[@]} packages)..."
+    local suite_current=0
+    
     for package in "${theme_suites[@]}"; do
-        if gum_confirm "Install $package (macOS-like theme suite)?"; then
-            gum_info "Installing $package..."
-            if yay -S --needed --noconfirm "$package"; then
-                gum_success "  ✓ $package installed successfully"
-            else
-                gum_warning "  ⚠ $package installation failed (may not exist in AUR)"
-            fi
+        ((suite_current++))
+        gum_info "📦 Installing theme suite $suite_current/${#theme_suites[@]}: $package"
+        gum_info "  → Building from AUR (this may take several minutes)..."
+        echo "  📋 Building $package..."
+        echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+        
+        if yay -S --needed --noconfirm "$package"; then
+            gum_success "  ✓ $package installed successfully"
+        else
+            gum_warning "  ⚠ $package installation failed (may not exist in AUR)"
         fi
+        echo
     done
     
     # Additional icon themes
@@ -1241,37 +1264,68 @@ install_dynamic_themes() {
         "qogir-icon-theme"               # AUR stable version (not git)
     )
     
+    local total_packages=${#icon_packages[@]}
+    local current_package=0
+    
     for package in "${icon_packages[@]}"; do
-        if gum_confirm "Install $package?"; then
-            # Try official repos first, then AUR
-            if pacman -Si "$package" &>/dev/null; then
-                gum spin --spinner=line --title="Installing $package (official repo)" -- \
-                    sudo pacman -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+        ((current_package++))
+        gum_info "📦 Installing icon theme $current_package/$total_packages: $package"
+        
+        # Try official repos first, then AUR
+        if pacman -Si "$package" &>/dev/null; then
+            gum_info "  → Installing from official repository..."
+            if sudo pacman -S --needed --noconfirm "$package"; then
+                gum_success "  ✓ $package installed successfully"
             else
-                gum spin --spinner=line --title="Installing $package (AUR)" -- \
-                    yay -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+                gum_warning "  ⚠ Failed to install $package from official repo"
+            fi
+        else
+            gum_info "  → Building from AUR (this may take a few minutes)..."
+            echo "  📋 Building $package..."
+            echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+            
+            if yay -S --needed --noconfirm "$package"; then
+                gum_success "  ✓ $package built and installed successfully"
+            else
+                gum_warning "  ⚠ Failed to build/install $package from AUR"
             fi
         fi
+        echo
     done
     
     # Cursor themes
     gum_step "Installing additional cursor themes"
     local cursor_packages=(
         "capitaine-cursors"  # Official Arch Extra repo
-        # "oreo-cursors-git" # Removed - not essential and may cause issues
     )
     
+    total_packages=${#cursor_packages[@]}
+    current_package=0
+    
     for package in "${cursor_packages[@]}"; do
-        if gum_confirm "Install $package?"; then
-            # Try official repos first, then AUR
-            if pacman -Si "$package" &>/dev/null; then
-                gum spin --spinner=line --title="Installing $package (official repo)" -- \
-                    sudo pacman -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+        ((current_package++))
+        gum_info "📦 Installing cursor theme $current_package/$total_packages: $package"
+        
+        # Try official repos first, then AUR
+        if pacman -Si "$package" &>/dev/null; then
+            gum_info "  → Installing from official repository..."
+            if sudo pacman -S --needed --noconfirm "$package"; then
+                gum_success "  ✓ $package installed successfully"
             else
-                gum spin --spinner=line --title="Installing $package (AUR)" -- \
-                    yay -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+                gum_warning "  ⚠ Failed to install $package from official repo"
+            fi
+        else
+            gum_info "  → Building from AUR (this may take a few minutes)..."
+            echo "  📋 Building $package..."
+            echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+            
+            if yay -S --needed --noconfirm "$package"; then
+                gum_success "  ✓ $package built and installed successfully"
+            else
+                gum_warning "  ⚠ Failed to build/install $package from AUR"
             fi
         fi
+        echo
     done
     
     # Setup theme cache system

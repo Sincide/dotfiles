@@ -1,7 +1,0 @@
-# Gaming Emulators
-retroarch
-dolphin-emu
-pcsx2
-ppsspp
-citra
-yuzu 

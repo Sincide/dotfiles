@@ -1,6 +1,0 @@
-# Additional Gaming Platforms
-lutris
-heroic-games-launcher-bin
-bottles
-minecraft-launcher
-multimc-bin 

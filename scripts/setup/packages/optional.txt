@@ -4,30 +4,30 @@
 # Communication
 signal-desktop
 telegram-desktop
-slack-desktop
-zoom
+#slack-desktop
+#zoom
 
 # Browsers
-firefox
-chromium
+#firefox
+#chromium
 brave-bin
 
 # Cloud storage
-dropbox
-google-drive-ocamlfuse
+#dropbox
+#google-drive-ocamlfuse
 rclone
 
 # Virtualization
-virtualbox
-virtualbox-host-modules-arch
+#virtualbox
+#virtualbox-host-modules-arch
 qemu
 virt-manager
 
 # System utilities
-bleachbit
-stacer
-timeshift
-ventoy-bin
+#bleachbit
+#stacer
+#timeshift
+#ventoy-bin
 
 # Network utilities
 putty
@@ -35,36 +35,36 @@ filezilla
 remmina
 
 # Productivity
-obsidian
-notion-app
-todoist
+#obsidian
+#notion-app
+#todoist
 
 # Note taking
-joplin
-logseq
-typora
+#joplin
+#logseq
+#typora
 
 # Password managers
 bitwarden
-keepassxc
+#keepassxc
 
 # Social media
 whatsapp-for-linux
-twitter-desktop
+#twitter-desktop
 
 # Finance
-gnucash
-homebank
+#gnucash
+#homebank
 
 # Weather
-gnome-weather
+#gnome-weather
 
 # Maps
-gnome-maps
+#gnome-maps
 
 # Calculator
-gnome-calculator
-qalculate-gtk
+#gnome-calculator
+#qalculate-gtk
 
 # System information
 hardinfo
@@ -72,18 +72,18 @@ cpu-x
 hwinfo
 
 # Backup tools
-timeshift
+#timeshift
 rsync
-borg
+#borg
 
 # Partition tools
-gparted
+#gparted
 gnome-disk-utility
 
 # Remote desktop
-anydesk-bin
-teamviewer
+#anydesk-bin
+#teamviewer
 
 # Torrents
-transmission-gtk
+#transmission-gtk
 qbittorrent 

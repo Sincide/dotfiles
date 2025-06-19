@@ -3,7 +3,7 @@
 
 # Color and theming tools
 matugen
-pywal
+#pywal
 imagemagick
 feh
 
@@ -22,9 +22,10 @@ bibata-cursor-theme
 capitaine-cursors
 
 # Wallpaper tools
-nitrogen
-swaybg
-mpvpaper
+#nitrogen
+#swaybg
+#mpvpaper
+swww
 
 # Font management
 fontconfig
@@ -45,20 +46,20 @@ figlet
 cowsay
 
 # Screenshot and recording
-flameshot
-obs-studio
+#flameshot
+#obs-studio
 peek
 
 # Color utilities
-gpick
-gcolor3
+#gpick
+#gcolor3
 
 # Transparency and effects
-picom
-maim
+#picom
+#maim
 
 # Theme preview tools
-lxappearance
+#lxappearance
 qt5ct
 qt6ct
 

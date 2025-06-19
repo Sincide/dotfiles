@@ -25,7 +25,7 @@ lazygit
 
 # Text editors and IDEs
 neovim
-code
+#code
 
 # Development tools
 ripgrep
@@ -38,9 +38,9 @@ zoxide
 starship
 
 # Database tools
-sqlite
-postgresql
-redis
+#sqlite
+#postgresql
+#redis
 
 # Container tools
 docker
@@ -73,7 +73,7 @@ valgrind
 strace
 
 # Language servers (for neovim)
-lua-language-server
-rust-analyzer
-typescript-language-server
-pyright 
+#lua-language-server
+#rust-analyzer
+#typescript-language-server
+#pyright 

@@ -1160,9 +1160,9 @@ install_dynamic_themes() {
     gum_step "Installing essential theming packages"
     local essential_packages=(
         "papirus-icon-theme"
-        "bibata-cursor-theme"
-        "cinnamon-desktop"  # Fixes Nemo warnings
-        "nemo-fileroller"   # Additional Nemo support
+        "bibata-cursor-git"     # Modern cursor theme with hyprcursor support
+        "cinnamon-desktop"      # Fixes Nemo warnings
+        "nemo"                  # File manager (nemo-fileroller is auto included)
     )
     
     for package in "${essential_packages[@]}"; do
@@ -1173,9 +1173,9 @@ install_dynamic_themes() {
     # GTK themes
     gum_step "Installing GTK themes"
     local gtk_themes=(
-        "nordic-theme-git"
-        "orchis-theme-git"
-        "graphite-gtk-theme-git"
+        "orchis-theme"              # Material Design (official repo)
+        "arc-gtk-theme"             # Popular flat theme (AUR)
+        "everforest-gtk-theme-git"  # Nature-inspired theme (AUR)
     )
     
     for theme in "${gtk_themes[@]}"; do
@@ -1185,31 +1185,26 @@ install_dynamic_themes() {
         fi
     done
     
-    # Install WhiteSur theme manually (more reliable)
-    gum_step "Installing WhiteSur theme suite"
-    if gum_confirm "Install WhiteSur (macOS-like) theme suite?"; then
-        local temp_dir=$(mktemp -d)
-        cd "$temp_dir"
-        
-        # GTK theme
-        gum spin --spinner=line --title="Installing WhiteSur GTK theme" -- \
-            bash -c "git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git && cd WhiteSur-gtk-theme && ./install.sh -c light -c dark"
-        
-        # Icon theme
-        gum spin --spinner=line --title="Installing WhiteSur icon theme" -- \
-            bash -c "git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git && cd WhiteSur-icon-theme && ./install.sh"
-        
-        cd "$DOTFILES_DIR"
-        rm -rf "$temp_dir"
-        gum_success "  ✓ WhiteSur theme suite installed"
-    fi
+    # Install modern theme suites from AUR
+    gum_step "Installing modern theme suites"
+    local theme_suites=(
+        "whitesur-gtk-theme"     # macOS-like theme
+        "whitesur-icon-theme"    # Matching icon theme
+    )
+    
+    for package in "${theme_suites[@]}"; do
+        if gum_confirm "Install $package (macOS-like theme suite)?"; then
+            gum spin --spinner=line --title="Installing $package" -- \
+                yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+        fi
+    done
     
     # Additional icon themes
     gum_step "Installing additional icon themes"
     local icon_packages=(
-        "tela-icon-theme"
-        "numix-circle-icon-theme-git"
-        "qogir-icon-theme"
+        "tela-icon-theme-git"        # Correct AUR package name
+        "numix-circle-icon-theme-git" 
+        "qogir-icon-theme-git"       # Correct AUR package name
     )
     
     for package in "${icon_packages[@]}"; do

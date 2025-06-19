@@ -18,7 +18,7 @@ materia-gtk-theme
 # nordic-theme-git  # Replaced with Graphite-Dark (included in main themes)
 
 # Cursor themes
-bibata-cursor-theme
+bibata-cursor-git  # Modern cursor theme with hyprcursor support
 capitaine-cursors
 
 # Wallpaper tools

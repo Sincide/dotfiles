@@ -202,17 +202,17 @@ create_config() {
 # Edit these mappings to customize themes for each wallpaper category
 
 [space]
-gtk=Graphite-Dark
+gtk=Arc-Dark
 icons=Papirus-Dark
 cursor=Bibata-Modern-Ice
 
 [nature]
-gtk=Orchis-Green-Dark
+gtk=Everforest-Dark
 icons=Tela-circle-green
 cursor=Bibata-Modern-Amber
 
 [gaming]
-gtk=Graphite-Dark
+gtk=Arc-Dark
 icons=Papirus
 cursor=Bibata-Modern-Classic
 
@@ -222,12 +222,12 @@ icons=WhiteSur
 cursor=Capitaine-Cursors
 
 [dark]
-gtk=Graphite-Dark
+gtk=Arc-Dark
 icons=Papirus-Dark
 cursor=Bibata-Modern-Classic
 
 [abstract]
-gtk=Graphite
+gtk=Arc
 icons=Papirus
 cursor=Bibata-Modern-Amber
 EOF

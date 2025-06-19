@@ -14,7 +14,7 @@ yt-dlp
 # Additional media players
 vlc
 celluloid
-#spotify
+spotify
 #audacious
 #imv
 

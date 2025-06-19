@@ -1160,13 +1160,23 @@ install_dynamic_themes() {
     gum_step "Installing essential theming packages"
     local essential_packages=(
         "papirus-icon-theme"
-        "bibata-cursor-git"     # Modern cursor theme with hyprcursor support
+        "bibata-cursor-theme"   # Stable cursor theme (avoid conflicts with -git version)
         "cinnamon-desktop"      # Fixes Nemo warnings
         "nemo"                  # File manager (nemo-fileroller is auto included)
     )
     
     for package in "${essential_packages[@]}"; do
         gum_info "Installing $package..."
+        
+        # Handle bibata cursor conflicts
+        if [[ "$package" == "bibata-cursor-theme" ]]; then
+            # Remove conflicting git version if it exists
+            if yay -Q bibata-cursor-git >/dev/null 2>&1; then
+                gum_info "  → Removing conflicting bibata-cursor-git..."
+                yay -R --noconfirm bibata-cursor-git 2>/dev/null || true
+            fi
+        fi
+        
         if yay -S --needed --noconfirm "$package"; then
             gum_success "  ✓ $package installed successfully"
         else
@@ -1226,29 +1236,41 @@ install_dynamic_themes() {
     # Additional icon themes
     gum_step "Installing additional icon themes"
     local icon_packages=(
-        "tela-icon-theme-git"        # Correct AUR package name
-        "numix-circle-icon-theme-git" 
-        "qogir-icon-theme-git"       # Correct AUR package name
+        "tela-circle-icon-theme-all"     # Official Arch Extra repo (all variants)
+        "numix-circle-icon-theme-git"    # Keep git version - it's correct
+        "qogir-icon-theme"               # AUR stable version (not git)
     )
     
     for package in "${icon_packages[@]}"; do
         if gum_confirm "Install $package?"; then
-            gum spin --spinner=line --title="Installing $package" -- \
-                yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+            # Try official repos first, then AUR
+            if pacman -Si "$package" &>/dev/null; then
+                gum spin --spinner=line --title="Installing $package (official repo)" -- \
+                    sudo pacman -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+            else
+                gum spin --spinner=line --title="Installing $package (AUR)" -- \
+                    yay -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+            fi
         fi
     done
     
     # Cursor themes
     gum_step "Installing additional cursor themes"
     local cursor_packages=(
-        "capitaine-cursors"
-        "oreo-cursors-git"
+        "capitaine-cursors"  # Official Arch Extra repo
+        # "oreo-cursors-git" # Removed - not essential and may cause issues
     )
     
     for package in "${cursor_packages[@]}"; do
         if gum_confirm "Install $package?"; then
-            gum spin --spinner=line --title="Installing $package" -- \
-                yay -S --needed --noconfirm "$package" 2>/dev/null || gum_warning "Failed to install $package"
+            # Try official repos first, then AUR
+            if pacman -Si "$package" &>/dev/null; then
+                gum spin --spinner=line --title="Installing $package (official repo)" -- \
+                    sudo pacman -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+            else
+                gum spin --spinner=line --title="Installing $package (AUR)" -- \
+                    yay -S --needed --noconfirm "$package" || gum_warning "Failed to install $package"
+            fi
         fi
     done
     
@@ -1258,9 +1280,14 @@ install_dynamic_themes() {
     if [[ -f "$cache_manager" ]]; then
         chmod +x "$cache_manager"
         
-        # Option to pre-cache themes
-        if gum_confirm "Pre-cache themes to avoid re-downloading on fresh installs?"; then
-            gum_info "📦 Caching git-based themes to ~/dotfiles/themes/cached/"
+        # Option to pre-cache themes (disabled by default to avoid git auth issues)
+        gum_info "📦 Theme caching system available"
+        gum_info "Note: Themes are now installed directly from AUR packages"
+        gum_info "Pre-caching is optional and no longer required"
+        echo
+        
+        if gum_confirm "Enable theme pre-caching? (Not recommended - themes install directly from AUR)"; then
+            gum_info "📦 Caching themes to ~/dotfiles/themes/cached/"
             gum_info "This will save themes locally for faster future installations."
             echo
             
@@ -1273,6 +1300,8 @@ install_dynamic_themes() {
             echo
             gum_info "Cache summary:"
             bash "$cache_manager" list
+        else
+            gum_info "  ✓ Skipping theme caching - themes will install directly from AUR"
         fi
     else
         gum_warning "  ⚠ Theme cache manager not found"

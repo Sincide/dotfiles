@@ -15,19 +15,19 @@ mkdir -p "$USER_THEMES_DIR" "$USER_ICONS_DIR"
 # Theme definitions with download information
 declare -A THEME_DOWNLOADS=(
     # GTK Themes
-    ["Nordic"]="git|https://github.com/EliverLara/Nordic.git|gtk"
-    ["Orchis-Green-Dark"]="git|https://github.com/vinceliuice/Orchis-theme.git|gtk|./install.sh -t green -d $USER_THEMES_DIR"
-    ["Ultimate-Dark"]="git|https://github.com/B00merang-Project/Ultimate-Dark.git|gtk"
-    ["WhiteSur-Light"]="git|https://github.com/vinceliuice/WhiteSur-gtk-theme.git|gtk|./install.sh -c light -d $USER_THEMES_DIR"
-    ["Graphite-Dark"]="git|https://github.com/vinceliuice/Graphite-gtk-theme.git|gtk|./install.sh -d $USER_THEMES_DIR"
+    ["Nordic"]="aur|nordic-theme|gtk"
+    ["Orchis-Green-Dark"]="aur|orchis-theme|gtk"
+    ["Ultimate-Dark"]="aur|arc-gtk-theme|gtk"
+    ["WhiteSur-Light"]="aur|whitesur-gtk-theme|gtk"
+    ["Graphite-Dark"]="aur|arc-gtk-theme|gtk"
     ["Yaru-Colors"]="aur|yaru-colors-git|gtk"
     
     # Icon Themes
     ["Papirus-Dark"]="aur|papirus-icon-theme|icons"
     ["Papirus"]="aur|papirus-icon-theme|icons"
-    ["Tela-circle-green"]="git|https://github.com/vinceliuice/Tela-circle-icon-theme.git|icons|./install.sh -c green -d $USER_ICONS_DIR"
-    ["WhiteSur"]="git|https://github.com/vinceliuice/WhiteSur-icon-theme.git|icons|./install.sh -d $USER_ICONS_DIR"
-    ["Qogir-dark"]="git|https://github.com/vinceliuice/Qogir-icon-theme.git|icons|./install.sh -t dark -d $USER_ICONS_DIR"
+    ["Tela-circle-green"]="aur|tela-circle-icon-theme-green|icons"
+    ["WhiteSur"]="aur|whitesur-icon-theme|icons"
+    ["Qogir-dark"]="aur|qogir-icon-theme|icons"
     ["Numix-Circle"]="aur|numix-circle-icon-theme-git|icons"
     
     # Cursor Themes

@@ -1,0 +1,77 @@
+# Essential System Packages
+# Core tools needed for basic Arch Linux + Hyprland functionality
+
+# Base system
+base-devel
+git
+curl
+wget
+unzip
+tree
+htop
+btop
+neofetch
+fastfetch
+
+# Network and system utilities
+networkmanager
+network-manager-applet
+bluez
+bluez-utils
+openssh
+rsync
+
+# Audio
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+wireplumber
+pavucontrol
+
+# Display and wayland
+wayland
+wayland-protocols
+xorg-xwayland
+xorg-xlsclients
+qt5-wayland
+qt6-wayland
+
+# Hyprland and core WM components
+hyprland
+waybar
+dunst
+fuzzel
+grim
+slurp
+swappy
+wl-clipboard
+polkit-gnome
+
+# Fonts
+ttf-jetbrains-mono-nerd
+noto-fonts
+noto-fonts-emoji
+ttf-liberation
+ttf-dejavu
+
+# File management
+ranger
+thunar
+thunar-volman
+tumbler
+file-roller
+
+# Text editors
+nano
+vim
+micro
+
+# System monitoring
+lm_sensors
+acpi
+upower
+
+# Archive support
+p7zip
+unrar 

@@ -1,0 +1,25 @@
+# Matugen Configuration
+# Material Design 3 color generation from wallpapers
+
+[config]
+# Global settings
+scheme = "material"
+mode = "dark"
+contrast = "standard"
+
+# Template definitions
+[templates.hyprland]
+input_path = "~/dotfiles/matugen/templates/hyprland.template"
+output_path = "~/dotfiles/hypr/conf/colors.conf"
+
+[templates.waybar]
+input_path = "~/dotfiles/matugen/templates/waybar.template"
+output_path = "~/dotfiles/waybar/colors.css"
+
+[templates.fuzzel]
+input_path = "~/dotfiles/matugen/templates/fuzzel.template"
+output_path = "~/dotfiles/fuzzel/fuzzel.ini"
+
+[templates.dunst]
+input_path = "~/dotfiles/matugen/templates/dunst.template"
+output_path = "~/dotfiles/dunst/dunstrc"

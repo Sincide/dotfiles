@@ -1,121 +1,252 @@
 @import url("colors.css");
 
+/* ╭─────────────────────────────────────────────────────────╮ */
+/* │               SPACE THEME WAYBAR (GTK)                  │ */
+/* │           🌌 Cosmic Status Bar Interface 🌌             │ */
+/* ╰─────────────────────────────────────────────────────────╯ */
+
 * {
     border: none;
     border-radius: 0;
-    font-family: "JetBrainsMono Nerd Font";
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
     font-size: 13px;
+    font-weight: 500;
     min-height: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════ */
+/*                        MAIN WINDOW                         */
+/* ═══════════════════════════════════════════════════════════ */
+
 window#waybar {
-    background-color: rgba(43, 48, 59, 0.8);
-    border-bottom: 3px solid rgba(100, 114, 125, 0.5);
-    color: #ffffff;
-    transition-property: background-color;
-    transition-duration: .5s;
+    /* Dark evil background using matugen surface but much darker */
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.95) 0%, 
+        alpha(@surface, 0.85) 50%,
+        rgba(10, 0, 0, 0.95) 100%);
+    
+    /* Evil red border with matugen error color */
+    border-bottom: 2px solid mix(@error, #000000, 0.3);
+    
+    /* Sinister glow effect */
+    box-shadow: 
+        0 0 20px rgba(0, 0, 0, 0.8),
+        inset 0 -2px 4px alpha(@error, 0.2);
+    
+    color: mix(@onSurface, #ffffff, 0.9);
+    transition: all 300ms ease;
 }
 
 window#waybar.hidden {
     opacity: 0.2;
 }
 
+/* ═══════════════════════════════════════════════════════════ */
+/*                      WORKSPACE STYLING                     */
+/* ═══════════════════════════════════════════════════════════ */
+
+#workspaces {
+    margin: 0 8px;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.8) 0%, 
+        alpha(@surface, 0.4) 100%);
+    border-radius: 12px;
+    border: 1px solid alpha(@error, 0.3);
+}
+
 #workspaces button {
-    padding: 0 5px;
-    background-color: transparent;
-    color: #ffffff;
-    border-bottom: 3px solid transparent;
+    padding: 4px 12px;
+    margin: 2px;
+    color: mix(@onSurface, #666666, 0.7);
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    border: 1px solid rgba(40, 0, 0, 0.5);
+    transition: all 200ms ease;
 }
 
 #workspaces button:hover {
-    background: rgba(0, 0, 0, 0.2);
-    box-shadow: inset 0 -3px #ffffff;
+    background: linear-gradient(135deg, 
+        alpha(@error, 0.2) 0%, 
+        rgba(20, 0, 0, 0.8) 100%);
+    color: mix(@error, #ff6b6b, 0.8);
+    border: 1px solid alpha(@error, 0.5);
+    box-shadow: 0 0 8px alpha(@error, 0.3);
 }
 
-#workspaces button.focused {
-    background-color: #64727D;
-    border-bottom: 3px solid #ffffff;
+#workspaces button.active {
+    background: linear-gradient(135deg, 
+        alpha(@error, 0.4) 0%, 
+        rgba(40, 0, 0, 0.9) 100%);
+    color: mix(@error, #ff3030, 0.9);
+    border: 1px solid @error;
+    box-shadow: 
+        0 0 12px alpha(@error, 0.5),
+        inset 0 1px 2px rgba(255, 100, 100, 0.2);
 }
 
 #workspaces button.urgent {
-    background-color: #eb4d4b;
+    background: linear-gradient(135deg, 
+        @error 0%, 
+        rgba(80, 0, 0, 0.9) 100%);
+    color: @onError;
+    border: 1px solid @error;
+    box-shadow: 0 0 15px @error;
 }
 
-#mode {
-    background-color: #64727D;
-    border-bottom: 3px solid #ffffff;
-}
+/* ═══════════════════════════════════════════════════════════ */
+/*                       MODULE STYLING                       */
+/* ═══════════════════════════════════════════════════════════ */
 
+#custom-launcher,
+#window,
+#custom-weather,
 #clock,
-#battery,
-#cpu,
-#memory,
-#disk,
-#temperature,
-#backlight,
+#custom-system-stats,
 #network,
 #pulseaudio,
 #tray,
-#mode,
-#idle_inhibitor,
-#mpd {
-    padding: 0 10px;
-    margin: 0 4px;
-    color: #ffffff;
+#custom-power {
+    background: linear-gradient(135deg,
+        rgba(0, 0, 0, 0.8) 0%,
+        alpha(@surface, 0.3) 50%,
+        rgba(10, 0, 0, 0.8) 100%);
+
+    border: 1px solid alpha(@outline, 0.4);
+    border-radius: 10px;
+    padding: 6px 14px;
+    margin: 3px 2px;
+    color: mix(@onSurface, #cccccc, 0.8);
+    
+    /* Evil shadow */
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.6), 
+        inset 0 1px 1px alpha(@error, 0.1);
+    
+    transition: all 250ms ease;
 }
 
-#window,
-#workspaces {
-    margin: 0 4px;
+/* ═══════════════════════════════════════════════════════════ */
+/*                      HOVER EFFECTS                         */
+/* ═══════════════════════════════════════════════════════════ */
+
+#custom-launcher:hover,
+#custom-weather:hover,
+#clock:hover,
+#custom-system-stats:hover,
+#network:hover,
+#pulseaudio:hover,
+#custom-power:hover {
+    background: linear-gradient(135deg,
+        alpha(@error, 0.2) 0%,
+        rgba(20, 0, 0, 0.9) 50%,
+        alpha(@errorContainer, 0.3) 100%);
+
+    border: 1px solid alpha(@error, 0.6);
+    color: mix(@error, #ff9999, 0.8);
+    
+    box-shadow: 
+        0 4px 15px alpha(@error, 0.4), 
+        inset 0 1px 2px rgba(255, 50, 50, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                    SPECIFIC MODULES                        */
+/* ═══════════════════════════════════════════════════════════ */
+
+#custom-launcher {
+    background: linear-gradient(135deg, 
+        alpha(@error, 0.3) 0%, 
+        rgba(30, 0, 0, 0.9) 100%);
+    color: mix(@error, #ff6666, 0.9);
+    font-size: 16px;
+    font-weight: bold;
+    border: 1px solid alpha(@error, 0.7);
+    box-shadow: 
+        0 3px 12px alpha(@error, 0.4), 
+        inset 0 1px 2px rgba(255, 100, 100, 0.3);
+}
+
+#custom-launcher:hover {
+    box-shadow: 
+        0 5px 20px alpha(@error, 0.6), 
+        inset 0 1px 3px rgba(255, 150, 150, 0.4);
+}
+
+#window {
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.9) 0%, 
+        alpha(@surface, 0.2) 100%);
+    color: mix(@onSurface, #888888, 0.7);
+    border: 1px solid alpha(@outline, 0.3);
+    font-style: italic;
+}
+
+#custom-weather {
+    background: linear-gradient(135deg, 
+        rgba(0, 10, 20, 0.8) 0%, 
+        alpha(@secondary, 0.2) 100%);
+    color: mix(@onSurface, #aaaaaa, 0.8);
+    border: 1px solid alpha(@outline, 0.4);
 }
 
 #clock {
-    background-color: #64727D;
+    background: linear-gradient(135deg, 
+        rgba(10, 0, 0, 0.9) 0%, 
+        alpha(@primary, 0.2) 100%);
+    color: mix(@onSurface, #ffffff, 0.9);
+    border: 1px solid alpha(@primary, 0.5);
+    font-weight: bold;
+    box-shadow: 
+        0 2px 10px alpha(@primary, 0.3), 
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
-#battery {
-    background-color: #ffffff;
-    color: #000000;
-}
-
-#battery.charging, #battery.plugged {
-    color: #ffffff;
-    background-color: #26A65B;
-}
-
-@keyframes blink {
-    to {
-        background-color: #ffffff;
-        color: #000000;
-    }
-}
-
-#battery.critical:not(.charging) {
-    background-color: #f53c3c;
-    color: #ffffff;
-    animation-name: blink;
-    animation-duration: 0.5s;
-    animation-timing-function: linear;
-    animation-iteration-count: infinite;
-    animation-direction: alternate;
+#custom-system-stats {
+    background: linear-gradient(135deg, 
+        rgba(20, 0, 0, 0.8) 0%, 
+        alpha(@error, 0.2) 100%);
+    color: mix(@error, #ff8888, 0.8);
+    border: 1px solid alpha(@error, 0.4);
 }
 
 #network {
-    background-color: #2980b9;
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 10, 0.8) 0%, 
+        alpha(@secondary, 0.2) 100%);
+    color: mix(@onSurface, #bbbbbb, 0.8);
+    border: 1px solid alpha(@secondary, 0.4);
 }
 
 #network.disconnected {
-    background-color: #f53c3c;
+    background: linear-gradient(135deg, 
+        @error 0%, 
+        rgba(50, 0, 0, 0.9) 100%);
+    color: @onError;
+    border: 1px solid @error;
 }
 
 #pulseaudio {
-    background-color: #f1c40f;
-    color: #000000;
+    background: linear-gradient(135deg, 
+        rgba(5, 0, 10, 0.8) 0%, 
+        alpha(@primary, 0.2) 100%);
+    color: mix(@onSurface, #cccccc, 0.8);
+    border: 1px solid alpha(@primary, 0.4);
 }
 
 #pulseaudio.muted {
-    background-color: #90b1b1;
-    color: #2a5c45;
+    background: linear-gradient(135deg, 
+        rgba(20, 20, 20, 0.9) 0%, 
+        alpha(@outline, 0.3) 100%);
+    color: mix(@onSurface, #555555, 0.7);
+    border: 1px solid @outline;
+}
+
+#tray {
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.7) 0%, 
+        alpha(@surface, 0.3) 100%);
+    border: 1px solid alpha(@outline, 0.3);
 }
 
 #tray > .passive {
@@ -124,5 +255,64 @@ window#waybar.hidden {
 
 #tray > .needs-attention {
     -gtk-icon-effect: highlight;
-    background-color: #eb4d4b;
+    background: linear-gradient(135deg, 
+        @error 0%, 
+        rgba(60, 0, 0, 0.9) 100%);
+    color: @onError;
+    border-radius: 6px;
+    border: 1px solid @error;
+}
+
+#custom-power {
+    background: linear-gradient(135deg, 
+        @error 0%, 
+        rgba(40, 0, 0, 0.9) 100%);
+    color: @onError;
+    border: 1px solid @error;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 
+        0 3px 12px alpha(@error, 0.5), 
+        inset 0 1px 2px rgba(255, 100, 100, 0.2);
+}
+
+#custom-power:hover {
+    background: linear-gradient(135deg, 
+        mix(@error, #ff0000, 0.8) 0%, 
+        rgba(60, 0, 0, 0.95) 100%);
+    box-shadow: 
+        0 5px 20px alpha(@error, 0.7), 
+        inset 0 1px 3px rgba(255, 150, 150, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                    COSMIC ANIMATIONS                       */
+/* ═══════════════════════════════════════════════════════════ */
+
+@keyframes cosmic-glow {
+    0% { opacity: 0.8; }
+    50% { opacity: 1.0; }
+    100% { opacity: 0.8; }
+}
+
+window#waybar:hover {
+    background: linear-gradient(135deg, 
+        alpha(@surface, 0.6) 0%, 
+        alpha(@surfaceVariant, 0.4) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                     TOOLTIP STYLING                        */
+/* ═══════════════════════════════════════════════════════════ */
+
+tooltip {
+    background: linear-gradient(135deg, 
+        rgba(0, 0, 0, 0.95) 0%, 
+        alpha(@surface, 0.9) 100%);
+    border: 2px solid alpha(@error, 0.6);
+    border-radius: 8px;
+    color: mix(@onSurface, #ffffff, 0.9);
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.8), 
+        inset 0 1px 2px alpha(@error, 0.3);
 }

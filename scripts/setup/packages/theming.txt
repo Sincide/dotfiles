@@ -1,0 +1,68 @@
+# Theming Packages
+# Dynamic theming, color tools, and aesthetic enhancements
+
+# Color and theming tools
+matugen
+pywal
+imagemagick
+feh
+
+# Icon themes
+papirus-icon-theme
+breeze-icons
+adwaita-icon-theme
+
+# GTK themes
+arc-gtk-theme
+materia-gtk-theme
+nordic-theme-git
+
+# Cursor themes
+bibata-cursor-theme
+capitaine-cursors
+
+# Wallpaper tools
+nitrogen
+swaybg
+mpvpaper
+
+# Font management
+fontconfig
+font-manager
+
+# Additional fonts
+ttf-fira-code
+ttf-font-awesome
+ttf-material-design-icons
+ttf-roboto
+ttf-ubuntu-font-family
+inter-font
+ttf-cascadia-code
+
+# Terminal theming
+lolcat
+figlet
+cowsay
+
+# Screenshot and recording
+flameshot
+obs-studio
+peek
+
+# Color utilities
+gpick
+gcolor3
+
+# Transparency and effects
+picom
+maim
+
+# Theme preview tools
+lxappearance
+qt5ct
+qt6ct
+
+# Additional theming utilities
+pokemon-colorscripts-git
+cava
+pipes.sh 

@@ -1,0 +1,61 @@
+# Gaming Packages
+# Gaming platforms, tools, and performance utilities
+
+# Gaming platforms
+steam
+lutris
+heroic-games-launcher-bin
+bottles
+
+# Game libraries
+gamemode
+lib32-gamemode
+mangohud
+lib32-mangohud
+
+# Compatibility layers
+wine
+wine-staging
+winetricks
+dxvk-bin
+vkd3d
+
+# Emulators
+retroarch
+dolphin-emu
+pcsx2
+ppsspp
+citra
+yuzu
+
+# Gaming utilities
+goverlay
+corectrl
+discord
+teamspeak3
+
+# Controller support
+xpadneo-dkms
+ds4drv
+
+# Performance monitoring
+nvtop
+radeontop
+
+# Streaming
+obs-studio
+streamlink
+twitch-cli
+
+# Game development
+godot
+unity-editor
+unreal-engine
+
+# Minecraft
+minecraft-launcher
+multimc-bin
+
+# Additional gaming tools
+appimage-launcher
+protonup-qt 

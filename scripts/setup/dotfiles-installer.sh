@@ -468,56 +468,125 @@ select_packages() {
     esac
 }
 
-# Custom package selection with simple categories
+# Build a unified list of all available subcategories
+build_all_subcategories() {
+    local -A all_subcategories
+    local package_files=("essential" "development" "theming" "multimedia" "gaming" "optional")
+    
+    for category in "${package_files[@]}"; do
+        local package_file="${PACKAGES_DIR}/${category}.txt"
+        [[ ! -f "$package_file" ]] && continue
+        
+        declare -A subcategories
+        declare -A package_to_category
+        parse_package_subcategories "$package_file" subcategories package_to_category
+        
+        for subcat in "${!subcategories[@]}"; do
+            local pkg_count
+            pkg_count=$(echo "${subcategories[$subcat]}" | wc -w)
+            all_subcategories["${category^}: $subcat ($pkg_count packages)"]="${category}:${subcat}"
+        done
+    done
+    
+    # Export the array
+    for key in "${!all_subcategories[@]}"; do
+        echo "$key|${all_subcategories[$key]}"
+    done
+}
+
+# Custom package selection with subcategories
 custom_package_selection() {
-    gum_info "Select package categories you want to install:"
+    gum_info "Select specific package groups you want to install:"
     echo
     
-    local categories=(
-        "Essential packages (core system tools)"
-        "Development packages (programming tools)"
-        "Theming packages (matugen, themes, fonts)"
-        "Multimedia packages (media tools)"
-        "Gaming packages (Steam, gamemode, wine)"
-        "Optional packages (nice-to-have tools)"
-    )
+    # Build list of all subcategories
+    local subcategory_options=()
+    local -A subcategory_map
     
-    local selected_categories
-    selected_categories=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
-        --header="Select categories to install:" "${categories[@]}" || true)
+    while IFS='|' read -r display_name category_info; do
+        subcategory_options+=("$display_name")
+        subcategory_map["$display_name"]="$category_info"
+    done < <(build_all_subcategories)
     
-    if [[ -z "$selected_categories" ]]; then
-        gum_warning "No categories selected"
+    if [[ ${#subcategory_options[@]} -eq 0 ]]; then
+        gum_warning "No subcategories found"
+        return 0
+    fi
+    
+    local selected_subcategories
+    selected_subcategories=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
+        --header="Select package groups to install:" "${subcategory_options[@]}" || true)
+    
+    if [[ -z "$selected_subcategories" ]]; then
+        gum_warning "No package groups selected"
         return 0
     fi
     
     echo
-    gum_info "Selected categories:"
-    echo "$selected_categories"
+    gum_info "Selected package groups:"
+    echo "$selected_subcategories"
     echo
     
-    if ! gum_confirm "Install selected categories with their default packages?"; then
+    if ! gum_confirm "Install selected package groups?"; then
         gum_warning "Package installation cancelled"
         return 0
     fi
     
-    # Install selected categories (simplified - no subcategory selection)
-    while IFS= read -r category; do
-        case "$category" in
-            "Essential packages"*)
-                install_simple_category "essential" ;;
-            "Development packages"*)
-                install_simple_category "development" ;;
-            "Theming packages"*)
-                install_simple_category "theming" ;;
-            "Multimedia packages"*)
-                install_simple_category "multimedia" ;;
-            "Gaming packages"*)
-                install_simple_category "gaming" ;;
-            "Optional packages"*)
-                install_simple_category "optional" ;;
-        esac
-    done <<< "$selected_categories"
+    # Install selected subcategories
+    declare -A category_subcats
+    while IFS= read -r selected_option; do
+        local category_info="${subcategory_map[$selected_option]}"
+        local category="${category_info%:*}"
+        local subcat="${category_info#*:}"
+        
+        if [[ -n "${category_subcats[$category]}" ]]; then
+            category_subcats["$category"]+=" $subcat"
+        else
+            category_subcats["$category"]="$subcat"
+        fi
+    done <<< "$selected_subcategories"
+    
+    # Install packages for each category with selected subcategories
+    for category in "${!category_subcats[@]}"; do
+        install_category_subcategories "$category" "${category_subcats[$category]}"
+    done
+}
+
+# Install specific subcategories from a category
+install_category_subcategories() {
+    local category="$1"
+    local subcategories="$2"
+    local package_file="${PACKAGES_DIR}/${category}.txt"
+    
+    show_section "Installing ${category^} Package Groups"
+    
+    declare -A all_subcategories
+    declare -A package_to_category
+    parse_package_subcategories "$package_file" all_subcategories package_to_category
+    
+    local selected_packages=()
+    local subcat_array
+    read -ra subcat_array <<< "$subcategories"
+    
+    for subcat in "${subcat_array[@]}"; do
+        if [[ -n "${all_subcategories[$subcat]}" ]]; then
+            local subcat_packages
+            read -ra subcat_packages <<< "${all_subcategories[$subcat]}"
+            selected_packages+=("${subcat_packages[@]}")
+            gum_info "Adding $subcat (${#subcat_packages[@]} packages)"
+        fi
+    done
+    
+    if [[ ${#selected_packages[@]} -eq 0 ]]; then
+        gum_warning "No packages found in selected subcategories"
+        return 0
+    fi
+    
+    gum_info "Installing ${#selected_packages[@]} packages from ${category^}..."
+    install_packages_list "${selected_packages[@]}"
+    
+    INSTALL_STATE["packages_${category}"]=true
+    gum_success "${category^} package groups installation completed"
 }
 
 # Simplified category installation (no subcategory selection)

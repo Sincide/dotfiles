@@ -582,6 +582,9 @@ post_install_setup() {
             "qemu")
                 setup_qemu
                 ;;
+            "ollama")
+                setup_ollama
+                ;;
         esac
     done
 }
@@ -676,6 +679,117 @@ setup_qemu() {
     fi
     
     gum_info "⚙️ QEMU detected - configuration handled by virt-manager setup"
+}
+
+# Setup Ollama and AI models
+setup_ollama() {
+    if ! pacman -Qi ollama &>/dev/null; then
+        return 0
+    fi
+    
+    gum_info "🤖 Setting up Ollama AI platform..."
+    
+    # Enable and start ollama service
+    sudo systemctl enable ollama
+    sudo systemctl start ollama
+    
+    # Wait for service to be ready
+    sleep 3
+    
+    gum_success "🚀 Ollama service enabled and started"
+    
+    if gum_confirm "Install AI language models?"; then
+        install_ollama_models
+    fi
+}
+
+# Install Ollama models with interactive selection
+install_ollama_models() {
+    gum_info "🧠 Select AI models to install:"
+    echo
+    
+    # Model information with descriptions
+    local model_info=(
+        "phi4:latest|Fast efficient model for coding and general tasks|2.5GB|⭐ Recommended for beginners"
+        "llava:latest|Multimodal model with vision capabilities|4.7GB|🎯 RECOMMENDED FOR VISION TASKS"
+        "llama3.2:latest|Great all-around model from Meta|2GB|⭐ Popular choice"
+        "codellama:7b|Specialized for code generation|3.8GB|💻 Best for programming"
+        "qwen2.5-coder:7b|Excellent coding assistant|4.2GB|💻 Advanced programming"
+        "mistral:7b|Fast multilingual model|4.1GB|🌍 Good for languages"
+        "llama3.1:8b|Meta's latest, great for complex tasks|4.7GB|🚀 High performance"
+        "deepseek-coder:6.7b|Excellent coding assistant|3.8GB|💻 Pro development"
+        "moondream:latest|Lightweight vision model|1.7GB|👁️ Fast vision tasks"
+        "phi3.5:latest|Very fast, good for quick tasks|2.2GB|⚡ Lightweight"
+        "tinyllama:latest|Ultra-lightweight model|637MB|⚡ Minimal resource use"
+    )
+    
+    # Create formatted choices with descriptions
+    local choices=()
+    for info in "${model_info[@]}"; do
+        IFS='|' read -r model desc size badge <<< "$info"
+        choices+=("$model - $desc ($size) $badge")
+    done
+    
+    local selected_models
+    selected_models=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
+        --header="Select models to install (use space to select, enter to confirm):" \
+        "${choices[@]}" || true)
+    
+    if [[ -z "$selected_models" ]]; then
+        gum_warning "No models selected"
+        return 0
+    fi
+    
+    echo
+    gum_info "Selected models:"
+    echo "$selected_models"
+    echo
+    
+    # Calculate total size
+    local total_size=0
+    while IFS= read -r choice; do
+        if [[ "$choice" =~ \(([0-9.]+)(GB|MB)\) ]]; then
+            local size="${BASH_REMATCH[1]}"
+            local unit="${BASH_REMATCH[2]}"
+            if [[ "$unit" == "GB" ]]; then
+                total_size=$(echo "$total_size + $size" | bc -l 2>/dev/null || echo "$total_size")
+            else
+                # Convert MB to GB
+                size=$(echo "scale=2; $size / 1024" | bc -l 2>/dev/null || echo "0")
+                total_size=$(echo "$total_size + $size" | bc -l 2>/dev/null || echo "$total_size")
+            fi
+        fi
+    done <<< "$selected_models"
+    
+    if command -v bc &>/dev/null; then
+        gum_info "💾 Total download size: ~${total_size%.*}GB"
+    fi
+    echo
+    
+    if ! gum_confirm "Download and install selected models?"; then
+        gum_warning "Model installation cancelled"
+        return 0
+    fi
+    
+    # Install selected models
+    while IFS= read -r choice; do
+        if [[ "$choice" =~ ^([^[:space:]]+) ]]; then
+            local model="${BASH_REMATCH[1]}"
+            echo
+            gum_info "📥 Installing model: $model"
+            
+            if timeout 1800 ollama pull "$model"; then  # 30 minute timeout
+                gum_success "✅ Successfully installed: $model"
+            else
+                gum_error "❌ Failed to install: $model"
+            fi
+        fi
+    done <<< "$selected_models"
+    
+    echo
+    gum_success "🤖 Ollama setup completed!"
+    gum_info "💡 You can chat with models using: ollama run <model-name>"
+    gum_info "💡 List installed models with: ollama list"
 }
 
 # Install a list of packages (shared function)

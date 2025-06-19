@@ -36,6 +36,9 @@ bat
 zoxide
 starship
 
+# AI and Machine Learning
+ollama
+
 # Database tools
 # sqlite
 # postgresql

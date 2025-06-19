@@ -570,23 +570,33 @@ post_install_setup() {
     shift
     local packages=("$@")
     
+    gum_info "🔧 Running post-installation setup for $category packages..."
+    gum_info "📦 Checking packages: ${packages[*]}"
+    
     # Check for packages that need special setup
     for package in "${packages[@]}"; do
+        gum_info "🔍 Checking package: $package"
         case "$package" in
             "virt-manager")
+                gum_info "🖥️ Found virt-manager, setting up..."
                 setup_virt_manager
                 ;;
             "docker")
+                gum_info "🐳 Found docker, setting up..."
                 setup_docker
                 ;;
             "qemu")
+                gum_info "⚙️ Found qemu, setting up..."
                 setup_qemu
                 ;;
             "ollama")
+                gum_info "🤖 Found ollama, setting up..."
                 setup_ollama
                 ;;
         esac
     done
+    
+    gum_info "✅ Post-installation setup completed for $category"
 }
 
 # Setup Virtual Machine Manager (virt-manager)
@@ -683,23 +693,53 @@ setup_qemu() {
 
 # Setup Ollama and AI models
 setup_ollama() {
+    gum_info "🔍 setup_ollama() called - checking ollama installation..."
+    
+    # Debug: Check ollama status
+    if pacman -Qi ollama &>/dev/null; then
+        gum_success "✅ Ollama package found in package database"
+    else
+        gum_warning "⚠️ Ollama package not found in package database"
+    fi
+    
+    if command -v ollama &>/dev/null; then
+        gum_success "✅ Ollama binary found in PATH"
+    else
+        gum_warning "⚠️ Ollama binary not found in PATH"
+    fi
+    
     # Check if ollama is installed by looking for the package OR if the binary exists
     if ! pacman -Qi ollama &>/dev/null && ! command -v ollama &>/dev/null; then
+        gum_error "❌ Ollama not found, skipping setup"
         return 0
     fi
     
     gum_info "🤖 Setting up Ollama AI platform..."
     
     # Enable and start ollama service
-    sudo systemctl enable ollama
-    sudo systemctl start ollama
+    if sudo systemctl enable ollama; then
+        gum_success "✅ Ollama service enabled"
+    else
+        gum_error "❌ Failed to enable ollama service"
+    fi
+    
+    if sudo systemctl start ollama; then
+        gum_success "✅ Ollama service started"
+    else
+        gum_error "❌ Failed to start ollama service"
+    fi
     
     # Wait for service to be ready
+    gum_info "⏳ Waiting for ollama service to be ready..."
     sleep 5
     
     # Verify service is running
-    if ! systemctl is-active --quiet ollama; then
+    if systemctl is-active --quiet ollama; then
+        gum_success "✅ Ollama service is running"
+    else
         gum_error "❌ Ollama service failed to start"
+        gum_info "📋 Service status:"
+        systemctl status ollama || true
         return 1
     fi
     
@@ -707,6 +747,8 @@ setup_ollama() {
     
     if gum_confirm "Install AI language models?"; then
         install_ollama_models
+    else
+        gum_info "⏭️ Skipping model installation"
     fi
 }
 

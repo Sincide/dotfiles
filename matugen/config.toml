@@ -23,3 +23,7 @@ output_path = "~/dotfiles/fuzzel/fuzzel.ini"
 [templates.dunst]
 input_path = "~/dotfiles/matugen/templates/dunst.template"
 output_path = "~/dotfiles/dunst/dunstrc"
+
+[templates.kitty]
+input_path = "~/dotfiles/matugen/templates/kitty.template"
+output_path = "~/dotfiles/kitty/theme-dynamic.conf"

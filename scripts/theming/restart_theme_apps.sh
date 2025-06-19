@@ -27,6 +27,10 @@ sleep 1
 dunst &
 sleep 1
 
+echo "  • Reloading Kitty configurations..."
+killall -USR1 kitty 2>/dev/null || echo "    (No kitty instances to reload)"
+sleep 0.5
+
 # Check if applications started successfully
 waybar_pid=$(pgrep waybar)
 dunst_pid=$(pgrep dunst)

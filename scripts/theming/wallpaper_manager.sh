@@ -47,6 +47,10 @@ apply_wallpaper() {
         echo "  • Starting Dunst..."
         dunst > /dev/null 2>&1 &
         
+        # Reload Kitty configurations
+        echo "  • Reloading Kitty configurations..."
+        killall -USR1 kitty 2>/dev/null || echo "    (No kitty instances to reload)"
+        
     else
         echo "  ⚠️  Not running under Hyprland - applications won't be restarted"
         echo "     Start Hyprland session and run 'wallpaper_manager.sh restore' to apply theme"

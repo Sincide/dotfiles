@@ -68,8 +68,8 @@ tldr
 
 # Performance profiling
 perf
-valgrind
-strace
+#valgrind
+#strace
 
 # Language servers (for neovim)
 #lua-language-server

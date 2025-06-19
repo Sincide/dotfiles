@@ -415,6 +415,12 @@ deploy_dotfiles() {
             continue
         fi
         
+        # Skip empty directories
+        if [[ -z "$(ls -A "$source" 2>/dev/null)" ]]; then
+            gum_info "Skipping empty directory: $dir"
+            continue
+        fi
+        
         if [[ -L "$target" ]]; then
             gum_info "Symlink already exists: $dir"
             continue
@@ -793,6 +799,165 @@ install_packages_list() {
     fi
 }
 
+# User environment setup
+user_setup() {
+    show_section "User Environment Setup"
+    
+    gum_info "Configuring user environment and permissions..."
+    
+    # Set up user directories
+    gum_step "Creating user directories"
+    local user_dirs=(
+        "$HOME/Documents"
+        "$HOME/Downloads"
+        "$HOME/Pictures/Screenshots"
+        "$HOME/Videos"
+        "$HOME/Development"
+        "$HOME/.local/bin"
+    )
+    
+    for dir in "${user_dirs[@]}"; do
+        if mkdir -p "$dir" 2>/dev/null; then
+            gum style --foreground=46 "  ✓ $dir"
+        else
+            gum_error "  ✗ Failed to create: $dir"
+        fi
+    done
+    
+    # Configure shell environment
+    gum_step "Configuring shell environment"
+    if [[ "$SHELL" != */fish ]]; then
+        if gum_confirm "Change default shell to fish?"; then
+            if chsh -s "$(which fish)" 2>/dev/null; then
+                gum_success "  ✓ Default shell changed to fish"
+            else
+                gum_error "  ✗ Failed to change shell"
+            fi
+        fi
+    else
+        gum_success "  ✓ Fish is already default shell"
+    fi
+    
+    # Set up development environment
+    gum_step "Setting up development environment"
+    if [[ ! -f "$HOME/.gitconfig" ]]; then
+        if gum_confirm "Configure Git user settings?"; then
+            echo "Enter your Git username:"
+            read -r git_username
+            echo "Enter your Git email:"
+            read -r git_email
+            
+            git config --global user.name "$git_username"
+            git config --global user.email "$git_email"
+            git config --global init.defaultBranch main
+            gum_success "  ✓ Git configured"
+        fi
+    else
+        gum_success "  ✓ Git already configured"
+    fi
+    
+    INSTALL_STATE["user_setup"]=true
+    gum_success "User environment setup completed!"
+}
+
+# System optimization
+system_optimization() {
+    show_section "System Optimization"
+    
+    gum_info "Applying system performance optimizations..."
+    
+    # Enable multilib repository
+    gum_step "Configuring package repositories"
+    if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+        if gum_confirm "Enable multilib repository for 32-bit support?"; then
+            echo -e "\n[multilib]\nInclude = /etc/pacman.d/mirrorlist" | sudo tee -a /etc/pacman.conf >/dev/null
+            sudo pacman -Sy
+            gum_success "  ✓ Multilib repository enabled"
+        fi
+    else
+        gum_success "  ✓ Multilib repository already enabled"
+    fi
+    
+    # Configure makepkg for faster compilation
+    gum_step "Optimizing compilation settings"
+    local makepkg_conf="/etc/makepkg.conf"
+    local cpu_cores=$(nproc)
+    
+    if sudo sed -i "s/^#MAKEFLAGS=.*/MAKEFLAGS=\"-j$cpu_cores\"/" "$makepkg_conf" 2>/dev/null; then
+        gum_success "  ✓ Compilation optimized for $cpu_cores cores"
+    else
+        gum_warning "  ⚠ Could not optimize compilation settings"
+    fi
+    
+    # Enable colored output in pacman
+    gum_step "Configuring package manager"
+    if sudo sed -i 's/^#Color/Color/' /etc/pacman.conf 2>/dev/null; then
+        gum_success "  ✓ Pacman colored output enabled"
+    else
+        gum_warning "  ⚠ Could not enable pacman colors"
+    fi
+    
+    # Configure swap settings for better performance
+    gum_step "Optimizing system performance"
+    if echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf >/dev/null; then
+        gum_success "  ✓ Swappiness optimized"
+    else
+        gum_warning "  ⚠ Could not optimize swappiness"
+    fi
+    
+    INSTALL_STATE["system_optimization"]=true
+    gum_success "System optimization completed!"
+}
+
+# Theming system setup
+theming_setup() {
+    show_section "Theming System Configuration"
+    
+    gum_info "Setting up dynamic theming system..."
+    
+    # Create theming directories
+    gum_step "Creating theming directories"
+    local theme_dirs=(
+        "$HOME/.config/matugen"
+        "$HOME/.config/matugen/templates"
+        "$HOME/.local/share/wallpapers"
+    )
+    
+    for dir in "${theme_dirs[@]}"; do
+        if mkdir -p "$dir" 2>/dev/null; then
+            gum style --foreground=46 "  ✓ $dir"
+        else
+            gum_error "  ✗ Failed to create: $dir"
+        fi
+    done
+    
+    # Set up wallpaper symlinks
+    gum_step "Setting up wallpaper collection"
+    if [[ -d "$DOTFILES_DIR/assets/wallpapers" ]]; then
+        ln -sf "$DOTFILES_DIR/assets/wallpapers" "$HOME/.local/share/wallpapers/dotfiles"
+        gum_success "  ✓ Wallpaper collection linked"
+    else
+        gum_warning "  ⚠ Wallpaper collection not found"
+    fi
+    
+    # Create theme restart script
+    gum_step "Installing theme utilities"
+    local theme_script="$HOME/.local/bin/restart-theme"
+    cat > "$theme_script" << 'EOF'
+#!/bin/bash
+# Restart theming applications after matugen update
+pkill waybar && waybar &
+pkill dunst && dunst &
+hyprctl reload
+notify-send "Theme Updated" "All applications reloaded with new theme"
+EOF
+    chmod +x "$theme_script"
+    gum_success "  ✓ Theme restart utility installed"
+    
+    INSTALL_STATE["theming"]=true
+    gum_success "Theming system setup completed!"
+}
+
 # Installation summary with gum
 show_summary() {
     show_section "Installation Summary"
@@ -857,6 +1022,22 @@ main() {
     echo
     if gum_confirm "Deploy dotfiles configurations?"; then
         deploy_dotfiles
+    fi
+    
+    # Additional setup options
+    echo
+    if gum_confirm "Run user environment setup?"; then
+        user_setup
+    fi
+    
+    echo
+    if gum_confirm "Apply system optimizations?"; then
+        system_optimization
+    fi
+    
+    echo
+    if gum_confirm "Configure theming system?"; then
+        theming_setup
     fi
     
     # Final summary

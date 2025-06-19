@@ -503,6 +503,8 @@ custom_package_selection() {
     
     # Install selected categories
     while IFS= read -r category; do
+        echo
+        gum_info "🚀 Processing category: $category"
         case "$category" in
             "Essential packages")
                 install_simple_category "essential" ;;
@@ -517,7 +519,11 @@ custom_package_selection() {
             "Optional packages")
                 install_simple_category "optional" ;;
         esac
+        gum_info "✅ Finished processing: $category"
     done <<< "$selected_categories"
+    
+    echo
+    gum_success "🎉 All selected categories have been processed!"
 }
 
 # Simplified category installation (no subcategory selection)
@@ -579,28 +585,37 @@ install_packages_list() {
         local failed_official=()
         
         for package in "${official_packages[@]}"; do
-            if ! sudo pacman -S --needed --noconfirm "$package" 2>>"$LOG_FILE"; then
+            # Check if package is already installed
+            if pacman -Qi "$package" &>/dev/null; then
+                gum style --foreground=245 "  ✓ $package (already installed)"
+                continue
+            fi
+            
+            gum style --foreground=75 "  → Installing $package"
+            if ! sudo pacman -S --needed --noconfirm "$package" &>/dev/null; then
                 failed_official+=("$package")
-                gum_error "Failed to install official package: $package"
+                gum_error "  ✗ Failed to install: $package"
+            else
+                gum style --foreground=46 "  ✓ $package"
             fi
         done
         
         if [[ ${#failed_official[@]} -gt 0 ]]; then
             echo
-            gum_error "❌ INSTALLATION FAILED ❌"
+            gum_error "❌ OFFICIAL PACKAGES FAILED ❌"
             gum_info "Failed official packages (${#failed_official[@]}):"
             for pkg in "${failed_official[@]}"; do
                 echo "  • $pkg"
             done
             echo
             
-            local choices=("Continue anyway" "Abort installation")
+            local choices=("Continue with remaining packages" "Abort installation")
             local choice
             choice=$(gum choose --header="What would you like to do?" "${choices[@]}")
             
             case "$choice" in
-                "Continue anyway")
-                    gum_warning "Continuing with failed packages skipped"
+                "Continue with remaining packages")
+                    gum_warning "Continuing installation (${#failed_official[@]} packages skipped)"
                     ;;
                 "Abort installation")
                     gum_error "Installation aborted by user"
@@ -618,28 +633,37 @@ install_packages_list() {
         local failed_aur=()
         
         for package in "${aur_packages[@]}"; do
-            if ! yay -S --needed --noconfirm "$package" 2>>"$LOG_FILE"; then
+            # Check if package is already installed
+            if pacman -Qi "$package" &>/dev/null; then
+                gum style --foreground=245 "  ✓ $package (already installed)"
+                continue
+            fi
+            
+            gum style --foreground=75 "  → Installing $package"
+            if ! yay -S --needed --noconfirm "$package" &>/dev/null; then
                 failed_aur+=("$package")
-                gum_error "Failed to install AUR package: $package"
+                gum_error "  ✗ Failed to install: $package"
+            else
+                gum style --foreground=46 "  ✓ $package"
             fi
         done
         
         if [[ ${#failed_aur[@]} -gt 0 ]]; then
             echo
-            gum_error "❌ INSTALLATION FAILED ❌"
+            gum_error "❌ AUR PACKAGES FAILED ❌"
             gum_info "Failed AUR packages (${#failed_aur[@]}):"
             for pkg in "${failed_aur[@]}"; do
                 echo "  • $pkg"
             done
             echo
             
-            local choices=("Continue anyway" "Abort installation")
+            local choices=("Continue with remaining packages" "Abort installation")
             local choice
             choice=$(gum choose --header="What would you like to do?" "${choices[@]}")
             
             case "$choice" in
-                "Continue anyway")
-                    gum_warning "Continuing with failed packages skipped"
+                "Continue with remaining packages")
+                    gum_warning "Continuing installation (${#failed_aur[@]} packages skipped)"
                     ;;
                 "Abort installation")
                     gum_error "Installation aborted by user"
@@ -712,11 +736,15 @@ main() {
     
     # Configuration options
     echo
+    gum_info "📦 Package installation completed. Moving to configuration phase..."
+    echo
     if gum_confirm "Deploy dotfiles configurations?"; then
         deploy_dotfiles
     fi
     
     # Final summary
+    echo
+    gum_info "🏁 Moving to final summary..."
     show_summary
 }
 

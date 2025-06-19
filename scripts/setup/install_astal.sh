@@ -62,67 +62,104 @@ check_root() {
     fi
 }
 
-# Check system requirements and compatibility
+# Check system requirements
 check_requirements() {
     log "Checking system requirements for Astal..."
     
-    # 1. Check for required commands
+    # Check for required commands
     local required_commands=("yay" "git")
-    local recommended_commands=("node" "sassc" "typescript" "esbuild")
-    
-    # Check required commands
-    for cmd in "${required_commands[@]}"; do
-        if ! command -v "$cmd" &> /dev/null; then
-            print_error "Required command '$cmd' is not installed."
-        fi
-    done
-    
-    # Check recommended commands
     local missing_commands=()
-    for cmd in "${recommended_commands[@]}"; do
+    
+    for cmd in "${required_commands[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
             missing_commands+=("$cmd")
         fi
     done
     
     if [ ${#missing_commands[@]} -gt 0 ]; then
-        print_warning "Recommended build tools missing: ${missing_commands[*]}"
-        if ! confirm "Continue without recommended tools?" "y"; then
-            print_error "Installation aborted. Please install missing tools first."
-        fi
+        print_error "Missing required commands: ${missing_commands[*]}"
+        return 1
     fi
     
-    # 2. Check for Wayland session
+    # Check for Wayland session
     if [ -z "$WAYLAND_DISPLAY" ] && [ "$XDG_SESSION_TYPE" != "wayland" ]; then
         print_warning "Astal works best on Wayland. You're currently not in a Wayland session."
-        if ! confirm "Continue with installation anyway?" "n"; then
-            print_error "Installation aborted. Please switch to a Wayland session."
+        if ! confirm "Continue anyway?" "n"; then
+            return 1
         fi
     fi
     
-    # 3. Check for required libraries
-    local required_libs=("gtk4" "libadwaita-1" "gjs")
-    local missing_libs=()
+    # Check for recommended build tools
+    local recommended_commands=("node" "sassc" "typescript" "esbuild" "bun")
+    local missing_recommended=()
     
-    for lib in "${required_libs[@]}"; do
-        if ! pkg-config --exists "$lib" 2>/dev/null; then
-            missing_libs+=("$lib")
+    for cmd in "${recommended_commands[@]}"; do
+        if ! command -v "$cmd" &> /dev/null; then
+            missing_recommended+=("$cmd")
         fi
     done
     
-    if [ ${#missing_libs[@]} -gt 0 ]; then
-        print_warning "Missing required libraries: ${missing_libs[*]}"
-        if confirm "Install missing libraries now?" "y"; then
-            log "Installing required libraries..."
-            if ! yay -S --needed --noconfirm "${missing_libs[@]}"; then
-                print_error "Failed to install required libraries"
-            fi
-        else
-            print_error "Installation aborted. Required libraries are missing."
+    if [ ${#missing_recommended[@]} -gt 0 ]; then
+        print_warning "Missing recommended tools: ${missing_recommended[*]}"
+        if ! confirm "Install recommended tools?" "y"; then
+            return 1
+        fi
+        
+        log "Installing recommended tools..."
+        if ! run_sudo pacman -S --needed --noconfirm "${missing_recommended[@]}"; then
+            print_error "Failed to install recommended tools"
+            return 1
         fi
     fi
     
-    print_success "System requirements check completed"
+    # Check for required AGS dependencies
+    local ags_deps=(
+        "gtk4" 
+        "libadwaita" 
+        "gjs" 
+        "gobject-introspection"
+        "typescript"
+        "sassc"
+        "nodejs"
+        "bun"
+    )
+    
+    local missing_deps=()
+    
+    for dep in "${ags_deps[@]}"; do
+        if ! pacman -Qi "$dep" &> /dev/null; then
+            missing_deps+=("$dep")
+        fi
+    done
+    
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        print_warning "Missing AGS dependencies: ${missing_deps[*]}"
+        if ! confirm "Install missing AGS dependencies?" "y"; then
+            return 1
+        fi
+        
+        log "Installing AGS dependencies..."
+        if ! run_sudo pacman -S --needed --noconfirm "${missing_deps[@]}"; then
+            print_error "Failed to install AGS dependencies"
+            return 1
+        fi
+    fi
+    
+    # Check for AGS AUR package
+    if ! pacman -Qi aylurs-gtk-shell &> /dev/null; then
+        print_warning "Aylur's GTK Shell (AGS) is not installed"
+        if ! confirm "Install Aylur's GTK Shell (AGS)?" "y"; then
+            return 1
+        fi
+        
+        log "Installing Aylur's GTK Shell (AGS)..."
+        if ! yay -S --needed --noconfirm aylurs-gtk-shell; then
+            print_error "Failed to install Aylur's GTK Shell (AGS)"
+            return 1
+        fi
+    fi
+    
+    return 0
 }
 
 # Install Astal package
@@ -135,252 +172,29 @@ install_astal() {
     fi
 }
 
-# Create basic Astal configuration
-setup_config() {
-    local config_dir="$HOME/.config/ags"
-    local config_file="$config_dir/app.ts"
-    local styles_dir="$config_dir/styles"
-    
-    log "Setting up Astal configuration..."
-    
-    # Create config directory if it doesn't exist
-    mkdir -p "$config_dir"
-    mkdir -p "$styles_dir"
-    
-    # Create basic config file if it doesn't exist
-    if [[ ! -f "$config_file" ]]; then
-        log "Creating default configuration..."
-        
-        # Create main app.ts
-        cat > "$config_file" << 'EOL'
-// Astal Configuration
-// This is a basic TypeScript configuration file for Astal
-
-import { App } from 'resource:///com/github/Aylur/ags/app.js';
-import { Widget } from 'resource:///com/github/Aylur/ags/widget.js';
-
-// Import styles
-import './styles/main.scss';
-
-// Define your widgets
-function Bar(monitor = 0) {
-    return Widget.Window({
-        name: `bar-${monitor}`,
-        className: 'bar',
-        monitor,
-        anchor: ['top', 'left', 'right'],
-        child: Widget.CenterBox({
-            className: 'bar-content',
-            startWidget: Widget.Label({
-                className: 'clock',
-                label: 'Welcome to Astal!',
-            }),
-            centerWidget: Widget.Box({}),
-            endWidget: Widget.Box({
-                children: [
-                    Widget.Label({
-                        className: 'workspaces',
-                        label: '1 2 3 4 5',
-                    }),
-                    Widget.Label({
-                        className: 'tray',
-                        label: 'Tray',
-                    }),
-                ],
-            }),
-        }),
-    });
-}
-
-// Initialize the application
-App.config({
-    style: './styles/main.scss',
-    windows: [
-        Bar(0), // Create bar for primary monitor
-        // Add more windows/widgets here
-    ],
-});
-
-export {};
-EOL
-        print_success "Created default configuration at $config_file"
-        
-        # Create SCSS styles
-        cat > "$styles_dir/main.scss" << 'EOL'
-// Main styles for Astal
-
-* {
-    all: unset;
-    font-family: 'JetBrainsMono Nerd Font';
-    font-size: 14px;
-}
-
-.bar {
-    background-color: rgba(30, 30, 46, 0.9);
-    color: #cdd6f4;
-    padding: 0 16px;
-}
-
-.bar-content {
-    min-height: 40px;
-}
-
-.clock {
-    font-weight: bold;
-    color: #f5e0dc;
-}
-
-.workspaces {
-    padding: 0 8px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    margin: 0 4px;
-}
-
-.tray {
-    padding: 0 8px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    margin: 0 4px;
-}
-EOL
-        print_success "Created default styles at $styles_dir/main.scss"
-        
-        # Create tsconfig.json for TypeScript
-        cat > "$config_dir/tsconfig.json" << 'EOL'
-{
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "resource:///com/github/Aylur/ags",
-    "baseUrl": ".",
-    "paths": {
-      "resource://*": ["node_modules/types-ags/*"]
-    }
-  },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
-}
-EOL
-        print_success "Created TypeScript configuration at $config_dir/tsconfig.json"
-        
-        # Create package.json for TypeScript support
-        cat > "$config_dir/package.json" << 'EOL'
-{
-  "name": "ags-config",
-  "version": "1.0.0",
-  "description": "AGS Configuration for Astal",
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch"
-  },
-  "dependencies": {
-    "@girs/gobject-2.0": "^1.0.0",
-    "@girs/gtk-3.0": "^1.0.0",
-    "@girs/gtk-4.0": "^1.0.0",
-    "@girs/gtk-3.0-ambient": "^1.0.0",
-    "@girs/gtk-4.0-ambient": "^1.0.0",
-    "@girs/gdk-3.0": "^1.0.0",
-    "@girs/gdk-4.0": "^1.0.0",
-    "@girs/gdkpixbuf-2.0": "^1.0.0",
-    "@girs/glib-2.0": "^1.0.0",
-    "@girs/gio-2.0": "^1.0.0",
-    "@girs/graphene-1.0": "^1.0.0",
-    "@girs/harfbuzz-0.0": "^0.0.0",
-    "@girs/pango-1.0": "^1.0.0",
-    "@girs/cairo-1.0": "^1.0.0",
-    "@girs/atk-1.0": "^1.0.0",
-    "@girs/graphene-1.0-ambient": "^1.0.0",
-    "@girs/harfbuzz-0.0-ambient": "^0.0.0",
-    "@girs/pango-1.0-ambient": "^1.0.0",
-    "@girs/cairo-1.0-ambient": "^1.0.0",
-    "@girs/atk-1.0-ambient": "^1.0.0",
-    "@girs/glib-2.0-ambient": "^1.0.0",
-    "@girs/gio-2.0-ambient": "^1.0.0",
-    "@girs/gobject-2.0-ambient": "^1.0.0",
-    "@girs/gdk-3.0-ambient": "^1.0.0",
-    "@girs/gdk-4.0-ambient": "^1.0.0",
-    "@girs/gdkpixbuf-2.0-ambient": "^1.0.0",
-    "typescript": "^5.0.0",
-    "sass": "^1.62.0",
-    "esbuild": "^0.17.0"
-  }
-}
-EOL
-        print_success "Created package.json for TypeScript support"
-        
-        # Create a simple README
-        cat > "$config_dir/README.md" << 'EOL'
-# Astal Configuration
-
-This directory contains the configuration for Astal, a GTK-based shell for Wayland.
-
-## Development
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Build the TypeScript files:
-   ```bash
-   npm run build
-   ```
-
-3. Run Astal with your configuration:
-   ```bash
-   ags -c app.ts
-   ```
-
-## File Structure
-
-- `app.ts` - Main configuration file
-- `styles/` - SCSS styles for theming
-- `tsconfig.json` - TypeScript configuration
-- `package.json` - Project dependencies and scripts
-
-## Documentation
-
-- [Astal Documentation](https://aylur.github.io/astal/)
-- [TypeScript Guide](https://aylur.github.io/astal/guide/typescript/)
-- [Widget Reference](https://aylur.github.io/libastal/)
-EOL
-        print_success "Created README.md with usage instructions"
-        
-    else
-        print_warning "Configuration file already exists at $config_file"
-    fi
-}
-
 # Main function
 main() {
     log "Starting Astal installation..."
     
-    # Check prerequisites
+    # Check if running as root
     check_root
     
-    # Check system requirements and install dependencies
-    check_requirements
+    # Check requirements
+    if ! check_requirements; then
+        print_error "System requirements check failed. See $LOG_FILE for details."
+    fi
     
     # Install Astal
-    install_astal
+    if ! install_astal; then
+        print_error "Failed to install Astal. See $LOG_FILE for details."
+    fi
     
-    # Setup configuration
-    setup_config
-    
-    # Print completion message
-    echo -e "\n${GREEN}Astal (Aylur's GTK Shell) installation completed successfully!${NC}"
-    echo -e "\n${YELLOW}Next steps:${NC}"
-    echo "1. Log out and log back in to ensure all components are properly loaded"
-    echo "2. Configure Astal by editing ~/.config/ags/app.ts"
-    echo '3. Run "ags --run-js \"console.log(\'"'"'Hello from AGS!'"'"')\"" to test the configuration'
-    echo "4. Add 'ags &' to your Hyprland autostart to launch Astal on login"
+    print_success "Astal installation completed successfully!"
+    echo -e "\n${BLUE}Next steps:${NC}"
+    echo "1. Ensure your Astal configuration is set up in your dotfiles"
+    echo "2. The configuration will be symlinked from your dotfiles to ~/.config/ags"
+    echo "3. Log out and log back in to ensure all components are properly loaded"
+    echo '4. Run "ags --run-js \"console.log(\'"'"'Hello from AGS!'"'"')\"" to test the configuration'
     echo -e "\n${YELLOW}Log file: $LOG_FILE${NC}"
 }
 

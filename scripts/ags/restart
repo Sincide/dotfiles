@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "Restarting AGS..."
+pkill -f "ags.*run"
+sleep 0.5
+cd ~/dotfiles/ags
+ags run &
+echo "AGS restarted"

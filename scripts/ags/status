@@ -1,0 +1,7 @@
+#!/bin/bash
+AGS_PID=$(pgrep -f "ags.*run")
+if [ -n "$AGS_PID" ]; then
+    echo "AGS is running (PID: $AGS_PID)"
+else
+    echo "AGS is not running"
+fi

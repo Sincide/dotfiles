@@ -573,6 +573,7 @@ create_symlinks() {
         "fish"
         "dunst"
         "nvim"
+        "matugen"
         "ags"
     )
     

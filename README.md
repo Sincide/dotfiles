@@ -120,30 +120,28 @@ cd ~/dotfiles
 
 ## 🎨 Theming System
 
-### 🌈 **Dynamic Theme Switching System**
+### 🌈 **Modern Dynamic Theming System (2025)**
 
-Revolutionary approach that automatically switches complete theme packages based on wallpaper categories:
+Advanced theming system using modern technologies for optimal Hyprland/Wayland compatibility:
 
 ```
-Wallpaper Category → Dynamic Theme Selection → GTK Themes + Icons + Cursors
+Wallpaper Category → Hyprcursor + nwg-look + Material You → Complete Desktop Transformation
 ```
 
-**Why This Approach?**
-- **libadwaita blocks custom theming** (GNOME's anti-theming policy)
-- **Gradience is archived** (July 2024, no longer maintained)
-- **CSS-based approaches are unreliable** for background theming
-
-**Solution: Complete Theme Packages**
-Instead of fighting libadwaita, we use proven, complete theme packages that actually work.
+**Core Technologies:**
+- **Hyprcursor**: Modern server-side cursor system for Hyprland
+- **nwg-look**: Wayland-optimized GTK theme management
+- **Material You**: AI-powered color extraction from wallpapers
+- **Dynamic Theme Packages**: Proven, reliable theme combinations
 
 #### **Theme Categories & Mappings**
 
-🌌 **Space Wallpapers** → Nordic + Papirus-Dark + Bibata-Modern-Ice
+🌌 **Space Wallpapers** → Graphite-Dark + Papirus-Dark + Bibata-Modern-Ice (Hyprcursor)
 🌿 **Nature Wallpapers** → Orchis-Green-Dark + Tela-circle-green + Bibata-Modern-Amber  
-🎮 **Gaming Wallpapers** → Ultimate-Dark + Papirus + Bibata-Modern-Classic
+🎮 **Gaming Wallpapers** → Graphite-Dark + Papirus + Bibata-Modern-Classic
 🎯 **Minimal Wallpapers** → WhiteSur-Light + WhiteSur + Capitaine-Cursors
-🌑 **Dark Wallpapers** → Graphite-Dark + Qogir-dark + Bibata-Modern-Classic
-🎨 **Abstract Wallpapers** → Yaru-Colors + Numix-Circle + Bibata-Modern-Amber
+🌑 **Dark Wallpapers** → Graphite-Dark + Papirus-Dark + Bibata-Modern-Classic
+🎨 **Abstract Wallpapers** → Graphite + Papirus + Bibata-Modern-Amber
 
 #### **Dynamic Adaptation**
 - **Instant Switching**: Change wallpaper, entire theme ecosystem changes

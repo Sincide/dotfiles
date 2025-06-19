@@ -15,7 +15,7 @@ adwaita-icon-theme
 # GTK themes
 arc-gtk-theme
 materia-gtk-theme
-nordic-theme-git
+# nordic-theme-git  # Replaced with Graphite-Dark (included in main themes)
 
 # Cursor themes
 bibata-cursor-theme

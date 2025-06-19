@@ -113,6 +113,20 @@ apply_wallpaper() {
             echo "    ✓ GTK theme refreshed"
         fi
         
+        # Restart applications that need cursor theme updates
+        echo "  • Restarting applications for cursor theme updates..."
+        
+        # Restart Nemo file manager if running
+        if pgrep -x nemo > /dev/null; then
+            echo "    - Restarting Nemo file manager..."
+            pkill nemo
+            sleep 0.5
+            nemo > /dev/null 2>&1 &
+        fi
+        
+        # Note about browser cursor themes
+        echo "    ℹ️  Browsers (Brave, Firefox) may need manual restart for cursor changes"
+        
     else
         echo "  ⚠️  Not running under Hyprland - applications won't be restarted"
         echo "     Start Hyprland session and run 'wallpaper_manager.sh restore' to apply theme"

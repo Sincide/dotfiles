@@ -21,7 +21,7 @@ rclone
 #virtualbox
 #virtualbox-host-modules-arch
 qemu
-virt-manager  # Auto-configures: libvirt, groups, services, networking
+virt-manager
 
 # System utilities
 #bleachbit

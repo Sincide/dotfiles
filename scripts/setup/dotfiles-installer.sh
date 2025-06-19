@@ -1194,7 +1194,7 @@ install_dynamic_themes() {
             fi
         fi
         
-        if yay -S --needed --noconfirm "$package"; then
+        if timeout 900 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
             gum_success "  ✓ $package installed successfully"
         else
             gum_error "  ✗ Failed to install $package"
@@ -1240,22 +1240,38 @@ install_dynamic_themes() {
     )
     
     gum_info "📦 Installing macOS-like theme suite (${#theme_suites[@]} packages)..."
-    local suite_current=0
+    gum_warning "⚠ This may take 10+ minutes as these are large AUR packages"
     
-    for package in "${theme_suites[@]}"; do
-        ((suite_current++))
-        gum_info "📦 Installing theme suite $suite_current/${#theme_suites[@]}: $package"
-        gum_info "  → Building from AUR (this may take several minutes)..."
-        echo "  📋 Building $package..."
-        echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+    if ! gum_confirm "Install WhiteSur theme suite? (Large download, slow build)"; then
+        gum_info "Skipping WhiteSur theme suite installation"
+    else
+        local suite_current=0
         
-        if yay -S --needed --noconfirm "$package"; then
-            gum_success "  ✓ $package installed successfully"
-        else
-            gum_warning "  ⚠ $package installation failed (may not exist in AUR)"
-        fi
-        echo
-    done
+        for package in "${theme_suites[@]}"; do
+            ((suite_current++))
+            gum_info "📦 Installing theme suite $suite_current/${#theme_suites[@]}: $package"
+            gum_info "  → Building from AUR (this may take 10-15 minutes)..."
+            gum_warning "  ⏰ Please be patient - this is a large package that takes time to compile"
+            echo "  📋 Building $package..."
+            echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+            
+            # Use timeout to prevent infinite hangs (30 minutes max)
+            if timeout 1800 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+                gum_success "  ✓ $package installed successfully"
+            else
+                local exit_code=$?
+                if [[ $exit_code -eq 124 ]]; then
+                    gum_error "  ✗ $package installation timed out (30 minutes exceeded)"
+                    gum_info "  → You can manually install later with: yay -S $package"
+                else
+                    gum_warning "  ⚠ $package installation failed"
+                    gum_info "  → Check /tmp/yay_install.log for details"
+                    gum_info "  → You can manually install later with: yay -S $package"
+                fi
+            fi
+            echo
+        done
+    fi
     
     # Additional icon themes
     gum_step "Installing additional icon themes"
@@ -1285,10 +1301,17 @@ install_dynamic_themes() {
             echo "  📋 Building $package..."
             echo "  ⏳ Downloading sources, checking dependencies, compiling..."
             
-            if yay -S --needed --noconfirm "$package"; then
+            if timeout 900 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
                 gum_success "  ✓ $package built and installed successfully"
             else
+                local exit_code=$?
+                if [[ $exit_code -eq 124 ]]; then
+                    gum_error "  ✗ $package installation timed out (15 minutes exceeded)"
+                    gum_info "  → You can manually install later with: yay -S $package"
+                else
                 gum_warning "  ⚠ Failed to build/install $package from AUR"
+                    gum_info "  → Check /tmp/yay_install.log for details"
+                fi
             fi
         fi
         echo
@@ -1320,10 +1343,17 @@ install_dynamic_themes() {
             echo "  📋 Building $package..."
             echo "  ⏳ Downloading sources, checking dependencies, compiling..."
             
-            if yay -S --needed --noconfirm "$package"; then
+            if timeout 900 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
                 gum_success "  ✓ $package built and installed successfully"
             else
+                local exit_code=$?
+                if [[ $exit_code -eq 124 ]]; then
+                    gum_error "  ✗ $package installation timed out (15 minutes exceeded)"
+                    gum_info "  → You can manually install later with: yay -S $package"
+                else
                 gum_warning "  ⚠ Failed to build/install $package from AUR"
+                    gum_info "  → Check /tmp/yay_install.log for details"
+                fi
             fi
         fi
         echo

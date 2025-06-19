@@ -186,6 +186,74 @@ Graphite-Dark   → arc-gtk-theme (replaced per user preference)
 2. Fresh install with dotfiles installer  
 3. Restore from external drive → all data back instantly
 
+### 10. Installer Timeout Protection & Package Parsing Fixes ✅ **COMPLETED**
+
+**Date**: June 20, 2025  
+**Issue Discovered**: User reported installer stopped during "modern theme suites" installation
+
+**Root Cause Analysis**:
+1. **AUR Build Hangs**: WhiteSur theme packages (`whitesur-gtk-theme`, `whitesur-icon-theme`) can take 10-15+ minutes to build and sometimes hang indefinitely
+2. **Package Parsing Bug**: Inline comments in package files prevented post-installation setup from running
+   - Package: `virt-manager  # Auto-configures: libvirt, groups, services, networking`
+   - Case statement looked for `"virt-manager"` but got full string with comment
+   - Result: virt-manager installed but setup never ran (no libvirt groups, services, etc.)
+
+**Fixes Implemented**:
+
+**1. AUR Build Timeout Protection**:
+```bash
+# Added 30-minute timeout for theme suites
+if timeout 1800 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+    gum_success "✓ $package installed successfully"
+else
+    local exit_code=$?
+    if [[ $exit_code -eq 124 ]]; then
+        gum_error "✗ $package installation timed out (30 minutes exceeded)"
+        gum_info "→ You can manually install later with: yay -S $package"
+    fi
+fi
+
+# Added 15-minute timeout for icon themes  
+timeout 900 yay -S --needed --noconfirm "$package"
+```
+
+**2. User Confirmation for Slow Builds**:
+```bash
+gum_warning "⚠ This may take 10+ minutes as these are large AUR packages"
+if ! gum_confirm "Install WhiteSur theme suite? (Large download, slow build)"; then
+    gum_info "Skipping WhiteSur theme suite installation"
+fi
+```
+
+**3. Package Parsing Fix**:
+```diff
+# BEFORE: Package with inline comment
+- virt-manager  # Auto-configures: libvirt, groups, services, networking
+
+# AFTER: Clean package name  
++ virt-manager
+```
+
+**Impact**:
+- ✅ **No more installer hangs** - AUR builds timeout gracefully after reasonable time limits
+- ✅ **Clear user choice** - Users can skip slow theme builds if desired  
+- ✅ **Proper logging** - Failed builds logged to `/tmp/yay_install.log` for debugging
+- ✅ **virt-manager setup works** - Post-installation setup now triggers correctly
+- ✅ **Better UX** - Realistic time estimates and progress feedback
+
+**Files Modified**:
+- `scripts/setup/dotfiles-installer.sh` - Added timeout protection and user confirmation
+- `scripts/setup/packages/optional.txt` - Removed inline comment from virt-manager
+
+**Virtualization Setup Includes**:
+- Installing libvirt, qemu-desktop, edk2-ovmf, bridge-utils, dnsmasq, openbsd-netcat
+- Adding user to libvirt group
+- Enabling libvirtd and virtlogd services
+- Configuring default network
+- Setting up UEFI firmware support
+
+**Result**: Installer is now robust against slow AUR builds and properly handles all post-installation setup tasks.
+
 ---
 
 ## 🎯 Current State
@@ -581,6 +649,8 @@ Graphite-Dark   → arc-gtk-theme (replaced per user preference)
 ### 🎯 Current System Statistics
 - **Core System Components**: ✅ 12 major components (100% complete)
 - **Installation Success Rate**: ✅ 100% on clean Arch systems
+- **Installer Robustness**: ✅ Timeout protection prevents hangs on slow AUR builds
+- **Package Setup Reliability**: ✅ All post-installation setup triggers correctly (virt-manager, etc.)
 - **Modern Technology Integration**: ✅ 2025 cutting-edge stack implemented
 - **Theme System Reliability**: ✅ Professional-grade with zero manual intervention
 - **Monitoring Coverage**: ✅ Complete AMDGPU monitoring with visual feedback

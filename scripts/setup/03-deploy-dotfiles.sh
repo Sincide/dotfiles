@@ -8,7 +8,7 @@ set -euo pipefail
 
 # Configuration
 readonly SCRIPT_NAME="$(basename "$0")"
-readonly DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+readonly DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 readonly LOG_DIR="${DOTFILES_DIR}/logs"
 readonly LOG_FILE="${LOG_DIR}/deploy-dotfiles_$(date +%Y%m%d_%H%M%S).log"
 readonly CONFIG_DIR="$HOME/.config"
@@ -267,6 +267,7 @@ deploy_special_configs() {
 # Get list of configuration directories to deploy
 get_config_directories() {
     local configs=(
+        "ags"
         "hypr"
         "waybar"
         "kitty"

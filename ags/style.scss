@@ -1,0 +1,152 @@
+// https://gitlab.gnome.org/GNOME/gtk/-/blob/gtk-3-24/gtk/theme/Adwaita/_colors-public.scss
+$fg-color: #{"@theme_fg_color"};
+$bg-color: #{"@theme_bg_color"};
+
+window.Bar {
+    background: transparent;
+    color: $fg-color;
+    font-weight: bold;
+
+    >centerbox {
+        background: $bg-color;
+        border-radius: 10px;
+        margin: 8px;
+    }
+
+    button {
+        border-radius: 8px;
+        margin: 2px;
+    }
+}
+
+/* Sidebar Styling */
+.Sidebar {
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: 0 15px 15px 0;
+    border-right: 2px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    min-width: 280px;
+    color: #ffffff;
+    font-family: "JetBrains Mono", monospace;
+}
+
+/* Header Section */
+.sidebar-header {
+    padding-bottom: 10px;
+}
+
+.sidebar-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #00d4ff;
+}
+
+/* Time Section */
+.time-section {
+    padding: 15px 0;
+}
+
+.time {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ffffff;
+    font-family: "JetBrains Mono", monospace;
+}
+
+.date {
+    font-size: 14px;
+    color: #cccccc;
+    margin-top: 5px;
+}
+
+/* Stats Section */
+.stats-section {
+    padding: 15px 0;
+}
+
+.stat-item {
+    padding: 8px 0;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.05);
+    margin: 5px 0;
+    padding: 10px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #00d4ff;
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.stat-value {
+    font-size: 14px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.stat-value.uptime {
+    font-size: 12px;
+    color: #cccccc;
+    margin-top: 5px;
+}
+
+/* Actions Section */
+.actions-section {
+    margin-top: 20px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #00d4ff;
+    margin-bottom: 10px;
+}
+
+.action-button {
+    background-color: rgba(0, 212, 255, 0.1);
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    border-radius: 8px;
+    color: #ffffff;
+    padding: 12px;
+    margin: 5px 0;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.action-button:hover {
+    background-color: rgba(0, 212, 255, 0.2);
+    border-color: #00d4ff;
+    color: #00d4ff;
+}
+
+.action-button.close-button {
+    background-color: rgba(255, 0, 0, 0.1);
+    border-color: rgba(255, 0, 0, 0.3);
+    color: #ff6b6b;
+    margin-top: 15px;
+}
+
+.action-button.close-button:hover {
+    background-color: rgba(255, 0, 0, 0.2);
+    border-color: #ff6b6b;
+    color: #ffffff;
+}
+
+/* Separators */
+.separator {
+    background-color: rgba(255, 255, 255, 0.1);
+    min-height: 1px;
+    margin: 10px 0;
+}
+
+/* Animations */
+.Sidebar {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive Design - GTK doesn't support @media queries
+   Fixed width used instead */
+
+/* Window blur effect - GTK doesn't support backdrop-filter
+   Blur effects will be handled by Hyprland window rules instead */

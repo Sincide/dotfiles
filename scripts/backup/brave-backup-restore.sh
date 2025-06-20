@@ -86,8 +86,49 @@ print_step() {
 
 # Detect available external drives
 detect_external_drives() {
-    # Simply use df to find mounted drives with decent space in /mnt or /media
-    df -h | awk '$4 ~ /[0-9]+[GT]/ && ($6 ~ /^\/mnt\// || $6 ~ /^\/media\//) { print $6 "|" $4 }'
+    # Look for mounted drives in /mnt and /media with decent space
+    # This matches the installer's mounting approach
+    local drives=()
+    
+    # Check /mnt directory (where installer mounts drives)
+    if [[ -d "/mnt" ]]; then
+        while IFS= read -r mount_info; do
+            if [[ -n "$mount_info" ]]; then
+                IFS='|' read -r mount_point space <<< "$mount_info"
+                drives+=("$mount_point|$space")
+            fi
+        done < <(df -h /mnt/* 2>/dev/null | awk 'NR>1 && $4 ~ /[0-9]+[GT]/ { print $6 "|" $4 }')
+    fi
+    
+    # Check /media directory (traditional mount point)
+    if [[ -d "/media" ]]; then
+        while IFS= read -r mount_info; do
+            if [[ -n "$mount_info" ]]; then
+                IFS='|' read -r mount_point space <<< "$mount_info"
+                drives+=("$mount_point|$space")
+            fi
+        done < <(df -h /media/* 2>/dev/null | awk 'NR>1 && $4 ~ /[0-9]+[GT]/ { print $6 "|" $4 }')
+    fi
+    
+    # Also check home directory symlinks created by installer
+    if [[ -d "$HOME" ]]; then
+        while IFS= read -r symlink; do
+            if [[ -L "$symlink" ]] && [[ -d "$symlink" ]]; then
+                local target
+                target=$(readlink "$symlink")
+                if [[ "$target" =~ ^/mnt/ ]] || [[ "$target" =~ ^/media/ ]]; then
+                    local space
+                    space=$(df -h "$target" 2>/dev/null | awk 'NR>1 && $4 ~ /[0-9]+[GT]/ { print $4 }')
+                    if [[ -n "$space" ]]; then
+                        drives+=("$target|$space")
+                    fi
+                fi
+            fi
+        done < <(find "$HOME" -maxdepth 1 -type l -name "*" 2>/dev/null)
+    fi
+    
+    # Remove duplicates and output
+    printf '%s\n' "${drives[@]}" | sort -u
 }
 
 # Select backup destination

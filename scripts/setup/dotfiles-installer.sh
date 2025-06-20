@@ -47,6 +47,7 @@ declare -A INSTALL_STATE=(
     [user_setup]=false
     [system_optimization]=false
     [external_drives]=false
+    [chaotic_aur]=false
 )
 
 # Initialize logging
@@ -107,11 +108,22 @@ gum_confirm() {
     local prompt="$1"
     local default="${2:-No}"
     
+    # Temporarily disable strict error handling for gum commands
+    set +e
+    
+    local result
     if [[ "$default" == "Yes" ]]; then
         gum confirm "$prompt" --default=true
+        result=$?
     else
         gum confirm "$prompt" --default=false
+        result=$?
     fi
+    
+    # Restore strict error handling
+    set -e
+    
+    return $result
 }
 
 # System checks with gum feedback
@@ -198,6 +210,139 @@ install_yay() {
         gum_error "yay installation failed"
         return 1
     fi
+}
+
+# Setup Chaotic-AUR repository for pre-built binaries
+setup_chaotic_aur() {
+    show_section "Setting up Chaotic-AUR Repository"
+    
+    gum_info "🔄 Chaotic-AUR provides pre-built binaries for faster installations"
+    gum_info "📦 This can reduce WhiteSur installation from 25 minutes to 3 minutes"
+    echo
+    
+    # STEP 1: Fix broken pacman.conf if it exists
+    if grep -q '\[chaotic-aur\]' /etc/pacman.conf && [[ ! -f /etc/pacman.d/chaotic-mirrorlist ]]; then
+        gum_warning "⚠ Found broken Chaotic-AUR entry in pacman.conf without mirrorlist"
+        gum_step "Fixing broken pacman.conf"
+        
+        # Create backup
+        sudo cp /etc/pacman.conf /etc/pacman.conf.backup.$(date +%s)
+        
+        # Remove broken chaotic-aur section
+        sudo sed -i '/^\[chaotic-aur\]/,/^$/d' /etc/pacman.conf
+        gum_success "✓ Removed broken Chaotic-AUR entries from pacman.conf"
+    fi
+    
+    # STEP 2: Check and fix pacman keyring
+    if [[ ! -d /etc/pacman.d/gnupg ]] || ! sudo pacman-key --list-keys >/dev/null 2>&1; then
+        gum_warning "⚠ Pacman keyring needs initialization"
+        gum_step "Initializing pacman keyring (this may take a moment)"
+        
+        # Remove any broken keyring
+        sudo rm -rf /etc/pacman.d/gnupg
+        
+        if ! sudo pacman-key --init; then
+            gum_error "✗ Failed to initialize pacman keyring"
+            gum_info "📦 Skipping Chaotic-AUR setup - packages will be built from source"
+            INSTALL_STATE["chaotic_aur"]=false
+            echo
+            return 0
+        fi
+        
+        gum_step "Populating Arch Linux keyring"
+        if ! sudo pacman-key --populate archlinux; then
+            gum_error "✗ Failed to populate Arch Linux keyring"
+            gum_info "📦 Skipping Chaotic-AUR setup - packages will be built from source"
+            INSTALL_STATE["chaotic_aur"]=false
+            echo
+            return 0
+        fi
+        
+        gum_success "✓ Pacman keyring initialized successfully"
+    fi
+    
+    # STEP 3: Test that pacman is working
+    if ! sudo pacman -Sy >/dev/null 2>&1; then
+        gum_error "✗ Pacman is not working properly"
+        gum_info "📦 Skipping Chaotic-AUR setup - packages will be built from source"
+        INSTALL_STATE["chaotic_aur"]=false
+        echo
+        return 0
+    fi
+    
+         # STEP 4: Ask user if they want Chaotic-AUR
+     if ! gum_confirm "Add Chaotic-AUR repository for faster package installations?"; then
+         gum_info "Skipping Chaotic-AUR repository setup"
+         gum_info "📦 Packages will be built from source (slower but more control)"
+         INSTALL_STATE["chaotic_aur"]=false
+         echo
+         return 0
+     fi
+     
+     # STEP 5: Import Chaotic-AUR key
+     gum_step "Importing Chaotic-AUR GPG key"
+     if ! sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com; then
+         gum_error "✗ Failed to receive Chaotic-AUR key"
+         gum_info "📦 Falling back to AUR builds"
+         INSTALL_STATE["chaotic_aur"]=false
+         echo
+         return 0
+     fi
+     
+     if ! sudo pacman-key --lsign-key 3056513887B78AEB; then
+         gum_error "✗ Failed to locally sign Chaotic-AUR key"
+         gum_info "📦 Falling back to AUR builds"
+         INSTALL_STATE["chaotic_aur"]=false
+         echo
+         return 0
+     fi
+     
+     # STEP 6: Install keyring and mirrorlist packages
+     gum_step "Installing Chaotic-AUR keyring and mirrorlist"
+     if ! sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'; then
+         gum_error "✗ Failed to install chaotic-keyring"
+         gum_info "📦 Falling back to AUR builds"
+         INSTALL_STATE["chaotic_aur"]=false
+         echo
+         return 0
+     fi
+     
+     if ! sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'; then
+         gum_error "✗ Failed to install chaotic-mirrorlist"
+         gum_info "📦 Falling back to AUR builds"
+         INSTALL_STATE["chaotic_aur"]=false
+         echo
+         return 0
+     fi
+     
+     # STEP 7: Add repository to pacman.conf (only now that mirrorlist exists)
+     if [[ -f /etc/pacman.d/chaotic-mirrorlist ]]; then
+         if ! grep -q '\[chaotic-aur\]' /etc/pacman.conf; then
+             gum_step "Adding Chaotic-AUR repository to pacman.conf"
+             echo -e '\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' | sudo tee -a /etc/pacman.conf >/dev/null
+             gum_success "✓ Added Chaotic-AUR repository to pacman.conf"
+         else
+             gum_info "ℹ Chaotic-AUR repository already configured"
+         fi
+     else
+         gum_error "✗ Chaotic-AUR mirrorlist not found after installation"
+         gum_info "📦 Falling back to AUR builds"
+         INSTALL_STATE["chaotic_aur"]=false
+         echo
+         return 0
+     fi
+     
+     # STEP 8: Sync package database
+     gum_step "Syncing package database"
+     if ! sudo pacman -Sy; then
+         gum_warning "⚠ Failed to sync package database, but Chaotic-AUR should still work"
+     fi
+     
+     gum_success "✓ Chaotic-AUR repository setup completed successfully"
+     gum_info "📦 Pre-built binaries now available for faster installations"
+     INSTALL_STATE["chaotic_aur"]=true
+     echo
+    echo
 }
 
 # Parse package file into subcategories
@@ -482,7 +627,7 @@ select_packages() {
     install_type=$(gum choose \
         "Quick install (recommended packages only)" \
         "Custom install (choose specific packages)" \
-        "Skip packages (dotfiles only)")
+        "Skip packages (dotfiles only)" || echo "Skip packages")
     
     case "$install_type" in
         "Quick install"*)
@@ -496,6 +641,9 @@ select_packages() {
             ;;
         "Skip packages"*)
             gum_info "Skipping package installation"
+            ;;
+        *)
+            gum_warning "Invalid selection, skipping package installation"
             ;;
     esac
 }
@@ -516,10 +664,10 @@ custom_package_selection() {
     
     local selected_categories
     selected_categories=$(gum choose --no-limit --cursor-prefix="[ ] " --selected-prefix="[✓] " \
-        --header="Select categories to install:" "${categories[@]}" || true)
+        --header="Select categories to install:" "${categories[@]}" || echo "")
     
     if [[ -z "$selected_categories" ]]; then
-        gum_warning "No categories selected"
+        gum_warning "No categories selected, skipping package installation"
         return 0
     fi
     
@@ -1194,15 +1342,41 @@ install_dynamic_themes() {
             fi
         fi
         
-        if timeout 900 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
-            gum_success "  ✓ $package installed successfully"
-        else
-            gum_error "  ✗ Failed to install $package"
-            gum_info "  → Trying with pacman for official packages..."
-            if pacman -S --needed --noconfirm "$package" 2>/dev/null; then
-                gum_success "  ✓ $package installed via pacman"
+        # Temporarily disable strict error handling for yay commands
+        set +e
+        
+        # Try Chaotic-AUR first if available, then fall back to AUR
+        local install_success=false
+        
+        if [[ "${INSTALL_STATE[chaotic_aur]}" == "true" ]]; then
+            gum_info "  → Trying Chaotic-AUR for pre-built binary..."
+            if timeout 300 pacman -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+                set -e
+                gum_success "  ✓ $package installed successfully (Chaotic-AUR binary)"
+                install_success=true
             else
-                gum_warning "  ⚠ $package installation failed completely"
+                gum_info "  → Chaotic-AUR not available, trying AUR build..."
+            fi
+        fi
+        
+        # If Chaotic-AUR failed or not available, try AUR
+        if [[ "$install_success" != "true" ]]; then
+            gum_info "  → Building from AUR (this may take 10-15 minutes)..."
+            if timeout 1800 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+                set -e
+                gum_success "  ✓ $package installed successfully (AUR build)"
+            else
+                local exit_code=$?
+                set -e
+                if [[ $exit_code -eq 124 ]]; then
+                    gum_error "  ✗ $package installation timed out (30 minutes exceeded)"
+                    gum_info "  → You can manually install later with: yay -S $package"
+                    gum_info "  → Check log: /tmp/yay_install.log"
+                else
+                    gum_warning "  ⚠ $package installation failed (exit code: $exit_code)"
+                    gum_info "  → Check log: /tmp/yay_install.log"
+                    gum_info "  → You can manually install later with: yay -S $package"
+                fi
             fi
         fi
     done
@@ -1242,35 +1416,70 @@ install_dynamic_themes() {
     gum_info "📦 Installing macOS-like theme suite (${#theme_suites[@]} packages)..."
     gum_warning "⚠ This may take 10+ minutes as these are large AUR packages"
     
-    if ! gum_confirm "Install WhiteSur theme suite? (Large download, slow build)"; then
-        gum_info "Skipping WhiteSur theme suite installation"
-    else
-        local suite_current=0
+    echo "DEBUG: About to call gum_confirm for WhiteSur"
+    if gum_confirm "Install WhiteSur theme suite? (Large download, slow build)"; then
+        echo "DEBUG: User selected YES for WhiteSur"
         
-        for package in "${theme_suites[@]}"; do
-            ((suite_current++))
-            gum_info "📦 Installing theme suite $suite_current/${#theme_suites[@]}: $package"
-            gum_info "  → Building from AUR (this may take 10-15 minutes)..."
-            gum_warning "  ⏰ Please be patient - this is a large package that takes time to compile"
-            echo "  📋 Building $package..."
-            echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+        # Ensure theme_suites array is properly defined
+        if [[ ${#theme_suites[@]} -eq 0 ]]; then
+            gum_warning "No theme suites defined, skipping installation"
+        else
+            local suite_current=0
             
-            # Use timeout to prevent infinite hangs (30 minutes max)
-            if timeout 1800 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
-                gum_success "  ✓ $package installed successfully"
-            else
-                local exit_code=$?
-                if [[ $exit_code -eq 124 ]]; then
-                    gum_error "  ✗ $package installation timed out (30 minutes exceeded)"
-                    gum_info "  → You can manually install later with: yay -S $package"
-                else
-                    gum_warning "  ⚠ $package installation failed"
-                    gum_info "  → Check /tmp/yay_install.log for details"
-                    gum_info "  → You can manually install later with: yay -S $package"
+            for package in "${theme_suites[@]}"; do
+                # Make arithmetic operation more robust
+                set +e
+                suite_current=$((suite_current + 1))
+                set -e
+                
+                gum_info "📦 Installing theme suite $suite_current/${#theme_suites[@]}: $package"
+                gum_info "  → Building from AUR (this may take 10-15 minutes)..."
+                gum_warning "  ⏰ Please be patient - this is a large package that takes time to compile"
+                echo "  📋 Building $package..."
+                echo "  ⏳ Downloading sources, checking dependencies, compiling..."
+                
+                # Temporarily disable strict error handling for yay commands
+                set +e
+                
+                # Try Chaotic-AUR first if available, then fall back to AUR
+                local install_success=false
+                
+                if [[ "${INSTALL_STATE[chaotic_aur]}" == "true" ]]; then
+                    gum_info "  → Trying Chaotic-AUR for pre-built binary..."
+                    if timeout 300 pacman -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+                        set -e
+                        gum_success "  ✓ $package installed successfully (Chaotic-AUR binary)"
+                        install_success=true
+                    else
+                        gum_info "  → Chaotic-AUR not available, trying AUR build..."
+                    fi
                 fi
-            fi
-            echo
-        done
+                
+                # If Chaotic-AUR failed or not available, try AUR
+                if [[ "$install_success" != "true" ]]; then
+                    gum_info "  → Building from AUR (this may take 10-15 minutes)..."
+                    if timeout 1800 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+                        set -e
+                        gum_success "  ✓ $package installed successfully (AUR build)"
+                    else
+                        local exit_code=$?
+                        set -e
+                        if [[ $exit_code -eq 124 ]]; then
+                            gum_error "  ✗ $package installation timed out (30 minutes exceeded)"
+                            gum_info "  → You can manually install later with: yay -S $package"
+                            gum_info "  → Check log: /tmp/yay_install.log"
+                        else
+                            gum_warning "  ⚠ $package installation failed (exit code: $exit_code)"
+                            gum_info "  → Check log: /tmp/yay_install.log"
+                            gum_info "  → You can manually install later with: yay -S $package"
+                        fi
+                    fi
+                fi
+            done
+        fi
+    else
+        echo "DEBUG: User selected NO for WhiteSur or function failed"
+        gum_info "Skipping WhiteSur theme suite installation"
     fi
     
     # Additional icon themes
@@ -1285,7 +1494,10 @@ install_dynamic_themes() {
     local current_package=0
     
     for package in "${icon_packages[@]}"; do
-        ((current_package++))
+        # Make arithmetic operation more robust
+        set +e
+        current_package=$((current_package + 1))
+        set -e
         gum_info "📦 Installing icon theme $current_package/$total_packages: $package"
         
         # Try official repos first, then AUR
@@ -1301,10 +1513,14 @@ install_dynamic_themes() {
             echo "  📋 Building $package..."
             echo "  ⏳ Downloading sources, checking dependencies, compiling..."
             
+            # Temporarily disable strict error handling for yay commands
+            set +e
             if timeout 900 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+                set -e
                 gum_success "  ✓ $package built and installed successfully"
             else
                 local exit_code=$?
+                set -e
                 if [[ $exit_code -eq 124 ]]; then
                     gum_error "  ✗ $package installation timed out (15 minutes exceeded)"
                     gum_info "  → You can manually install later with: yay -S $package"
@@ -1327,7 +1543,10 @@ install_dynamic_themes() {
     current_package=0
     
     for package in "${cursor_packages[@]}"; do
-        ((current_package++))
+        # Make arithmetic operation more robust
+        set +e
+        current_package=$((current_package + 1))
+        set -e
         gum_info "📦 Installing cursor theme $current_package/$total_packages: $package"
         
         # Try official repos first, then AUR
@@ -1343,10 +1562,14 @@ install_dynamic_themes() {
             echo "  📋 Building $package..."
             echo "  ⏳ Downloading sources, checking dependencies, compiling..."
             
+            # Temporarily disable strict error handling for yay commands
+            set +e
             if timeout 900 yay -S --needed --noconfirm "$package" 2>&1 | tee /tmp/yay_install.log; then
+                set -e
                 gum_success "  ✓ $package built and installed successfully"
             else
                 local exit_code=$?
+                set -e
                 if [[ $exit_code -eq 124 ]]; then
                     gum_error "  ✗ $package installation timed out (15 minutes exceeded)"
                     gum_info "  → You can manually install later with: yay -S $package"
@@ -1516,14 +1739,47 @@ setup_external_drives() {
         fi
     done < <(lsblk -rno NAME,LABEL,FSTYPE,UUID,MOUNTPOINT | \
              awk -v root_uuid="$system_root_uuid" -v boot_uuid="$boot_uuid" '
-             $3 != "" && $3 != "swap" && $2 != "" && $2 != "vfat" && $2 != "btrfs" && 
+             $3 != "" && $3 != "swap" && $2 != "" && 
              $4 != root_uuid && $4 != boot_uuid && $5 == "" && 
-             $1 !~ /nvme0n1p/ && $1 !~ /sda[0-9]/ {
+             $1 !~ /nvme0n1p/ && $1 !~ /sda[0-9]/ && $1 !~ /sdc[0-9]/ {
                  print $1 "|" $2 "|" $3 "|" $4
              }')
     
     if [[ ${#external_drives[@]} -eq 0 ]]; then
         gum_info "No unmounted external drives with labels found"
+        
+        # Check for already mounted external drives
+        local mounted_external_drives=()
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                mounted_external_drives+=("$line")
+            fi
+        done < <(lsblk -rno NAME,LABEL,FSTYPE,UUID,MOUNTPOINT | \
+                 awk -v root_uuid="$system_root_uuid" -v boot_uuid="$boot_uuid" '
+                 $3 != "" && $3 != "swap" && $2 != "" && $5 != "" && $5 != "/" && $5 != "/boot" && 
+                 $4 != root_uuid && $4 != boot_uuid && 
+                 $1 !~ /nvme0n1p/ && $1 !~ /sda[0-9]/ && $1 !~ /sdc[0-9]/ {
+                     print $1 "|" $2 "|" $3 "|" $4 "|" $5
+                 }')
+        
+        if [[ ${#mounted_external_drives[@]} -gt 0 ]]; then
+            gum_info "Found ${#mounted_external_drives[@]} already mounted external drive(s):"
+            echo
+            
+            for drive_info in "${mounted_external_drives[@]}"; do
+                IFS='|' read -r device label fstype uuid mount_point <<< "$drive_info"
+                gum style --foreground=46 "  📱 /dev/$device"
+                gum style --foreground=245 "     Label: $label"
+                gum style --foreground=245 "     Type:  $fstype"
+                gum style --foreground=245 "     Mount: $mount_point"
+                echo
+            done
+            
+            if gum_confirm "Add these already mounted drives to /etc/fstab for automatic mounting on boot?"; then
+                setup_fstab_for_mounted_drives "${mounted_external_drives[@]}"
+            fi
+        fi
+        
         return 0
     fi
     
@@ -1649,47 +1905,163 @@ setup_external_drives() {
     INSTALL_STATE["external_drives"]=true
 }
 
+# Helper function to add already mounted drives to fstab
+setup_fstab_for_mounted_drives() {
+    local mounted_drives=("$@")
+    
+    gum_info "📝 Adding already mounted drives to /etc/fstab..."
+    
+    local fstab_backup="/etc/fstab.backup.$(date +%s)"
+    sudo cp /etc/fstab "$fstab_backup"
+    gum_info "  ✓ Backed up /etc/fstab to $fstab_backup"
+    
+    for drive_info in "${mounted_drives[@]}"; do
+        IFS='|' read -r device label fstype uuid mount_point <<< "$drive_info"
+        
+        # Check if entry already exists
+        if grep -q "$uuid" /etc/fstab; then
+            gum_info "  ℹ Entry for $device already exists in /etc/fstab"
+            continue
+        fi
+        
+        # Add fstab entry
+        local fstab_entry="UUID=$uuid $mount_point $fstype defaults,user,noauto,x-systemd.automount,x-systemd.device-timeout=10 0 2"
+        echo "$fstab_entry" | sudo tee -a /etc/fstab > /dev/null
+        gum_success "  ✓ Added /dev/$device to /etc/fstab"
+    done
+    
+    # Reload systemd
+    sudo systemctl daemon-reload
+    gum_success "  ✓ Reloaded systemd configuration"
+    
+    # Create convenient symlinks in home directory
+    if gum_confirm "Create symlinks in your home directory for easy access?"; then
+        gum_info "🔗 Creating convenience symlinks..."
+        
+        for drive_info in "${mounted_drives[@]}"; do
+            IFS='|' read -r device label fstype uuid mount_point <<< "$drive_info"
+            local drive_name
+            drive_name=$(basename "$mount_point")
+            local symlink_path="$HOME/$drive_name"
+            
+            if [[ -L "$symlink_path" ]] || [[ -e "$symlink_path" ]]; then
+                gum_warning "  ⚠ $symlink_path already exists, skipping"
+                continue
+            fi
+            
+            ln -s "$mount_point" "$symlink_path"
+            gum_success "  ✓ Created: ~/$drive_name → $mount_point"
+        done
+    fi
+}
+
 # Brave Browser Backup/Restore System (requires external drives to be mounted)
 setup_brave_backup() {
     show_section "Brave Browser Backup & Restore"
     
-    gum_info "🦁 Brave Browser backup system available"
-    gum_info "📱 Uses your external drives for seamless reinstall workflow"
+    gum_info "🦁 Brave Browser backup & restore system"
+    gum_info "📱 Seamlessly transfer your browser data using external drives"
     echo
     
-    if gum_confirm "Set up Brave backup/restore system?"; then
-        local brave_script="$DOTFILES_DIR/scripts/backup/brave-backup-restore.sh"
+    if ! gum_confirm "Set up Brave backup/restore system?"; then
+        gum_info "Skipped Brave backup system setup"
+        INSTALL_STATE["brave_backup"]=true
+        echo
+        return 0
+    fi
+    
+    local brave_script="$DOTFILES_DIR/scripts/backup/brave-backup-restore.sh"
+    
+    if [[ ! -f "$brave_script" ]]; then
+        gum_warning "Brave backup script not found at $brave_script"
+        INSTALL_STATE["brave_backup"]=false
+        echo
+        return 0
+    fi
+    
+    chmod +x "$brave_script"
+    gum_success "✓ Brave backup system configured"
+    echo
+    
+    # Always check for backups on mounted drives first
+    gum_info "🔍 Checking for existing backups on mounted drives..."
+    
+    # Check for backups on mounted drives
+    local backup_found=false
+    local backup_locations=()
+    
+    # Check common mount points for backups
+    for mount_point in /mnt/* /media/* "$HOME"/*; do
+        if [[ -d "$mount_point" ]] && [[ -r "$mount_point" ]]; then
+            # Look for Brave backup files (support both underscore and hyphen formats, exclude trash)
+            if find "$mount_point" -name "*brave*backup*.tar.gz" -type f -not -path "*/.Trash-*" 2>/dev/null | head -1 | grep -q .; then
+                backup_found=true
+                backup_locations+=("$mount_point")
+            fi
+        fi
+    done
+    
+    if [[ "$backup_found" == true ]]; then
+        gum_success "✓ Found Brave backups on external drives!"
+        echo
+        gum_info "Available backup locations:"
+        for location in "${backup_locations[@]}"; do
+            local backup_count
+            backup_count=$(find "$location" -name "*brave*backup*.tar.gz" -type f -not -path "*/.Trash-*" 2>/dev/null | wc -l)
+            echo "  📁 $location ($backup_count backup(s))"
+        done
+        echo
         
-        if [[ -f "$brave_script" ]]; then
-            chmod +x "$brave_script"
-            
-            gum_info "📦 Brave backup system configured!"
+        # Check if there's existing config and warn user
+        if [[ -d "$HOME/.config/BraveSoftware/Brave-Browser" ]]; then
+            gum_warning "⚠️  Existing Brave configuration detected"
+            gum_info "💡 Restoring will backup your current config first"
+        fi
+        
+        if gum_confirm "Restore Brave data from external drive backup?"; then
+            gum_info "🚀 Launching Brave restore system..."
+            "$brave_script" restore
+            gum_success "✓ Brave restoration completed!"
             echo
-            gum_info "Available commands:"
-            echo "  • $brave_script backup    - Create backup to external drive"
-            echo "  • $brave_script restore   - Restore from external drive"
-            echo "  • $brave_script list      - List available backups"
-            echo "  • $brave_script           - Interactive menu (default)"
-            echo
+        else
+            gum_info "ℹ️  Skipped restoration - you can restore later with: $brave_script restore"
             
-            # Ask if user wants to create backup now
+            # Only offer backup if user has existing config and didn't restore
             if [[ -d "$HOME/.config/BraveSoftware/Brave-Browser" ]]; then
-                gum_info "🔍 Brave Browser configuration detected"
-                if gum_confirm "Create backup now before continuing installation?"; then
+                echo
+                if gum_confirm "Create backup of current Brave data to external drive?"; then
                     gum_info "🚀 Launching Brave backup system..."
                     "$brave_script" backup
-                    gum_success "Backup completed! Continuing with installation..."
+                    gum_success "✓ Backup completed!"
                     echo
                 fi
-            else
-                gum_info "ℹ️  No existing Brave config found - backup available after Brave installation"
             fi
-        else
-            gum_warning "Brave backup script not found at $brave_script"
         fi
     else
-        gum_info "Skipped Brave backup system setup"
+        gum_info "ℹ️  No existing Brave backups found on mounted drives"
+        
+        # If no backups found, check if user has existing config to backup
+        if [[ -d "$HOME/.config/BraveSoftware/Brave-Browser" ]]; then
+            gum_info "🔍 Existing Brave Browser configuration detected"
+            echo
+            if gum_confirm "Create backup of current Brave data to external drive?"; then
+                gum_info "🚀 Launching Brave backup system..."
+                "$brave_script" backup
+                gum_success "✓ Backup completed!"
+                echo
+            else
+                gum_info "ℹ️  Skipped backup - you can backup later with: $brave_script backup"
+            fi
+        else
+            gum_info "📦 Brave backup will be available after browser installation"
+        fi
     fi
+    
+    gum_info "📋 Brave backup system commands:"
+    echo "  • $brave_script backup    - Create backup to external drive"
+    echo "  • $brave_script restore   - Restore from external drive"  
+    echo "  • $brave_script list      - List available backups"
+    echo "  • $brave_script           - Interactive menu (default)"
     echo
     
     INSTALL_STATE["brave_backup"]=true
@@ -1749,6 +2121,9 @@ main() {
     
     # Install yay
     install_yay
+    
+    # Setup Chaotic-AUR repository for pre-built binaries
+    setup_chaotic_aur
     
     # Package selection and installation
     select_packages

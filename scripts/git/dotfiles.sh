@@ -140,6 +140,90 @@ show_status() {
     fi
 }
 
+# Test SSH connection to remote
+test_ssh_connection() {
+    local remote_url="$1"
+    local domain=""
+    
+    # Extract domain from remote URL
+    if [[ "$remote_url" =~ git@([^:]+): ]]; then
+        domain="${BASH_REMATCH[1]}"
+    elif [[ "$remote_url" =~ https://([^/]+)/ ]]; then
+        domain="${BASH_REMATCH[1]}"
+        return 0  # HTTPS doesn't need SSH test
+    else
+        return 0  # Unknown format, skip test
+    fi
+    
+    print_status "Testing SSH connection to $domain..."
+    
+    # Test SSH connection
+    if ssh -T "git@$domain" 2>&1 | grep -q "successfully authenticated\|Welcome to"; then
+        print_success "SSH connection to $domain working"
+        return 0
+    else
+        print_error "SSH authentication failed for $domain"
+        print_warning "You need to add your SSH key to $domain"
+        
+        # Show the appropriate public key
+        local key_file=""
+        if [[ "$domain" == "github.com" && -f "$HOME/.ssh/id_ed25519_github.pub" ]]; then
+            key_file="$HOME/.ssh/id_ed25519_github.pub"
+        elif [[ "$domain" == "gitlab.com" && -f "$HOME/.ssh/id_ed25519_gitlab.pub" ]]; then
+            key_file="$HOME/.ssh/id_ed25519_gitlab.pub"
+        elif [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
+            key_file="$HOME/.ssh/id_ed25519.pub"
+        elif [[ -f "$HOME/.ssh/id_rsa.pub" ]]; then
+            key_file="$HOME/.ssh/id_rsa.pub"
+        fi
+        
+        if [[ -n "$key_file" ]]; then
+            echo
+            print_status "Your SSH public key:"
+            echo -e "${BLUE}$(cat "$key_file")${NC}"
+            echo
+            
+            case "$domain" in
+                "github.com")
+                    print_status "Add this key to GitHub:"
+                    echo -e "${YELLOW}→ https://github.com/settings/keys${NC}"
+                    ;;
+                "gitlab.com")
+                    print_status "Add this key to GitLab:"
+                    echo -e "${YELLOW}→ https://gitlab.com/-/user_settings/ssh_keys${NC}"
+                    ;;
+            esac
+            
+            echo
+            read -p "Press Enter after adding the key to $domain, or Ctrl+C to abort: "
+            
+            # Test again
+            if ssh -T "git@$domain" 2>&1 | grep -q "successfully authenticated\|Welcome to"; then
+                print_success "SSH connection now working!"
+                return 0
+            else
+                print_error "SSH connection still failing. Please check your key was added correctly."
+                return 1
+            fi
+        else
+            print_error "No SSH public key found. Run the git-ssh-setup.sh script first."
+            
+            # Try to run the setup script if it exists
+            local setup_script="$REPO_ROOT/scripts/setup/git-ssh-setup.sh"
+            if [[ -f "$setup_script" ]]; then
+                echo
+                read -p "Run git-ssh-setup.sh now? (y/N): " -n 1 -r
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    "$setup_script" -y
+                    return $?
+                fi
+            fi
+            return 1
+        fi
+    fi
+}
+
 sync_dotfiles() {
     print_status "Syncing dotfiles..."
 
@@ -163,6 +247,12 @@ sync_dotfiles() {
         fi
     else
         print_warning "No local changes to commit!"
+    fi
+
+    # Test SSH connection before attempting to pull/push
+    if ! test_ssh_connection "$REMOTE_URL"; then
+        print_error "Cannot proceed without working SSH connection"
+        return 1
     fi
 
     # Always pull from remote to get latest changes

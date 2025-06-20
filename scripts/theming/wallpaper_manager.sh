@@ -82,6 +82,15 @@ apply_wallpaper() {
         echo "  • Starting bottom Waybar (AMDGPU monitoring)..."
         waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css > /dev/null 2>&1 &
         
+        # Restart AGS for dynamic theme updates
+        if pgrep gjs > /dev/null; then
+            echo "  • Restarting AGS for theme updates..."
+            pkill gjs
+            sleep 0.5
+        fi
+        echo "  • Starting AGS..."
+        ags run > /dev/null 2>&1 &
+        
         # Restart Dunst
         if pgrep -x dunst > /dev/null; then
             echo "  • Restarting Dunst..."

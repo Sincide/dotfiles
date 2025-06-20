@@ -11,6 +11,7 @@ tree
 htop
 btop
 fastfetch
+starship
 gum
 bc
 pacman-contrib

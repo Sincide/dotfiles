@@ -1,0 +1,168 @@
+# Starship Configuration - Evil Space Theme
+# ~/.config/starship.toml
+
+# Get editor completions based on the config schema
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Inserts a blank line between shell prompts
+add_newline = true
+
+# Replace the "❯" symbol in the prompt with "➜"
+[character]
+success_symbol = "[❯](bold magenta)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+# Disable the package module, hiding it from the prompt completely
+[package]
+disabled = true
+
+# Configure directory display
+[directory]
+style = "bold cyan"
+truncation_length = 3
+truncate_to_repo = true
+truncation_symbol = "…/"
+
+# Git branch
+[git_branch]
+symbol = "🌌 "
+style = "bold purple"
+truncation_length = 20
+truncation_symbol = "…"
+
+# Git status
+[git_status]
+style = "bold yellow"
+ahead = "⇡${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+behind = "⇣${count}"
+conflicted = "🏳"
+untracked = "🤷"
+stashed = "📦"
+modified = "📝"
+staged = '[++\($count\)](green)'
+renamed = "👅"
+deleted = "🗑"
+
+# Git commit
+[git_commit]
+commit_hash_length = 7
+style = "bold green"
+
+# Git state (for rebase, merge, etc.)
+[git_state]
+style = "bold yellow"
+format = '[\($state( $progress_current of $progress_total)\)]($style) '
+
+# Command duration
+[cmd_duration]
+min_time = 2_000
+style = "bold yellow"
+format = "⏱ [$duration]($style) "
+
+# Username (only show in SSH or when root)
+[username]
+style_user = "bold blue"
+style_root = "bold red"
+format = "[$user]($style) "
+disabled = false
+show_always = false
+
+# Hostname (only show in SSH)
+[hostname]
+ssh_only = true
+style = "bold green"
+format = "[@$hostname]($style) "
+
+# Python
+[python]
+symbol = "🐍 "
+style = "bold green"
+format = '[${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+
+# Node.js
+[nodejs]
+symbol = "⬢ "
+style = "bold green"
+format = "[$symbol($version )]($style)"
+
+# Rust
+[rust]
+symbol = "🦀 "
+style = "bold red"
+format = "[$symbol($version )]($style)"
+
+# Docker context
+[docker_context]
+symbol = "🐳 "
+style = "bold blue"
+format = "[$symbol$context]($style) "
+
+# Memory usage
+[memory_usage]
+disabled = false
+threshold = 70
+symbol = "🐏 "
+style = "bold dimmed red"
+format = "$symbol[${ram_pct}]($style) "
+
+# Battery
+[battery]
+full_symbol = "🔋 "
+charging_symbol = "⚡️ "
+discharging_symbol = "💀 "
+
+[[battery.display]]
+threshold = 10
+style = "bold red"
+
+[[battery.display]]
+threshold = 30
+style = "bold yellow"
+
+# Time
+[time]
+disabled = false
+style = "bold white"
+format = "🕐 [$time]($style) "
+
+# Custom evil space elements
+[custom.evil_space]
+command = "echo '🌌'"
+when = "true"
+style = "bold purple"
+format = "[$output]($style)"
+
+# Jobs
+[jobs]
+symbol = "+ "
+style = "bold blue"
+number_threshold = 1
+format = "[$symbol$number]($style) "
+
+# Status
+[status]
+style = "bold red"
+symbol = "🔴 "
+success_symbol = ""
+not_executable_symbol = "🚫 "
+not_found_symbol = "🔍 "
+sigint_symbol = "🧱 "
+signal_symbol = "⚡ "
+format = '[$symbol$common_meaning$signal_name$maybe_int]($style) '
+map_symbol = true
+disabled = false
+
+# Line break
+[line_break]
+disabled = false
+
+# Shell
+[shell]
+fish_indicator = "🐠"
+bash_indicator = "🐧"
+zsh_indicator = "⚡"
+disabled = false
+format = "[$indicator]($style) "
+style = "cyan bold" 

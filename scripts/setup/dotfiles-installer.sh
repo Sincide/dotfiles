@@ -609,6 +609,27 @@ deploy_dotfiles() {
         gum_success "Linked: $dir"
     done
     
+    # Special handling for starship config (needs to be a file, not directory)
+    local starship_source="${DOTFILES_DIR}/starship/starship.toml"
+    local starship_target="${config_dir}/starship.toml"
+    
+    if [[ -f "$starship_source" ]]; then
+        if [[ -f "$starship_target" ]]; then
+            gum_warning "Starship config already exists"
+            if gum_confirm "Backup existing starship config and replace?"; then
+                mv "$starship_target" "${starship_target}.backup.$(date +%s)"
+                gum_success "Backed up existing starship config"
+            else
+                gum_warning "Skipping starship config"
+            fi
+        fi
+        
+        if [[ ! -f "$starship_target" ]]; then
+            ln -sf "$starship_source" "$starship_target"
+            gum_success "Linked: starship.toml"
+        fi
+    fi
+    
     # Note: GTK themes are now handled by the dynamic theme system
     gum_info "GTK themes will be managed by the dynamic theme switcher"
     

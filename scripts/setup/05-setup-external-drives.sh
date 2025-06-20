@@ -331,21 +331,54 @@ setup_selected_drives() {
     local drives_to_mount=()
     local drives_for_fstab=()
     
-    # Separate drives that need mounting vs those already mounted
+    # Process each selected drive
     for drive_info in "${drives[@]}"; do
         IFS='|' read -r device label fstype uuid mount_status <<< "$drive_info"
+        
+        local clean_label
+        clean_label=$(echo "$label" | tr ' ' '_' | tr -cd '[:alnum:]_-')
+        local target_mount_point="/mnt/$clean_label"
         
         if [[ "$mount_status" == "UNMOUNTED" ]]; then
             # Need to mount this drive first
             drives_to_mount+=("$device|$label|$fstype|$uuid")
         else
-            # Already mounted, just add to fstab
-            local mount_point="${mount_status#MOUNTED:}"
-            drives_for_fstab+=("$device|$mount_point|$uuid")
+            # Already mounted somewhere else, need to remount to /mnt/
+            local current_mount_point="${mount_status#MOUNTED:}"
+            
+            if [[ "$current_mount_point" != "$target_mount_point" ]]; then
+                log_info "Remounting /dev/$device from $current_mount_point to $target_mount_point"
+                
+                # Create target mount point
+                sudo mkdir -p "$target_mount_point"
+                
+                # Unmount from current location
+                if sudo umount "$current_mount_point" 2>/dev/null; then
+                    log_success "Unmounted /dev/$device from $current_mount_point"
+                    
+                    # Mount to target location
+                    if sudo mount "/dev/$device" "$target_mount_point"; then
+                        log_success "Mounted /dev/$device to $target_mount_point"
+                        sudo chown "$USER:$USER" "$target_mount_point" 2>/dev/null || true
+                        drives_for_fstab+=("$device|$target_mount_point|$uuid")
+                    else
+                        log_error "Failed to mount /dev/$device to $target_mount_point"
+                        # Try to remount to original location
+                        sudo mount "/dev/$device" "$current_mount_point" 2>/dev/null || true
+                    fi
+                else
+                    log_warning "Could not unmount /dev/$device from $current_mount_point, adding to fstab as-is"
+                    drives_for_fstab+=("$device|$current_mount_point|$uuid")
+                fi
+            else
+                # Already mounted at correct location
+                log_info "/dev/$device already mounted at correct location: $target_mount_point"
+                drives_for_fstab+=("$device|$target_mount_point|$uuid")
+            fi
         fi
     done
     
-    # Mount unmounted drives first
+    # Mount unmounted drives
     if [[ ${#drives_to_mount[@]} -gt 0 ]]; then
         log_info "Mounting ${#drives_to_mount[@]} unmounted drive(s)..."
         local newly_mounted=()
@@ -355,7 +388,7 @@ setup_selected_drives() {
         drives_for_fstab+=("${newly_mounted[@]}")
     fi
     
-    # Setup fstab for all drives (newly mounted + already mounted)
+    # Setup fstab for all drives
     if [[ ${#drives_for_fstab[@]} -gt 0 ]]; then
         setup_fstab "${drives_for_fstab[@]}"
     fi

@@ -1,7 +1,7 @@
 # Modular Dotfiles Installer - Development Log
 
 ## Overview
-Decomposition of the monolithic `dotfiles-installer.sh` (2195 lines) into independent, modular scripts in the `newinst/` directory.
+Decomposition of the monolithic `dotfiles-installer.sh` (2195 lines) into independent, modular scripts in the `scripts/setup/` directory.
 
 ## Design Principles
 
@@ -66,7 +66,7 @@ Decomposition of the monolithic `dotfiles-installer.sh` (2195 lines) into indepe
   - Dry run support with package listing
   - Fixed arithmetic operations for bash strict mode compliance
   - Conflict handling for robust reinstallation
-  - Package txt files copied to newinst/ directory for reference
+  - Package txt files copied to scripts/setup/ directory for reference
 - **Categories**: Essential, Development, Theming, Multimedia, Gaming, Optional
 - **User Feedback**: Successfully tested and customized by user
 
@@ -164,7 +164,7 @@ Decomposition of the monolithic `dotfiles-installer.sh` (2195 lines) into indepe
 ## Technical Improvements Made ✅
 
 ### Package Management
-- **Package txt files**: Copied all original package files to newinst/ for reference
+- **Package txt files**: Copied all original package files to scripts/setup/ for reference
 - **Error handling**: Fixed bash strict mode issues with arithmetic operations (`count=$((count + 1))`)
 - **Conflict resolution**: Added `--overwrite '*'` flag for robust package conflict handling
 - **User customization**: Easy package commenting/uncommenting directly in script
@@ -250,7 +250,7 @@ All 11 scripts are now:
 
 ### Fresh System Installation Test
 ```bash
-cd ~/dotfiles/newinst/
+cd ~/dotfiles/scripts/setup/
 chmod +x *.sh
 
 # Complete installation sequence
@@ -303,7 +303,7 @@ done
 
 ## File Structure
 ```
-newinst/
+scripts/setup/
 ├── 00-prerequisites.sh          ✅ System validation & yay setup
 ├── 01-setup-chaotic-aur.sh     ✅ Chaotic-AUR repository setup  
 ├── 02-install-packages.sh      ✅ All packages in one script

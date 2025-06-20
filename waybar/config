@@ -99,11 +99,11 @@
             "on-scroll": 1,
             "on-click-right": "mode",
             "format": {
-                "months": "<span color='#adc6ff'><b>{}</b></span>",
-                "days": "<span color='#e2e2e9'>{}</span>",
-                "weeks": "<span color='#bfc6dc'><b>W{}</b></span>",
-                "weekdays": "<span color='#debcdf'><b>{}</b></span>",
-                "today": "<span color='#adc6ff'><b><u>{}</u></b></span>"
+                "months": "<span color='#ffb3b5'><b>{}</b></span>",
+                "days": "<span color='#f0dede'>{}</span>",
+                "weeks": "<span color='#e6bdbd'><b>W{}</b></span>",
+                "weekdays": "<span color='#e6c08d'><b>{}</b></span>",
+                "today": "<span color='#ffb3b5'><b><u>{}</u></b></span>"
             }
         }
     },

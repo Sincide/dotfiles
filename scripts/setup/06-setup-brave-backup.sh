@@ -12,7 +12,7 @@ readonly DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 
 readonly LOG_DIR="${DOTFILES_DIR}/logs"
 readonly LOG_FILE="${LOG_DIR}/brave-backup_$(date +%Y%m%d_%H%M%S).log"
 readonly BRAVE_CONFIG_DIR="$HOME/.config/BraveSoftware/Brave-Browser"
-readonly BACKUP_BASE_DIR="/mnt/Stuff/brave-backups"
+readonly DEFAULT_BACKUP_BASE_DIR="/mnt/Stuff/brave-backups"
 
 # Colors
 readonly RED='\033[0;31m'
@@ -28,6 +28,7 @@ SKIP_AUTO_BACKUP=false
 SKIP_RESTORE_SCAN=false
 DRY_RUN=false
 FORCE_RESTORE=false
+BACKUP_BASE_DIR="$DEFAULT_BACKUP_BASE_DIR"
 
 # Initialize logging
 init_logging() {
@@ -38,31 +39,31 @@ init_logging() {
 
 # Logging functions
 log_info() {
-    local msg="[INFO] $1"
+    local msg="[INFO] ${1:-}"
     echo -e "${BLUE}$msg${NC}"
     echo "$(date +'%Y-%m-%d %H:%M:%S') $msg" >> "$LOG_FILE"
 }
 
 log_success() {
-    local msg="[SUCCESS] $1"
+    local msg="[SUCCESS] ${1:-}"
     echo -e "${GREEN}✓ $msg${NC}"
     echo "$(date +'%Y-%m-%d %H:%M:%S') $msg" >> "$LOG_FILE"
 }
 
 log_error() {
-    local msg="[ERROR] $1"
+    local msg="[ERROR] ${1:-}"
     echo -e "${RED}✗ $msg${NC}" >&2
     echo "$(date +'%Y-%m-%d %H:%M:%S') $msg" >> "$LOG_FILE"
 }
 
 log_warning() {
-    local msg="[WARNING] $1"
+    local msg="[WARNING] ${1:-}"
     echo -e "${YELLOW}⚠ $msg${NC}"
     echo "$(date +'%Y-%m-%d %H:%M:%S') $msg" >> "$LOG_FILE"
 }
 
 log_section() {
-    local msg="$1"
+    local msg="${1:-}"
     echo -e "${CYAN}=== $msg ===${NC}"
     echo "$(date +'%Y-%m-%d %H:%M:%S') [SECTION] $msg" >> "$LOG_FILE"
 }
@@ -87,6 +88,100 @@ check_prerequisites() {
     done
     
     log_success "Prerequisites check passed"
+}
+
+# Check and select backup directory
+check_backup_directory() {
+    log_info "Checking backup directory permissions..."
+    
+    # Test if we can write to the backup directory
+    if [[ -d "$BACKUP_BASE_DIR" ]]; then
+        if [[ -w "$BACKUP_BASE_DIR" ]]; then
+            log_success "Backup directory is writable: $BACKUP_BASE_DIR"
+            return 0
+        else
+            log_warning "Backup directory exists but is not writable: $BACKUP_BASE_DIR"
+        fi
+    else
+        # Try to create the directory
+        if mkdir -p "$BACKUP_BASE_DIR" 2>/dev/null; then
+            log_success "Created backup directory: $BACKUP_BASE_DIR"
+            return 0
+        else
+            log_warning "Cannot create backup directory: $BACKUP_BASE_DIR"
+        fi
+    fi
+    
+    # If we get here, the default directory is not usable
+    if [[ "$SKIP_CONFIRMATION" == "true" ]]; then
+        log_error "Default backup directory not accessible and running in non-interactive mode"
+        exit 1
+    fi
+    
+    # Try to create the directory with sudo if user is in wheel group
+    if groups | grep -q wheel; then
+        log_info "Attempting to create backup directory with sudo..."
+        if sudo mkdir -p "$BACKUP_BASE_DIR" 2>/dev/null; then
+            # Set ownership to current user
+            sudo chown "$USER:$USER" "$BACKUP_BASE_DIR" 2>/dev/null || true
+            log_success "Created backup directory with sudo: $BACKUP_BASE_DIR"
+            return 0
+        else
+            log_warning "Failed to create backup directory with sudo"
+        fi
+    fi
+    
+    # Offer alternative locations
+    log_info "Please select an alternative backup location:"
+    echo
+    echo "Available options:"
+    echo "  1. ~/brave-backups (home directory)"
+    echo "  2. ~/Documents/brave-backups"
+    echo "  3. ~/Downloads/brave-backups"
+    echo "  4. Custom location"
+    echo "  5. Skip backup creation"
+    echo
+    
+    local choice
+    read -p "Enter choice (1-5): " -r choice
+    
+    case $choice in
+        1)
+            BACKUP_BASE_DIR="$HOME/brave-backups"
+            ;;
+        2)
+            BACKUP_BASE_DIR="$HOME/Documents/brave-backups"
+            ;;
+        3)
+            BACKUP_BASE_DIR="$HOME/Downloads/brave-backups"
+            ;;
+        4)
+            read -p "Enter custom backup directory path: " -r custom_path
+            if [[ -n "$custom_path" ]]; then
+                BACKUP_BASE_DIR="$custom_path"
+            else
+                log_error "No path provided"
+                exit 1
+            fi
+            ;;
+        5)
+            log_info "Skipping backup creation"
+            SKIP_AUTO_BACKUP=true
+            return 0
+            ;;
+        *)
+            log_error "Invalid choice"
+            exit 1
+            ;;
+    esac
+    
+    # Try to create the selected directory
+    if mkdir -p "$BACKUP_BASE_DIR" 2>/dev/null; then
+        log_success "Using backup directory: $BACKUP_BASE_DIR"
+    else
+        log_error "Cannot create backup directory: $BACKUP_BASE_DIR"
+        exit 1
+    fi
 }
 
 # Check if Brave is installed and has configuration
@@ -232,8 +327,11 @@ create_brave_backup() {
         return 0
     fi
     
-    # Create backup directory
-    mkdir -p "$BACKUP_BASE_DIR"
+    # Backup directory should already be checked/created by check_backup_directory
+    if [[ ! -d "$BACKUP_BASE_DIR" ]]; then
+        log_error "Backup directory not available: $BACKUP_BASE_DIR"
+        return 1
+    fi
     
     local backup_name="brave-backup-$(date +%Y%m%d_%H%M%S)"
     local backup_path="$BACKUP_BASE_DIR/$backup_name"
@@ -275,7 +373,12 @@ create_brave_backup() {
 
 # Restore Brave configuration from backup
 restore_brave_backup() {
-    local backup_path="$1"
+    local backup_path="${1:-}"
+    
+    if [[ -z "$backup_path" ]]; then
+        log_error "No backup file specified"
+        return 1
+    fi
     
     if [[ ! -e "$backup_path" ]]; then
         log_error "Backup not found: $backup_path"
@@ -359,43 +462,43 @@ setup_automated_backup() {
     
     mkdir -p "$(dirname "$backup_script")"
     
-    cat > "$backup_script" << 'EOF'
+    cat > "$backup_script" << EOF
 #!/bin/bash
 # Automated Brave Backup Script
 
 set -euo pipefail
 
-BRAVE_CONFIG_DIR="$HOME/.config/BraveSoftware/Brave-Browser"
-BACKUP_BASE_DIR="/mnt/Stuff/brave-backups"
+BRAVE_CONFIG_DIR="\$HOME/.config/BraveSoftware/Brave-Browser"
+BACKUP_BASE_DIR="$BACKUP_BASE_DIR"
 MAX_BACKUPS=5
 
 log_info() {
-    echo -e "\033[0;34m[INFO] $1\033[0m"
+    echo -e "\033[0;34m[INFO] \${1:-}\033[0m"
 }
 
 log_success() {
-    echo -e "\033[0;32m✓ [SUCCESS] $1\033[0m"
+    echo -e "\033[0;32m✓ [SUCCESS] \${1:-}\033[0m"
 }
 
 log_error() {
-    echo -e "\033[0;31m✗ [ERROR] $1\033[0m" >&2
+    echo -e "\033[0;31m✗ [ERROR] \${1:-}\033[0m" >&2
 }
 
 # Check if Brave config exists
-if [[ ! -d "$BRAVE_CONFIG_DIR" ]]; then
+if [[ ! -d "\$BRAVE_CONFIG_DIR" ]]; then
     log_error "Brave configuration directory not found"
     exit 1
 fi
 
 # Create backup directory
-mkdir -p "$BACKUP_BASE_DIR"
+mkdir -p "\$BACKUP_BASE_DIR"
 
 # Create backup name
-backup_name="brave-backup-$(date +%Y%m%d_%H%M%S)"
-backup_path="$BACKUP_BASE_DIR/$backup_name"
-archive_path="${backup_path}.tar.gz"
+backup_name="brave-backup-\$(date +%Y%m%d_%H%M%S)"
+backup_path="\$BACKUP_BASE_DIR/\$backup_name"
+archive_path="\${backup_path}.tar.gz"
 
-log_info "Creating Brave backup: $backup_name"
+log_info "Creating Brave backup: \$backup_name"
 
 # Stop Brave if running
 if pgrep -x brave-browser || pgrep -x brave &>/dev/null; then
@@ -406,26 +509,26 @@ fi
 
 # Create backup
 if rsync -av --exclude='Crash Reports' --exclude='ShaderCache' --exclude='GPUCache' \
-          "$BRAVE_CONFIG_DIR/" "$backup_path/"; then
+          "\$BRAVE_CONFIG_DIR/" "\$backup_path/"; then
     
     # Create compressed archive
-    if tar -czf "$archive_path" -C "$BACKUP_BASE_DIR" "$backup_name"; then
-        rm -rf "$backup_path"
+    if tar -czf "\$archive_path" -C "\$BACKUP_BASE_DIR" "\$backup_name"; then
+        rm -rf "\$backup_path"
         
-        backup_size=$(du -h "$archive_path" | cut -f1)
-        log_success "Backup created: $archive_path ($backup_size)"
+        backup_size=\$(du -h "\$archive_path" | cut -f1)
+        log_success "Backup created: \$archive_path (\$backup_size)"
         
         # Clean up old backups
-        log_info "Cleaning up old backups (keeping $MAX_BACKUPS)..."
-        cd "$BACKUP_BASE_DIR"
-        ls -t brave-backup-*.tar.gz 2>/dev/null | tail -n +$((MAX_BACKUPS + 1)) | xargs -r rm -f
+        log_info "Cleaning up old backups (keeping \$MAX_BACKUPS)..."
+        cd "\$BACKUP_BASE_DIR"
+        ls -t brave-backup-*.tar.gz 2>/dev/null | tail -n +\$((\$MAX_BACKUPS + 1)) | xargs -r rm -f
         
-        current_count=$(ls brave-backup-*.tar.gz 2>/dev/null | wc -l)
-        log_info "Current backup count: $current_count"
+        current_count=\$(ls brave-backup-*.tar.gz 2>/dev/null | wc -l)
+        log_info "Current backup count: \$current_count"
         
     else
         log_error "Failed to create compressed archive"
-        rm -rf "$backup_path"
+        rm -rf "\$backup_path"
         exit 1
     fi
 else
@@ -460,6 +563,7 @@ OPTIONS:
     --force-restore         Force restore without backing up current config
     --log-dir DIR           Custom log directory (default: ~/dotfiles/logs)
     --dotfiles-dir DIR      Custom dotfiles directory (default: auto-detect)
+    --backup-dir DIR        Custom backup directory (default: /mnt/Stuff/brave-backups)
 
 DESCRIPTION:
     This script sets up an intelligent backup and restore system for Brave browser.
@@ -485,6 +589,7 @@ EXAMPLES:
     $SCRIPT_NAME --skip-restore-scan # Setup without scanning for existing backups
     $SCRIPT_NAME -n                 # Dry run to see what would be done
     $SCRIPT_NAME -y                 # Setup without confirmations
+    $SCRIPT_NAME --backup-dir ~/brave-backups  # Use custom backup directory
 
 EOF
 }
@@ -536,6 +641,15 @@ parse_args() {
                     exit 1
                 fi
                 ;;
+            --backup-dir)
+                if [[ -n "${2:-}" ]]; then
+                    BACKUP_BASE_DIR="$2"
+                    shift 2
+                else
+                    log_error "--backup-dir requires a directory path"
+                    exit 1
+                fi
+                ;;
             *)
                 log_error "Unknown option: $1"
                 show_usage
@@ -556,6 +670,9 @@ main() {
     echo
     
     check_prerequisites
+    
+    # Check and setup backup directory
+    check_backup_directory
     
     # Check Brave status
     local brave_status=0

@@ -5,5 +5,5 @@ timeout 20 sh -c "while true; do hyprctl dispatch dpms off HDMI-A-1; sleep 1; do
 sleep 3
 killall waybar
 sleep 0.5
-waybar -s ~/.config/waybar/style-dynamic.css &
-waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom-dynamic.css & 
+waybar &
+waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css & 

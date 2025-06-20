@@ -26,6 +26,7 @@ lazygit
 # Text editors and IDEs
 neovim
 #code
+cursor-bin
 
 # Development tools
 ripgrep

@@ -18,6 +18,7 @@
 - **🔄 Intelligent Theme Adaptation** - Entire system adapts colors instantly to any wallpaper
 - **📦 Multi-Category Installer** - Complex workflow support (handles ollama + other packages)
 - **🤖 AI Integration Complete** - Ollama with interactive model selection and boot-time activation
+- **⭐ Starship Dynamic Prompt** - Professional Evil Space themed terminal prompt with dynamic Material You colors
 
 ### 🎖️ **MAJOR ACHIEVEMENTS**
 - **🌌 Modern Evil Space Desktop**: Production-ready themed environment with 2025 technologies

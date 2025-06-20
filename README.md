@@ -98,6 +98,7 @@ cd ~/dotfiles
 | **Matugen** | Color Generation | Material Design 3 from wallpapers |
 | **GTK 3/4** | Application Theming | System-wide consistency |
 | **Kitty** | Terminal | Dynamic theming, performance |
+| **Starship** | Terminal Prompt | Dynamic Material You colors |
 | **Custom CSS** | Styling | Glassmorphism, space aesthetics |
 
 ### 🔧 **System Tools**
@@ -168,6 +169,7 @@ All theming handled through Matugen templates:
 - `matugen/templates/gtk3.template` - GTK3 application theming
 - `matugen/templates/gtk4.template` - GTK4/libadwaita theming
 - `matugen/templates/kitty.template` - Terminal colors
+- `starship/update_starship_colors.sh` - Terminal prompt colors
 - `matugen/templates/dunst.template` - Notification styling
 - `matugen/templates/fuzzel.template` - Launcher theming
 

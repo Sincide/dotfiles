@@ -92,7 +92,8 @@ detect_category() {
 3. **GTK Application**: Use nwg-look for reliable Wayland theming
 4. **Cursor Setup**: Apply both hyprcursor and xcursor themes
 5. **Color Generation**: Extract Material You colors with matugen
-6. **System Reload**: Refresh Hyprland and applications
+6. **Starship Update**: Apply new colors to terminal prompt
+7. **System Reload**: Refresh Hyprland and applications
 
 ### Modern Cursor Implementation
 ```bash
@@ -113,12 +114,24 @@ nwg-look -x  # Export to config files
 nwg-look -a  # Apply configurations
 ```
 
+### Starship Prompt Integration
+```bash
+# Automatic color extraction from Material You palette
+PRIMARY=$(grep "primary " "$COLORS_FILE" | sed 's/.*#\([^;]*\);.*/\1/')
+SECONDARY=$(grep "secondary " "$COLORS_FILE" | sed 's/.*#\([^;]*\);.*/\1/')
+TERTIARY=$(grep "tertiary " "$COLORS_FILE" | sed 's/.*#\([^;]*\);.*/\1/')
+
+# Dynamic prompt color updates
+./starship/update_starship_colors.sh
+```
+
 ## Supported Applications
 
 ### ✅ **Immediate Theme Application**
 - **Hyprland**: Window manager, decorations, borders
 - **Waybar**: Status bars, modules, styling
 - **Kitty**: Terminal colors and themes
+- **Starship**: Terminal prompt colors and styling
 - **Dunst**: Notification appearance
 - **Fuzzel**: Application launcher styling
 
@@ -183,6 +196,7 @@ nwg-look -a
 - `~/.config/gtk-4.0/colors.css` - Material You colors for GTK4
 - `~/.config/waybar/colors.css` - Status bar color scheme
 - `~/.config/kitty/theme-dynamic.conf` - Terminal color scheme
+- `~/.config/starship.toml` - Terminal prompt colors and styling
 
 ### Static Configuration
 - `~/.config/gtk-3.0/settings.ini` - GTK3 theme preferences
@@ -202,6 +216,9 @@ pacman -S nwg-look
 
 # Material You color generation
 yay -S matugen
+
+# Terminal prompt theming
+pacman -S starship
 
 # Theme packages
 # (Graphite, Orchis, WhiteSur themes as needed)

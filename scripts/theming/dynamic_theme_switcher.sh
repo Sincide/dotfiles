@@ -147,6 +147,16 @@ EOF
         else
             echo "⚠️  Matugen not found, skipping color generation"
         fi
+        
+        # Update starship prompt colors to match the new theme
+        echo "✨ Updating starship prompt colors..."
+        local starship_updater="$dotfiles_dir/starship/update_starship_colors.sh"
+        if [[ -f "$starship_updater" ]]; then
+            chmod +x "$starship_updater"
+            bash "$starship_updater" || echo "⚠️  Failed to update starship colors"
+        else
+            echo "⚠️  Starship color updater not found: $starship_updater"
+        fi
     fi
 }
 

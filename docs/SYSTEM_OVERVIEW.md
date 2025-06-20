@@ -9,6 +9,7 @@ This repository contains a **production-ready Arch Linux + Hyprland configuratio
 ### **Core Desktop Environment**
 - **Hyprland**: Wayland compositor with advanced features
 - **Waybar**: Dual-bar system (controls + GPU monitoring)
+- **Starship**: Dynamic terminal prompt with Material You colors
 - **Dunst**: Dynamic notifications with cosmic theming
 - **Fuzzel**: Fast application launcher
 - **Kitty**: High-performance terminal with dynamic theming
@@ -70,6 +71,7 @@ Each category provides a complete aesthetic transformation:
 - `~/.config/hypr/cursor-theme.conf` - Dynamic hyprcursor + xcursor variables
 - `~/.config/gtk-3.0/settings.ini` - GTK3 theme preferences (auto-updated)
 - `~/.config/gtk-4.0/settings.ini` - GTK4 theme preferences (auto-updated)
+- `~/.config/starship.toml` - Dynamic terminal prompt colors and styling
 - `matugen/config.toml` - Material You color generation settings
 - `matugen/templates/` - Application-specific color templates
 
@@ -90,7 +92,7 @@ cd ~/dotfiles
 ### **Required Packages (Auto-installed)**
 ```bash
 # Core theming system
-pacman -S hyprcursor nwg-look
+pacman -S hyprcursor nwg-look starship
 yay -S bibata-cursor-git matugen
 
 # Theme packages

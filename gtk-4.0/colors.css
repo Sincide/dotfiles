@@ -5,19 +5,19 @@
  */
 
 /* Core GTK4 color definitions */
-@define-color accent_color #82d5c7;
-@define-color accent_fg_color #00201c;
-@define-color accent_bg_color #82d5c7;
-@define-color window_bg_color #0e1513;
-@define-color window_fg_color #dde4e1;
-@define-color headerbar_bg_color #0e1513;
-@define-color headerbar_fg_color #dde4e1;
-@define-color popover_bg_color #0e1513;
-@define-color popover_fg_color #dde4e1;
-@define-color view_bg_color #0e1513;
-@define-color view_fg_color #dde4e1;
-@define-color card_bg_color #0e1513;
-@define-color card_fg_color #dde4e1;
+@define-color accent_color #fdb876;
+@define-color accent_fg_color #2d1600;
+@define-color accent_bg_color #fdb876;
+@define-color window_bg_color #19120c;
+@define-color window_fg_color #efe0d5;
+@define-color headerbar_bg_color #19120c;
+@define-color headerbar_fg_color #efe0d5;
+@define-color popover_bg_color #19120c;
+@define-color popover_fg_color #efe0d5;
+@define-color view_bg_color #19120c;
+@define-color view_fg_color #efe0d5;
+@define-color card_bg_color #19120c;
+@define-color card_fg_color #efe0d5;
 @define-color sidebar_bg_color @window_bg_color;
 @define-color sidebar_fg_color @window_fg_color;
 @define-color sidebar_border_color @window_bg_color;
@@ -27,36 +27,36 @@
 @define-color destructive_color #ffb4ab;
 @define-color destructive_fg_color #690005;
 @define-color destructive_bg_color #ffb4ab;
-@define-color success_color #adcae5;
-@define-color success_fg_color #143349;
-@define-color success_bg_color #adcae5;
-@define-color warning_color #b1ccc6;
-@define-color warning_fg_color #1c3531;
-@define-color warning_bg_color #b1ccc6;
+@define-color success_color #c1cc99;
+@define-color success_fg_color #2b340f;
+@define-color success_bg_color #c1cc99;
+@define-color warning_color #e2c0a4;
+@define-color warning_fg_color #412c18;
+@define-color warning_bg_color #e2c0a4;
 
 /* Primary colors */
-@define-color primary_color #82d5c7;
-@define-color on_primary_color #003731;
-@define-color primary_container_color #005047;
-@define-color on_primary_container_color #9ef2e3;
+@define-color primary_color #fdb876;
+@define-color on_primary_color #4a2800;
+@define-color primary_container_color #6a3c01;
+@define-color on_primary_container_color #ffdcbf;
 
 /* Secondary colors */
-@define-color secondary_color #b1ccc6;
-@define-color on_secondary_color #1c3531;
-@define-color secondary_container_color #334b47;
-@define-color on_secondary_container_color #cce8e2;
+@define-color secondary_color #e2c0a4;
+@define-color on_secondary_color #412c18;
+@define-color secondary_container_color #59422d;
+@define-color on_secondary_container_color #ffdcbf;
 
 /* Surface colors */
-@define-color background_color #0e1513;
-@define-color on_background_color #dde4e1;
-@define-color surface_color #0e1513;
-@define-color on_surface_color #dde4e1;
-@define-color surface_variant_color #3f4946;
-@define-color on_surface_variant_color #bec9c5;
+@define-color background_color #19120c;
+@define-color on_background_color #efe0d5;
+@define-color surface_color #19120c;
+@define-color on_surface_color #efe0d5;
+@define-color surface_variant_color #51443a;
+@define-color on_surface_variant_color #d5c3b6;
 
 /* Additional GTK4 colors */
-@define-color borders #899390;
-@define-color outline_color #899390;
+@define-color borders #9e8e81;
+@define-color outline_color #9e8e81;
 @define-color shadow_color #000000;
 
 /* ============================================ */

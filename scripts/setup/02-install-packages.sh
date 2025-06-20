@@ -186,6 +186,7 @@ get_essential_packages() {
         "pipewire-jack"
         "wireplumber"
         "pavucontrol"
+        "pactl"
         
         # Display and wayland
         "wayland"

@@ -29,6 +29,7 @@ SKIP_CONFIRMATION=false
 DRY_RUN=false
 FORCE_BACKUP=false
 SKIP_GENERATION=false
+RESTORE_MODE=false
 KEY_TYPE="$DEFAULT_KEY_TYPE"
 KEY_SIZE="$DEFAULT_KEY_SIZE"
 EMAIL=""
@@ -80,6 +81,7 @@ OPTIONS:
     -h, --help              Show this help message
     -n, --dry-run           Show what would be done without making changes
     -y, --yes               Skip confirmation prompts
+    --restore               Restore SSH keys from encrypted backup
     --force-backup          Force backup even if keys don't exist
     --key-type TYPE         SSH key type (ed25519, rsa) [default: $DEFAULT_KEY_TYPE]
     --key-size SIZE         RSA key size in bits [default: $DEFAULT_KEY_SIZE]
@@ -125,6 +127,10 @@ parse_args() {
                 ;;
             -y|--yes)
                 SKIP_CONFIRMATION=true
+                shift
+                ;;
+            --restore)
+                RESTORE_MODE=true
                 shift
                 ;;
             --force-backup)
@@ -508,6 +514,113 @@ setup_backup_directory() {
     fi
 }
 
+# Restore SSH keys from backup
+restore_ssh_keys() {
+    log_section "Restoring SSH Keys from Backup"
+    
+    if [[ ! -d "$BACKUP_DIR" ]]; then
+        log_error "Backup directory not found: $BACKUP_DIR"
+        exit 1
+    fi
+    
+    # Find available backup files
+    local backup_files=($(find "$BACKUP_DIR" -name "ssh-keys-backup-*.tar.gz.gpg" 2>/dev/null | sort -r))
+    
+    if [[ ${#backup_files[@]} -eq 0 ]]; then
+        log_error "No SSH key backups found in $BACKUP_DIR"
+        exit 1
+    fi
+    
+    echo "Available SSH key backups:"
+    for i in "${!backup_files[@]}"; do
+        local file="${backup_files[$i]}"
+        local basename=$(basename "$file")
+        local size=$(du -h "$file" | cut -f1)
+        echo "  $((i+1)). $basename ($size)"
+    done
+    echo
+    
+    local selected_backup=""
+    if [[ "$SKIP_CONFIRMATION" == "true" ]]; then
+        # Use the most recent backup
+        selected_backup="${backup_files[0]}"
+        log_info "Auto-selecting most recent backup: $(basename "$selected_backup")"
+    else
+        read -p "Select backup to restore (1-${#backup_files[@]}): " selection
+        if [[ "$selection" =~ ^[0-9]+$ ]] && [[ "$selection" -ge 1 ]] && [[ "$selection" -le "${#backup_files[@]}" ]]; then
+            selected_backup="${backup_files[$((selection-1))]}"
+        else
+            log_error "Invalid selection"
+            exit 1
+        fi
+    fi
+    
+    log_info "Restoring from: $(basename "$selected_backup")"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "DRY RUN - Would restore SSH keys from backup"
+        return 0
+    fi
+    
+    # Create temporary directory for restoration
+    local temp_dir=$(mktemp -d)
+    trap "rm -rf '$temp_dir'" EXIT
+    
+    # Decrypt and extract backup
+    log_info "Decrypting backup (you'll need to enter the passphrase)..."
+    if ! gpg --decrypt "$selected_backup" > "$temp_dir/ssh-backup.tar.gz"; then
+        log_error "Failed to decrypt backup"
+        exit 1
+    fi
+    
+    log_info "Extracting backup..."
+    if ! tar -xzf "$temp_dir/ssh-backup.tar.gz" -C "$temp_dir"; then
+        log_error "Failed to extract backup"
+        exit 1
+    fi
+    
+    # Backup current SSH directory if it exists
+    if [[ -d "$SSH_DIR" ]]; then
+        local current_backup="$SSH_DIR.backup.$(date +%Y%m%d_%H%M%S)"
+        cp -r "$SSH_DIR" "$current_backup"
+        log_info "Backed up current SSH directory to: $current_backup"
+    fi
+    
+    # Restore SSH keys
+    log_info "Restoring SSH keys..."
+    mkdir -p "$SSH_DIR"
+    cp -r "$temp_dir/ssh-backup"/* "$SSH_DIR/"
+    
+    # Fix permissions
+    chmod 700 "$SSH_DIR"
+    chmod 600 "$SSH_DIR"/id_* "$SSH_DIR"/config* 2>/dev/null || true
+    chmod 644 "$SSH_DIR"/*.pub 2>/dev/null || true
+    
+    log_success "SSH keys restored successfully!"
+    
+    # Test connections
+    echo
+    log_info "Testing SSH connections..."
+    
+    if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+        log_success "GitHub SSH connection working"
+    else
+        log_warning "GitHub SSH connection failed - you may need to add the key to GitHub"
+    fi
+    
+    if ssh -T git@gitlab.com 2>&1 | grep -q "Welcome to GitLab"; then
+        log_success "GitLab SSH connection working"
+    else
+        log_warning "GitLab SSH connection failed - you may need to add the key to GitLab"
+    fi
+    
+    # Clean up temp directory
+    rm -rf "$temp_dir"
+    trap - EXIT
+    
+    log_success "SSH key restoration completed!"
+}
+
 # Backup existing SSH keys
 backup_existing_keys() {
     log_section "Backing Up Existing SSH Keys"
@@ -840,6 +953,13 @@ main() {
     
     parse_args "$@"
     check_prerequisites
+    
+    # Handle restore mode
+    if [[ "$RESTORE_MODE" == "true" ]]; then
+        restore_ssh_keys
+        return 0
+    fi
+    
     auto_detect_config
     get_user_input
     

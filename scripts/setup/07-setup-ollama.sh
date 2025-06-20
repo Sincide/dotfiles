@@ -24,6 +24,7 @@ readonly NC='\033[0m' # No Color
 SKIP_CONFIRMATION=false
 SKIP_MODELS=false
 SKIP_SERVICE=false
+SKIP_SYSTEMD=false
 DRY_RUN=false
 
 # Available AI Models with descriptions
@@ -198,8 +199,128 @@ start_ollama_service() {
     # Verify service is running
     if pgrep -f "ollama serve" &>/dev/null; then
         log_success "Ollama service started successfully"
+        
+        # Configure systemd service for autostart
+        configure_systemd_service
     else
-        log_warning "Failed to start Ollama service"
+        log_error "Failed to start Ollama service"
+        return 1
+    fi
+}
+
+# Configure systemd service for autostart
+configure_systemd_service() {
+    if [[ "$SKIP_SYSTEMD" == "true" ]]; then
+        log_info "Skipping systemd service configuration"
+        return 0
+    fi
+    
+    log_section "Configuring Ollama Systemd Service"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "DRY RUN - Would configure systemd service"
+        return 0
+    fi
+    
+    # Check if system service already exists
+    if systemctl --user list-unit-files ollama.service &>/dev/null; then
+        log_success "Ollama user service already exists"
+        
+        # Enable and start if not already
+        if ! systemctl --user is-enabled ollama.service &>/dev/null; then
+            systemctl --user enable ollama.service
+            log_success "Enabled Ollama user service"
+        fi
+        
+        if ! systemctl --user is-active ollama.service &>/dev/null; then
+            systemctl --user start ollama.service
+            log_success "Started Ollama user service"
+        fi
+        return 0
+    fi
+    
+    log_info "Creating Ollama user systemd service..."
+    
+    # Create user systemd directory
+    local user_systemd_dir="$HOME/.config/systemd/user"
+    mkdir -p "$user_systemd_dir"
+    
+    # Create systemd service file
+    cat > "$user_systemd_dir/ollama.service" << EOF
+[Unit]
+Description=Ollama AI Platform
+Documentation=https://ollama.com/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+ExecStart=$(which ollama) serve
+Environment=OLLAMA_HOST=127.0.0.1:11434
+Environment=HOME=%h
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ollama
+
+[Install]
+WantedBy=default.target
+EOF
+    
+    log_success "Created Ollama systemd service file"
+    
+    # Reload systemd and enable service
+    systemctl --user daemon-reload
+    log_info "Reloaded systemd user daemon"
+    
+    # Stop the manual process first
+    if pgrep -f "ollama serve" &>/dev/null; then
+        log_info "Stopping manual Ollama process..."
+        pkill -f "ollama serve" || true
+        sleep 2
+    fi
+    
+    # Enable and start the service
+    if systemctl --user enable ollama.service; then
+        log_success "Enabled Ollama service for autostart"
+    else
+        log_error "Failed to enable Ollama service"
+        return 1
+    fi
+    
+    if systemctl --user start ollama.service; then
+        log_success "Started Ollama systemd service"
+    else
+        log_error "Failed to start Ollama service"
+        return 1
+    fi
+    
+    # Enable lingering to start service at boot even when user not logged in
+    if ! loginctl show-user "$USER" --property=Linger | grep -q "yes"; then
+        log_info "Enabling user lingering for boot autostart..."
+        if sudo loginctl enable-linger "$USER"; then
+            log_success "Enabled user lingering - Ollama will start at boot"
+        else
+            log_warning "Failed to enable user lingering - service may not start at boot"
+        fi
+    else
+        log_success "User lingering already enabled"
+    fi
+    
+    # Verify service status
+    sleep 2
+    if systemctl --user is-active ollama.service &>/dev/null; then
+        log_success "Ollama service is running and will autostart at boot"
+        
+        # Show service status
+        local status_output
+        status_output=$(systemctl --user status ollama.service --no-pager -l | head -10)
+        echo -e "${BLUE}Service Status:${NC}"
+        echo "$status_output"
+    else
+        log_error "Ollama service failed to start properly"
+        systemctl --user status ollama.service --no-pager -l || true
         return 1
     fi
 }
@@ -686,6 +807,7 @@ OPTIONS:
     -y, --yes               Skip confirmation prompts
     --skip-models           Skip AI model installation
     --skip-service          Skip starting Ollama service
+    --skip-systemd          Skip systemd service configuration
     --log-dir DIR           Custom log directory (default: ~/dotfiles/logs)
     --dotfiles-dir DIR      Custom dotfiles directory (default: auto-detect)
 
@@ -702,6 +824,7 @@ DEFAULT MODELS:
 FEATURES:
     • Automatic Ollama installation
     • AI model management
+    • Systemd service configuration for autostart
     • Service startup and configuration
     • Interactive chat utilities
     • Model management tools
@@ -742,6 +865,10 @@ parse_args() {
                 ;;
             --skip-service)
                 SKIP_SERVICE=true
+                shift
+                ;;
+            --skip-systemd)
+                SKIP_SYSTEMD=true
                 shift
                 ;;
             --log-dir)

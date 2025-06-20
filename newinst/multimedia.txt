@@ -1,0 +1,39 @@
+# Multimedia Packages
+# Media tools, players, and creative software
+
+# Essential media tools
+mpv
+feh
+ffmpeg
+gstreamer
+gst-plugins-base
+gst-plugins-good
+webp-pixbuf-loader
+yt-dlp
+
+# Additional media players
+vlc
+celluloid
+spotify
+#audacious
+#imv
+
+# Office and documents
+#libreoffice-fresh
+#zathura
+#zathura-pdf-mupdf
+#evince
+#calibre
+#foliate
+
+# Creative tools
+#gimp
+#inkscape
+#krita
+#kdenlive
+#blender
+#audacity
+#freecad
+#openscad
+#figma-linux
+simplescreenrecorder 

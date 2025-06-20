@@ -1,0 +1,89 @@
+# Optional Packages
+# Nice-to-have tools and additional utilities
+
+# Communication
+signal-desktop
+telegram-desktop
+#slack-desktop
+#zoom
+
+# Browsers
+#firefox
+#chromium
+brave-bin
+
+# Cloud storage
+#dropbox
+#google-drive-ocamlfuse
+rclone
+
+# Virtualization
+#virtualbox
+#virtualbox-host-modules-arch
+qemu
+virt-manager
+
+# System utilities
+#bleachbit
+#stacer
+#timeshift
+#ventoy-bin
+
+# Network utilities
+putty
+filezilla
+remmina
+
+# Productivity
+#obsidian
+#notion-app
+#todoist
+
+# Note taking
+#joplin
+#logseq
+#typora
+
+# Password managers
+bitwarden
+#keepassxc
+
+# Social media
+whatsapp-for-linux
+#twitter-desktop
+
+# Finance
+#gnucash
+#homebank
+
+# Weather
+#gnome-weather
+
+# Maps
+#gnome-maps
+
+# Calculator
+#gnome-calculator
+#qalculate-gtk
+
+# System information
+#hardinfo
+cpu-x
+#hwinfo
+
+# Backup tools
+#timeshift
+rsync
+#borg
+
+# Partition tools
+#gparted
+gnome-disk-utility
+
+# Remote desktop
+#anydesk-bin
+#teamviewer
+
+# Torrents
+#transmission-gtk
+qbittorrent 

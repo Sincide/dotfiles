@@ -1,0 +1,17 @@
+{
+  "name": "dotfiles-ags",
+  "version": "1.0.0",
+  "description": "Complete AGS desktop shell configuration",
+  "type": "module",
+  "main": "app.ts",
+  "scripts": {
+    "dev": "ags run",
+    "build": "ags build",
+    "types": "ags types",
+    "init": "ags init --typescript --gtk3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+} 

@@ -41,10 +41,10 @@ output_path = "~/dotfiles/gtk-3.0/colors.css"
 input_path = "~/dotfiles/matugen/templates/gtk4.template"
 output_path = "~/dotfiles/gtk-4.0/colors.css"
 
-# AGS Sidebar theming
+# AGS theming
 [templates.ags]
 input_path = "~/dotfiles/matugen/templates/ags.template"
-output_path = "~/dotfiles/ags/style.scss"
+output_path = "~/dotfiles/ags/style/theme.scss"
 
 # Bottom Waybar templates
 [templates.waybar-bottom-config]

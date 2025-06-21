@@ -31,9 +31,7 @@ export default function CategorySidebar({
             {categories.map(category => (
                 <button
                     key={category}
-                    className={selectedCategory().bind().as(selected => 
-                        `category-button ${selected === category ? 'active' : ''}`
-                    )}
+                    className={`category-button ${selectedCategory() === category ? 'active' : ''}`}
                     onClicked={() => onCategorySelect(category)}
                     halign={Gtk.Align.FILL}
                 >

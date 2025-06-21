@@ -1,115 +1,147 @@
-import { Variable, bind } from 'astal'
-import { Widget } from 'astal/gtk3'
-import Gtk from 'gi://Gtk'
-import { FileSystemService, type WallpaperImage } from './services/filesystem'
-import { WallpaperService } from './services/wallpaper'
-import { ThumbnailService } from './utils/thumbnails'
-import { CategorySidebar } from './components/CategorySidebar'
-import { ThumbnailGrid } from './components/ThumbnailGrid'
-import { ImagePreview } from './components/ImagePreview'
+import { App, Astal, Gtk, Gdk } from "astal/gtk3"
+import { Variable } from "astal"
+import CategorySidebar from "./components/CategorySidebar"
+import ThumbnailGrid from "./components/ThumbnailGrid"
+import ImagePreview from "./components/ImagePreview"
+import { FileSystemService } from "./services/filesystem"
+import { WallpaperService } from "./services/wallpaper"
+import { MatugenService } from "./services/matugen"
 
-export function WallpaperSelector() {
-  // Services
-  const fileSystemService = new FileSystemService()
-  const wallpaperService = new WallpaperService()
-  const thumbnailService = new ThumbnailService(180)
+// Initialize services
+const fileSystemService = new FileSystemService()
+const wallpaperService = new WallpaperService()
+const matugenService = new MatugenService()
 
-  // State
-  const selectedCategory = Variable<string>("abstract")
-  const selectedImage = Variable<WallpaperImage | null>(null)
-  const showPreview = Variable<boolean>(false)
-  const filteredImages = Variable<WallpaperImage[]>([])
+// State variables
+const selectedCategory = Variable<string>("all")
+const selectedImage = Variable<string | null>(null)
+const categories = Variable<string[]>([])
+const wallpapers = Variable<string[]>([])
+const allWallpapers = Variable<Record<string, string[]>>({})
 
-  // Update filtered images when category changes
-  selectedCategory.subscribe(category => {
-    const images = fileSystemService.getImagesByCategory(category)
-    filteredImages.set(images)
-  })
-
-  // Initialize with first category
-  fileSystemService.getCategories().subscribe(categories => {
-    if (categories.length > 0 && !selectedCategory.get()) {
-      selectedCategory.set(categories[0])
-    }
-  })
-
-  function handleCategorySelect(category: string) {
-    selectedCategory.set(category)
-  }
-
-  function handleImageSelect(image: WallpaperImage) {
-    selectedImage.set(image)
-    showPreview.set(true)
-  }
-
-  function handleClosePreview() {
-    showPreview.set(false)
-    selectedImage.set(null)
-  }
-
-  async function handleApplyWallpaper(image: WallpaperImage) {
+// Initialize data
+async function initializeData() {
     try {
-      const success = await wallpaperService.setWallpaper(image.path, true)
-      if (success) {
-        console.log(`Applied wallpaper: ${image.name}`)
-        handleClosePreview()
-      } else {
-        console.error("Failed to apply wallpaper")
-      }
+        const wallpaperData = await fileSystemService.scanWallpapers()
+        const categoryList = Object.keys(wallpaperData)
+        
+        allWallpapers.set(wallpaperData)
+        categories.set(["all", ...categoryList])
+        
+        // Set initial wallpapers to all
+        const allPapers = Object.values(wallpaperData).flat()
+        wallpapers.set(allPapers)
+        
+        console.log(`Loaded ${allPapers.length} wallpapers from ${categoryList.length} categories`)
     } catch (error) {
-      console.error("Error applying wallpaper:", error)
+        console.error("Failed to initialize wallpaper data:", error)
     }
-  }
+}
 
-  const mainWindow = (
-    <window
-      className="wallpaper-selector"
-      name="wallpaper-selector"
-      title="Wallpaper Selector"
-      defaultWidth={1200}
-      defaultHeight={800}
-      resizable={true}
+// Handle category selection
+function handleCategorySelect(category: string) {
+    selectedCategory.set(category)
+    
+    const allData = allWallpapers.get()
+    if (category === "all") {
+        const allPapers = Object.values(allData).flat()
+        wallpapers.set(allPapers)
+    } else {
+        wallpapers.set(allData[category] || [])
+    }
+}
+
+// Handle wallpaper selection
+function handleWallpaperSelect(wallpaper: string) {
+    selectedImage.set(wallpaper)
+}
+
+// Handle setting wallpaper
+async function handleSetWallpaper(imagePath: string) {
+    try {
+        console.log(`Setting wallpaper: ${imagePath}`)
+        
+        // Set the wallpaper
+        await wallpaperService.setWallpaper(imagePath)
+        
+        // Generate and apply colors
+        await matugenService.generateColors(imagePath)
+        
+        console.log("Wallpaper and colors applied successfully")
+    } catch (error) {
+        console.error("Failed to set wallpaper:", error)
+    }
+}
+
+// Handle preview close
+function handlePreviewClose() {
+    selectedImage.set(null)
+}
+
+export default function WallpaperSelector(gdkmonitor: Gdk.Monitor) {
+    const { TOP, LEFT, RIGHT, BOTTOM } = Astal.WindowAnchor
+    
+    // Initialize data when component mounts
+    initializeData()
+    
+    return <window
+        className="WallpaperSelector"
+        gdkmonitor={gdkmonitor}
+        exclusivity={Astal.Exclusivity.NORMAL}
+        anchor={TOP | LEFT | RIGHT | BOTTOM}
+        application={App}
+        keymode={Astal.Keymode.EXCLUSIVE}
+        onKeyPressEvent={(self, event) => {
+            if (event.get_keyval()[1] === Gdk.KEY_Escape) {
+                App.quit()
+            }
+        }}
     >
-      <overlay>
-        <box orientation={Gtk.Orientation.HORIZONTAL}>
-          <CategorySidebar
-            categories={fileSystemService.getCategories()}
-            selectedCategory={selectedCategory}
-            onCategorySelect={handleCategorySelect}
-          />
-          
-          <separator orientation={Gtk.Orientation.VERTICAL} />
-          
-          <box className="main-content" hexpand>
-            <box className="content-header">
-              <label 
-                label={bind(selectedCategory).as(cat => 
-                  `${cat.charAt(0).toUpperCase() + cat.slice(1)} Wallpapers`
-                )}
-                className="content-title"
-              />
-            </box>
-            
-            <ThumbnailGrid
-              images={filteredImages}
-              onImageSelect={handleImageSelect}
-              thumbnailService={thumbnailService}
+        <box 
+            className="main-container"
+            orientation={Gtk.Orientation.HORIZONTAL}
+        >
+            <CategorySidebar
+                categories={categories.get()}
+                selectedCategory={selectedCategory}
+                onCategorySelect={handleCategorySelect}
             />
-          </box>
+            
+            <box 
+                className="content-area"
+                orientation={Gtk.Orientation.VERTICAL}
+                hexpand
+            >
+                <box 
+                    className="header"
+                    orientation={Gtk.Orientation.HORIZONTAL}
+                    spacing={12}
+                >
+                    <label 
+                        className="title"
+                        label="Wallpaper Selector"
+                        halign={Gtk.Align.START}
+                        hexpand
+                    />
+                    <button 
+                        className="close-button"
+                        onClicked={() => App.quit()}
+                    >
+                        <label label="✕" />
+                    </button>
+                </box>
+                
+                <ThumbnailGrid
+                    wallpapers={wallpapers}
+                    onWallpaperSelect={handleWallpaperSelect}
+                />
+            </box>
         </box>
         
-        {bind(showPreview).as(show => 
-          show ? (
-            <ImagePreview
-              selectedImage={selectedImage}
-              onApply={handleApplyWallpaper}
-              onClose={handleClosePreview}
-            />
-          ) : null
-        )}
-      </overlay>
+        <ImagePreview
+            selectedImage={selectedImage}
+            onClose={handlePreviewClose}
+            onSetWallpaper={handleSetWallpaper}
+        />
     </window>
-  )
-
-  return mainWindow
 } 

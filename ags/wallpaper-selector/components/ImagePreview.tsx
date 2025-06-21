@@ -1,58 +1,93 @@
-import { Variable, bind } from 'astal'
-import { Widget } from 'astal/gtk3'
-import Gtk from 'gi://Gtk'
-import type { WallpaperImage } from '../services/filesystem'
+import { Gtk } from "astal/gtk3"
+import { Variable } from "astal"
 
 interface ImagePreviewProps {
-  selectedImage: Variable<WallpaperImage | null>
-  onApply: (image: WallpaperImage) => void
-  onClose: () => void
+    selectedImage: Variable<string | null>
+    onClose: () => void
+    onSetWallpaper: (imagePath: string) => void
 }
 
-export function ImagePreview({ selectedImage, onApply, onClose }: ImagePreviewProps) {
-  return (
-    <overlay>
-      <eventbox 
-        className="preview-backdrop"
-        onButtonPressEvent={onClose}
-      />
-      
-      <box className="preview-dialog" halign={Gtk.Align.CENTER} valign={Gtk.Align.CENTER}>
-        {bind(selectedImage).as(image => 
-          image ? (
-            <box orientation={Gtk.Orientation.VERTICAL} className="preview-content">
-              <box className="preview-header">
-                <label 
-                  label={image.name.replace(/\.[^/.]+$/, "")} 
-                  className="preview-title"
-                />
-                <button className="close-button" onClicked={onClose}>
-                  <label label="×" />
-                </button>
-              </box>
-              
-              <image
-                file={image.path}
-                className="preview-image"
-                widthRequest={600}
-                heightRequest={400}
-              />
-              
-              <box className="preview-controls">
-                <button className="cancel-button" onClicked={onClose}>
-                  <label label="Cancel" />
-                </button>
-                <button 
-                  className="apply-button" 
-                  onClicked={() => onApply(image)}
+export default function ImagePreview({ selectedImage, onClose, onSetWallpaper }: ImagePreviewProps) {
+    return <revealer 
+        className="preview-overlay"
+        revealChild={selectedImage() !== null}
+        transitionType={Gtk.RevealerTransitionType.CROSSFADE}
+        transitionDuration={200}
+    >
+        <eventbox 
+            onButtonPressEvent={onClose}
+            className="preview-background"
+        >
+            <box 
+                className="preview-container"
+                orientation={Gtk.Orientation.VERTICAL}
+                halign={Gtk.Align.CENTER}
+                valign={Gtk.Align.CENTER}
+            >
+                <box 
+                    className="preview-content"
+                    orientation={Gtk.Orientation.VERTICAL}
+                    spacing={16}
                 >
-                  <label label="Apply Wallpaper" />
-                </button>
-              </box>
+                    <box 
+                        className="preview-header"
+                        orientation={Gtk.Orientation.HORIZONTAL}
+                        spacing={12}
+                    >
+                        <label 
+                            className="preview-title"
+                            label={selectedImage() ? selectedImage()!.split('/').pop()?.replace(/\.[^/.]+$/, '') || 'Preview' : 'Preview'}
+                            halign={Gtk.Align.START}
+                            hexpand
+                        />
+                        <button 
+                            className="close-button"
+                            onClicked={onClose}
+                        >
+                            <label label="✕" />
+                        </button>
+                    </box>
+
+                    <box 
+                        className="preview-image-container"
+                        widthRequest={600}
+                        heightRequest={400}
+                    >
+                        <box 
+                            className="preview-image"
+                            css={selectedImage() ? `background-image: url('${selectedImage()}'); background-size: contain; background-repeat: no-repeat; background-position: center;` : ''}
+                            widthRequest={600}
+                            heightRequest={400}
+                        />
+                    </box>
+
+                    <box 
+                        className="preview-actions"
+                        orientation={Gtk.Orientation.HORIZONTAL}
+                        spacing={12}
+                        halign={Gtk.Align.CENTER}
+                    >
+                        <button 
+                            className="set-wallpaper-button primary"
+                            onClicked={() => {
+                                const img = selectedImage()
+                                if (img) {
+                                    onSetWallpaper(img)
+                                    onClose()
+                                }
+                            }}
+                        >
+                            <label label="Set as Wallpaper" />
+                        </button>
+                        <button 
+                            className="cancel-button"
+                            onClicked={onClose}
+                        >
+                            <label label="Cancel" />
+                        </button>
+                    </box>
+                </box>
             </box>
-          ) : null
-        )}
-      </box>
-    </overlay>
-  )
+        </eventbox>
+    </revealer>
 } 

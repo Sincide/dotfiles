@@ -21,7 +21,10 @@ function warn
 end
 
 function debug
-    set_color cyan; echo -n "[d]"; set_color normal; echo " $argv"
+    # Only show debug messages if DEBUG environment variable is set
+    if test -n "$DEBUG"
+        set_color cyan; echo -n "[d]"; set_color normal; echo " $argv" >&2
+    end
 end
 
 # Check if we're in a git repository
@@ -52,6 +55,7 @@ function show_help
     echo "  status           - Show repository status"
     echo "  diff             - Show changes"
     echo "  ai-test          - Test AI commit generation"
+    echo "  ai-debug         - Debug AI generation with details"
     echo "  help             - Show this help"
     
     echo
@@ -111,12 +115,12 @@ function generate_ai_commit
     
     set model (detect_ollama_model)
     if test $status -ne 0
-        warn "Ollama not available, using fallback"
+        warn "Ollama not available, using fallback" >&2
         generate_fallback_commit
         return
     end
     
-    info "🤖 Generating commit with $model..."
+    info "🤖 Generating commit with $model..." >&2
     
     set prompt "Generate a concise git commit message for these dotfiles changes:
 
@@ -135,13 +139,26 @@ Requirements:
 
 Generate ONLY the commit message, no explanation:"
 
-    # Run AI with timeout and capture output
-    set ai_output (timeout 25s ollama run $model $prompt 2>/dev/null | head -1 | string trim)
+    # Run AI with timeout and capture both output and errors
+    set ai_result (timeout 25s ollama run $model $prompt 2>&1)
+    set ai_exit_code $status
+    set ai_output (echo $ai_result | head -1 | string trim)
     
-    if test $status -eq 0 -a -n "$ai_output" -a (string length "$ai_output") -gt 5 -a (string length "$ai_output") -lt 150
+    debug "AI exit code: $ai_exit_code" >&2
+    debug "AI raw output: '$ai_result'" >&2
+    debug "AI processed: '$ai_output'" >&2
+    
+    if test $ai_exit_code -eq 0 -a -n "$ai_output" -a (string length "$ai_output") -gt 5 -a (string length "$ai_output") -lt 150
         echo $ai_output
     else
-        warn "AI generation failed, using fallback"
+        if test $ai_exit_code -eq 124
+            warn "AI generation timed out" >&2
+        else if test $ai_exit_code -ne 0
+            warn "AI failed with exit code $ai_exit_code" >&2
+            warn "Error output: $ai_result" >&2
+        else
+            warn "AI generated invalid message: '$ai_output' (length: "(string length "$ai_output")")" >&2
+        end
         generate_fallback_commit
     end
 end
@@ -293,6 +310,57 @@ function test_ai
     end
 end
 
+# Debug AI generation with detailed output
+function debug_ai
+    set -x DEBUG 1  # Enable debug output
+    
+    info "Debugging AI generation..."
+    
+    # Check if there are staged changes
+    set staged_files (git diff --cached --name-only)
+    if test -z "$staged_files"
+        warn "No staged changes found. Staging all changes for testing..."
+        git add -A
+        set staged_files (git diff --cached --name-only)
+    end
+    
+    if test -z "$staged_files"
+        error "No changes to generate commit for"
+        return 1
+    end
+    
+    info "Files to commit: $staged_files"
+    
+    set model (detect_ollama_model)
+    if test $status -ne 0
+        error "Could not detect Ollama model"
+        return 1
+    end
+    
+    info "Using model: $model"
+    
+    # Test Ollama directly first
+    info "Testing basic Ollama functionality..."
+    set test_response (echo "Say hello" | ollama run $model 2>&1)
+    set test_exit $status
+    
+    if test $test_exit -ne 0
+        error "Basic Ollama test failed with exit code $test_exit"
+        error "Output: $test_response"
+        return 1
+    else
+        success "Basic Ollama test passed: $test_response"
+    end
+    
+    # Now test commit generation
+    info "Testing commit generation..."
+    set commit_msg (generate_ai_commit)
+    
+    success "Generated commit message: '$commit_msg'"
+    
+    set -e DEBUG  # Disable debug output
+end
+
 # Smart sync operation
 function sync_dotfiles
     set custom_message $argv[1]
@@ -359,7 +427,7 @@ end
 # Main script logic
 function main
     # Ensure we're in a git repo for most commands
-    set git_commands sync status diff ai-test
+    set git_commands sync status diff ai-test ai-debug
     set command $argv[1]
     
     if contains $command $git_commands
@@ -376,6 +444,8 @@ function main
             show_diff
         case ai-test ai
             test_ai
+        case ai-debug
+            debug_ai
         case help h --help -h ""
             show_help
         case "*"

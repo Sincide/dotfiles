@@ -276,7 +276,6 @@ get_config_directories() {
         "fuzzel"
         "swappy"
         "matugen"
-        "quickshell"
         "gtk-3.0"
         "gtk-4.0"
     )
@@ -330,7 +329,7 @@ DESCRIPTION:
     by offering backup options and conflict resolution.
 
 CONFIGURATIONS DEPLOYED:
-    • hypr, waybar, kitty, fish, dunst, fuzzel, swappy, matugen, quickshell
+    • hypr, waybar, kitty, fish, dunst, fuzzel, swappy, matugen
     • GTK configurations (gtk-3.0, gtk-4.0)
     • starship.toml (single file)
     • themes directory (→ ~/.themes)

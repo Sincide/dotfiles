@@ -54,3 +54,8 @@ output_path = "~/dotfiles/waybar/config-bottom"
 [templates.waybar-bottom-style]
 input_path = "~/dotfiles/matugen/templates/waybar-bottom-style.template"
 output_path = "~/dotfiles/waybar/style-bottom.css"
+
+# QuickShell theming
+[templates.quickshell]
+input_path = "~/dotfiles/matugen/templates/quickshell.template"
+output_path = "~/.local/state/quickshell/user/generated/colors.json"

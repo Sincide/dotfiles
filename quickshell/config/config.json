@@ -1,0 +1,32 @@
+{
+  "theme": {
+    "name": "Material3Dark",
+    "transparency": {
+      "bars": 0.95,
+      "panels": 0.90
+    }
+  },
+  "bars": {
+    "height": 36,
+    "position": {
+      "top": true,
+      "bottom": false
+    },
+    "features": {
+      "workspaces": true,
+      "clock": true,
+      "systemTray": true,
+      "mediaControls": false,
+      "systemResources": false
+    }
+  },
+  "displays": {
+    "primary": {
+      "width": 5120,
+      "height": 1440,
+      "name": "ultrawide"
+    }
+  },
+  "version": "0.1.0",
+  "lastUpdated": "2025-01-27"
+} 

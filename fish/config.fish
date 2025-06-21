@@ -8,15 +8,89 @@ set -gx EDITOR nano
 # Add ~/.local/bin to PATH
 fish_add_path ~/.local/bin
 
-# Dotfiles management aliases
-alias dot='$HOME/dotfiles/scripts/git/dotfiles.fish'
-alias dots='$HOME/dotfiles/scripts/git/dotfiles.fish sync'
-alias dotst='$HOME/dotfiles/scripts/git/dotfiles.fish status'
-alias dotd='$HOME/dotfiles/scripts/git/dotfiles.fish diff'
-alias dotr='$HOME/dotfiles/scripts/git/dotfiles.fish --remote=ssh'
-alias dotrh='$HOME/dotfiles/scripts/git/dotfiles.fish --remote=https'
+# ============================================================================
+# DOTFILES & AI MANAGEMENT ALIASES
+# ============================================================================
 
-# Aliases
+# Dotfiles Management (Enhanced)
+alias dot='$HOME/dotfiles/scripts/git/dotfiles.fish'              # Interactive menu
+alias dots='$HOME/dotfiles/scripts/git/dotfiles.fish sync'        # Quick sync with AI
+alias dotst='$HOME/dotfiles/scripts/git/dotfiles.fish status'     # Repository status
+alias dotd='$HOME/dotfiles/scripts/git/dotfiles.fish diff'        # Show changes
+alias dotai='$HOME/dotfiles/scripts/git/dotfiles.fish ai-test'    # Test AI commits
+alias dotfix='$HOME/dotfiles/scripts/git/dotfiles.fish ai-debug'  # Debug AI issues
+
+# AI Health & Diagnostics  
+alias ai='$HOME/dotfiles/scripts/ai/ai-health.fish'               # Interactive AI health menu
+alias ai-quick='$HOME/dotfiles/scripts/ai/ai-health.fish quick'   # Quick AI status
+alias ai-gpu='$HOME/dotfiles/scripts/ai/ai-health.fish gpu'       # GPU diagnostics
+alias ai-models='$HOME/dotfiles/scripts/ai/ai-health.fish models' # List installed models
+alias ai-bench='$HOME/dotfiles/scripts/ai/ai-health.fish benchmark' # Performance test
+alias ai-sys='$HOME/dotfiles/scripts/ai/ai-health.fish system'    # System resources
+alias ai-ollama='$HOME/dotfiles/scripts/ai/ai-health.fish ollama' # Ollama service status
+alias ai-tips='$HOME/dotfiles/scripts/ai/ai-health.fish recommendations' # Optimization tips
+
+# Quick Dotfiles Functions (Super convenient!)
+function dotc
+    # Quick commit with custom message: dotc "fix: update config"
+    $HOME/dotfiles/scripts/git/dotfiles.fish sync "$argv"
+end
+
+function dotf
+    # Quick find in dotfiles: dotf "fish"
+    find $HOME/dotfiles -name "*$argv*" -type f
+end
+
+function doted
+    # Quick edit config files: doted fish (opens config/fish/config.fish)
+    set target "$argv"
+    if test -z "$target"
+        echo "Usage: doted <config_name>"
+        echo "Examples: doted fish, doted kitty, doted waybar"
+        return 1
+    end
+    
+    # Look for the config file
+    set config_file (find $HOME/dotfiles/config -name "*$target*" -type f | head -1)
+    if test -n "$config_file"
+        $EDITOR "$config_file"
+    else
+        echo "Config file for '$target' not found"
+        echo "Available configs:"
+        ls $HOME/dotfiles/config/
+    end
+end
+
+# Ollama Management Shortcuts
+alias ollama-start='ollama serve'                    # Start Ollama service
+alias ollama-models='ollama list'                    # List models
+alias ollama-pull='ollama pull'                      # Pull/download model
+alias ollama-rm='ollama rm'                          # Remove model
+alias ollama-chat='ollama run'                       # Quick chat with model
+
+# Popular Model Shortcuts (adjust to your preferences)
+alias llama='ollama run llama3.2:3b'                # Quick Llama chat
+alias coder='ollama run qwen2.5-coder:14b'          # Coding assistant
+alias mistral='ollama run mistral:7b-instruct'      # Mistral chat
+
+# System Monitoring Aliases (AI-related)
+alias gpu-status='nvidia-smi'                        # GPU status (if NVIDIA)
+alias gpu-watch='watch -n 1 nvidia-smi'             # Watch GPU usage
+alias ram-free='free -h'                            # Memory usage
+alias disk-space='df -h'                            # Disk usage
+alias processes='ps aux | grep -E "(ollama|python|node)"' # AI-related processes
+
+# Enhanced navigation
+alias cdot='cd $HOME/dotfiles'                      # Go to dotfiles
+alias cdot-config='cd $HOME/dotfiles/config'        # Go to configs
+alias cdot-scripts='cd $HOME/dotfiles/scripts'      # Go to scripts
+alias cdot-git='cd $HOME/dotfiles/scripts/git'      # Go to git scripts
+alias cdot-ai='cd $HOME/dotfiles/scripts/ai'        # Go to AI scripts
+
+# ============================================================================
+# REGULAR ALIASES (Your existing ones)
+# ============================================================================
+
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
@@ -40,6 +114,13 @@ alias gl='git log --oneline'
 alias gd='git diff'
 alias gb='git branch'
 alias gco='git checkout'
+alias glog='git log --oneline --graph --decorate --all'
+alias gst='git status --short'
+alias gaa='git add --all'
+alias gcm='git commit -m'
+alias gps='git push'
+alias gpl='git pull'
+alias gco-='git checkout -'
 
 # Additional useful aliases
 alias tree='tree -C'
@@ -48,6 +129,21 @@ alias du='du -h'
 alias free='free -h'
 alias ps='ps aux'
 alias top='htop'
+alias cp='cp -i'
+alias mv='mv -i'
+alias rm='rm -i'
+alias mkdir='mkdir -pv'
+alias which='type -a'
+
+# Development shortcuts
+alias serve='python -m http.server 8000'
+alias myip='curl -s ifconfig.me'
+alias localip='ip route get 1 | awk "{print \$NF; exit}"'
+alias ports='netstat -tuln'
+
+# ============================================================================
+# FUNCTIONS (Your existing ones)
+# ============================================================================
 
 # Function to extract archives
 function extract
@@ -103,10 +199,52 @@ function duh
     du -sh * | sort -hr
 end
 
-# Function to show git log with graph
-function glog
-    git log --oneline --graph --decorate --all
+# ============================================================================
+# QUICK HELP FUNCTIONS
+# ============================================================================
+
+function dot-help
+    echo "🐟 Dotfiles Management Commands:"
+    echo "  dot         - Interactive dotfiles menu"
+    echo "  dots        - Quick sync with AI commit"
+    echo "  dotc \"msg\"  - Sync with custom commit message"
+    echo "  dotst       - Show repository status"
+    echo "  dotd        - Show changes/diff"
+    echo "  dotai       - Test AI commit generation"
+    echo "  dotfix      - Debug AI issues"
+    echo "  doted <app> - Edit config file (e.g., doted fish)"
+    echo "  dotf <name> - Find files in dotfiles"
+    echo "  cdot        - Go to dotfiles directory"
 end
+
+function ai-help
+    echo "🤖 AI Management Commands:"
+    echo "  ai          - Interactive AI health menu"
+    echo "  ai-quick    - Quick AI status check"
+    echo "  ai-gpu      - GPU diagnostics"
+    echo "  ai-models   - List installed models"
+    echo "  ai-bench    - Performance benchmark"
+    echo "  ai-sys      - System resources"
+    echo "  ai-ollama   - Ollama service status"
+    echo "  ai-tips     - Optimization recommendations"
+    echo ""
+    echo "🦙 Model Shortcuts:"
+    echo "  llama       - Chat with Llama model"
+    echo "  coder       - Chat with coding model"
+    echo "  mistral     - Chat with Mistral model"
+end
+
+# Quick reference
+function aliases-help
+    echo "📚 Available Help Commands:"
+    echo "  dot-help    - Dotfiles management commands"
+    echo "  ai-help     - AI & Ollama commands"
+    echo "  aliases-help - This help message"
+end
+
+# ============================================================================
+# INITIALIZATION
+# ============================================================================
 
 # Starship prompt (cross-shell prompt written in Rust)
 if command -v starship > /dev/null
@@ -123,6 +261,8 @@ set -g fish_greeting ""
 
 # Enable vi mode (optional - uncomment if you prefer vi keybindings)
 # fish_vi_key_bindings
+
+# ROCm settings for AMD GPU
 set -gx PATH /opt/rocm/bin $PATH
 set -gx ROCM_PATH /opt/rocm
 set -gx HSA_OVERRIDE_GFX_VERSION 11.0.0

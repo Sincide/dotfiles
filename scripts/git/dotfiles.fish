@@ -1,9 +1,31 @@
 #!/usr/bin/fish
 
-# Dotfiles Manager - Fish Script
-# Clean, fast, and Fish-native
+# ============================================================================
+# DOTFILES MANAGER - FISH EDITION
+# ============================================================================
+# Smart dotfiles management with AI-powered commit messages
+# Author: Fish Script
+# Version: 1.0
+# 
+# Features:
+# - AI-generated commit messages using Ollama
+# - Smart git sync (pull, commit, push)
+# - Interactive menu interface
+# - Beautiful Fish-native colors
+# - Fallback commit messages when AI fails
+#
+# Requirements:
+# - Fish shell
+# - Git repository
+# - Ollama (optional, for AI features)
+#
+# Usage:
+#   ./dotfiles.fish           # Interactive menu
+#   ./dotfiles.fish sync      # Quick sync with AI
+#   ./dotfiles.fish status    # Show repo status
+# ============================================================================
 
-# Colors using Fish's set_color (much better than ANSI codes!)
+# Colors using Fish's native set_color
 function info
     set_color blue; echo -n "[*]"; set_color normal; echo " $argv"
 end
@@ -21,7 +43,6 @@ function warn
 end
 
 function debug
-    # Only show debug messages if DEBUG environment variable is set
     if test -n "$DEBUG"
         set_color cyan; echo -n "[d]"; set_color normal; echo " $argv" >&2
     end
@@ -31,6 +52,7 @@ end
 function check_git_repo
     if not git rev-parse --git-dir >/dev/null 2>&1
         error "Not in a git repository!"
+        error "Navigate to your dotfiles directory first"
         exit 1
     end
     
@@ -38,38 +60,6 @@ function check_git_repo
     set repo_root (git rev-parse --show-toplevel)
     cd $repo_root
     debug "Using repo: $repo_root"
-end
-
-# Show help
-function show_help
-    set_color purple
-    echo "╭─────────────────────────────────────────╮"
-    echo "│           Dotfiles Manager              │"
-    echo "│            Fish Edition                 │"
-    echo "╰─────────────────────────────────────────╯"
-    set_color normal
-    
-    echo
-    set_color yellow; echo "Commands:"; set_color normal
-    echo "  sync [message]    - Smart sync with AI commits"
-    echo "  status           - Show repository status"
-    echo "  diff             - Show changes"
-    echo "  ai-test          - Test AI commit generation"
-    echo "  ai-debug         - Debug AI generation with details"
-    echo "  help             - Show this help"
-    
-    echo
-    set_color yellow; echo "Features:"; set_color normal
-    echo "  🤖 AI commit messages (Ollama)"
-    echo "  🔄 Smart git sync"
-    echo "  🐟 Native Fish shell"
-    echo "  🎨 Beautiful colors"
-    
-    echo
-    set_color yellow; echo "Examples:"; set_color normal
-    echo "  dotfiles.fish sync"
-    echo "  dotfiles.fish sync \"custom message\""
-    echo "  dotfiles.fish status"
 end
 
 # Detect best available Ollama model
@@ -82,7 +72,7 @@ function detect_ollama_model
         return 1
     end
     
-    # Priority models for coding
+    # Priority models for coding tasks
     set priority_models qwen2.5-coder:14b qwen2.5-coder:7b codegemma:7b mistral:7b-instruct mistral:7b
     
     set available_models (ollama list | tail -n +2 | awk '{print $1}')
@@ -103,7 +93,7 @@ function detect_ollama_model
     return 1
 end
 
-# Generate AI commit message
+# Generate AI-powered commit message
 function generate_ai_commit
     set files_changed (git diff --cached --name-only)
     set diff_summary (git diff --cached --stat)
@@ -145,7 +135,6 @@ Generate ONLY the commit message, no explanation:"
     set ai_output (echo $ai_result | head -1 | string trim)
     
     debug "AI exit code: $ai_exit_code" >&2
-    debug "AI raw output: '$ai_result'" >&2
     debug "AI processed: '$ai_output'" >&2
     
     if test $ai_exit_code -eq 0 -a -n "$ai_output" -a (string length "$ai_output") -gt 5 -a (string length "$ai_output") -lt 150
@@ -155,9 +144,8 @@ Generate ONLY the commit message, no explanation:"
             warn "AI generation timed out" >&2
         else if test $ai_exit_code -ne 0
             warn "AI failed with exit code $ai_exit_code" >&2
-            warn "Error output: $ai_result" >&2
         else
-            warn "AI generated invalid message: '$ai_output' (length: "(string length "$ai_output")")" >&2
+            warn "AI generated invalid message: '$ai_output'" >&2
         end
         generate_fallback_commit
     end
@@ -292,14 +280,15 @@ function test_ai
     set model (detect_ollama_model)
     if test $status -ne 0
         error "Ollama not available"
+        error "Install: curl -fsSL https://ollama.ai/install.sh | sh"
         return 1
     end
     
     success "Found model: $model"
     
-    # Test with fake changes
+    # Test with sample prompt
     info "Testing with sample prompt..."
-    set test_message (echo "Generate a commit message for: Updated fish shell configuration" | ollama run $model)
+    set test_message (echo "Generate a commit message for: Updated fish shell configuration" | ollama run $model 2>/dev/null)
     
     if test -n "$test_message"
         success "AI is working!"
@@ -424,11 +413,125 @@ function sync_dotfiles
     success "Sync completed! 🎉"
 end
 
-# Main script logic
+# Interactive menu for dotfiles
+function show_interactive_menu
+    while true
+        set_color purple
+        echo "╭─────────────────────────────────────────╮"
+        echo "│           Dotfiles Manager              │"
+        echo "│            Fish Edition                 │"
+        echo "╰─────────────────────────────────────────╯"
+        set_color normal
+        echo
+        
+        set_color yellow; echo "What would you like to do?"; set_color normal
+        echo
+        echo "  1️⃣  Sync (AI-powered commit & push)"
+        echo "  2️⃣  Status (repository overview)"
+        echo "  3️⃣  Diff (show changes)"
+        echo "  4️⃣  AI Test (test commit generation)"
+        echo "  5️⃣  AI Debug (detailed AI diagnostics)"
+        echo
+        echo "  0️⃣  Exit"
+        echo
+        
+        read -P "Enter your choice [1-5, 0 to exit]: " choice
+        echo
+        
+        switch $choice
+            case 1
+                read -P "Custom commit message (or Enter for AI): " custom_msg
+                sync_dotfiles "$custom_msg"
+                break
+            case 2
+                show_status
+                break
+            case 3
+                show_diff
+                break
+            case 4
+                test_ai
+                break
+            case 5
+                debug_ai
+                break
+            case 0 q quit exit
+                info "Goodbye! 👋"
+                exit 0
+            case ""
+                # Default to sync if just Enter is pressed
+                sync_dotfiles
+                break
+            case "*"
+                error "Invalid choice: $choice"
+                echo "Please enter a number from 1-5, or 0 to exit"
+                echo
+                read -P "Press Enter to continue..." dummy
+                clear
+        end
+    end
+    
+    echo
+    read -P "Press Enter to return to menu, or 'q' to quit: " continue
+    if test "$continue" = "q" -o "$continue" = "quit"
+        info "Goodbye! 👋"
+        exit 0
+    else
+        clear
+        show_interactive_menu
+    end
+end
+
+# Show help
+function show_help
+    set_color purple
+    echo "╭─────────────────────────────────────────╮"
+    echo "│           Dotfiles Manager              │"
+    echo "│            Fish Edition                 │"
+    echo "╰─────────────────────────────────────────╯"
+    set_color normal
+    
+    echo
+    set_color yellow; echo "Usage:"; set_color normal
+    echo "  ./dotfiles.fish           - Interactive menu (default)"
+    echo "  ./dotfiles.fish [command] - Direct command"
+    echo
+    set_color yellow; echo "Commands:"; set_color normal
+    echo "  sync [message]    - Smart sync with AI commits"
+    echo "  status           - Show repository status"
+    echo "  diff             - Show changes"
+    echo "  ai-test          - Test AI commit generation"
+    echo "  ai-debug         - Debug AI generation with details"
+    echo "  help             - Show this help"
+    
+    echo
+    set_color yellow; echo "Features:"; set_color normal
+    echo "  🤖 AI commit messages (Ollama)"
+    echo "  🔄 Smart git sync"
+    echo "  🐟 Native Fish shell"
+    echo "  🎨 Beautiful colors"
+    echo "  📱 Interactive menus"
+    
+    echo
+    set_color yellow; echo "Examples:"; set_color normal
+    echo "  ./dotfiles.fish                    # Interactive menu"
+    echo "  ./dotfiles.fish sync               # Quick AI sync"
+    echo "  ./dotfiles.fish sync \"fix bug\"     # Custom message"
+    echo "  ./dotfiles.fish status             # Check status"
+end
+
+# Main function
 function main
     # Ensure we're in a git repo for most commands
     set git_commands sync status diff ai-test ai-debug
     set command $argv[1]
+    
+    # If no arguments, show interactive menu
+    if test (count $argv) -eq 0
+        check_git_repo
+        show_interactive_menu
+        return
+    end
     
     if contains $command $git_commands
         check_git_repo
@@ -446,14 +549,19 @@ function main
             test_ai
         case ai-debug
             debug_ai
-        case help h --help -h ""
+        case interactive menu i
+            show_interactive_menu
+        case help h --help -h
             show_help
         case "*"
             error "Unknown command: $command"
-            echo "Run 'dotfiles.fish help' for usage"
-            exit 1
+            echo
+            info "Starting interactive menu..."
+            sleep 1
+            check_git_repo
+            show_interactive_menu
     end
 end
 
-# Run main function with all arguments
+# Run main with all arguments
 main $argv

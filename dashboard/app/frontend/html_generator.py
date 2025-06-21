@@ -1,10 +1,16 @@
 def get_dashboard_html():
     """Generate the main dashboard HTML"""
-    return '''<!DOCTYPE html>
+    import time
+    cache_bust = int(time.time())
+    html_template = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-bust" content="__CACHE_BUST__">
     <title>Evil Space Dashboard</title>
     <style>
         * {
@@ -273,7 +279,8 @@ def get_dashboard_html():
                             <option value="DEBUG">Debug</option>
                         </select>
                         <input type="text" id="log-search-input" placeholder="Search logs..." onkeyup="applyLogFilters()" style="padding: 0.5rem; background: rgba(0,0,0,0.6); border: 1px solid rgba(100,255,218,0.3); color: #e0e0e0; border-radius: 4px; margin-right: 1rem; min-width: 150px;">
-                        <button onclick="refreshLogContent()" style="padding: 0.5rem 1rem; background: #64ffda; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Refresh</button>
+                        <button onclick="refreshLogContent()" style="padding: 0.5rem 1rem; background: #64ffda; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; margin-right: 0.5rem;">Refresh</button>
+                        <button onclick="clearLogFilters()" style="padding: 0.5rem 1rem; background: rgba(255,193,7,0.8); color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Clear Filters</button>
                     </div>
                     <div id="log-content" style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; max-height: 500px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.4;">
                         <div style="color: #90a4ae; text-align: center; padding: 2rem;">Select a log file to view its content</div>
@@ -305,6 +312,7 @@ def get_dashboard_html():
     </div>
     
     <script>
+        console.log('Evil Space Dashboard JavaScript Loaded - Version: __CACHE_BUST__');
         let updateInterval;
         let isActive = true;
         let currentTab = 'overview';
@@ -913,6 +921,9 @@ def get_dashboard_html():
             const data = await fetchAPI('logs');
             const select = document.getElementById('log-file-select');
             
+            // Preserve the current selection
+            const previousSelection = select.value;
+            
             if (data.error) {
                 select.innerHTML = '<option value="">Error loading logs</option>';
                 return;
@@ -961,6 +972,15 @@ def get_dashboard_html():
                     select.appendChild(optgroup);
                 });
             }
+            
+            // Restore the previous selection
+            if (previousSelection) {
+                select.value = previousSelection;
+                // If the selection was restored and we have a current log file, update currentLogFile
+                if (select.value === previousSelection) {
+                    currentLogFile = previousSelection;
+                }
+            }
         }
         
         async function loadSelectedLog() {
@@ -978,7 +998,16 @@ def get_dashboard_html():
         }
         
         async function refreshLogContent() {
-            if (!currentLogFile) return;
+            if (!currentLogFile) {
+                // If no log file is selected, preserve the dropdown selection but show appropriate message
+                const select = document.getElementById('log-file-select');
+                if (select && select.value) {
+                    currentLogFile = select.value;
+                } else {
+                    document.getElementById('log-content').innerHTML = '<div style="color: #90a4ae; text-align: center; padding: 2rem;">Select a log file to view its content</div>';
+                    return;
+                }
+            }
             
             const contentDiv = document.getElementById('log-content');
             const statsDiv = document.getElementById('log-stats');
@@ -987,13 +1016,19 @@ def get_dashboard_html():
             statsDiv.innerHTML = '<div style="color: #90a4ae; text-align: center; padding: 2rem;">Loading statistics...</div>';
             
             try {
+                // Ensure the dropdown still shows the selected file
+                const select = document.getElementById('log-file-select');
+                if (select && select.value !== currentLogFile) {
+                    select.value = currentLogFile;
+                }
+                
                 // Get current filter settings
                 const levelFilter = document.getElementById('log-level-filter').value;
                 
                 // Build URL with filters
                 let contentUrl = `/api/logs/content?file=${encodeURIComponent(currentLogFile)}&lines=100`;
                 if (levelFilter && levelFilter !== 'ALL') {
-                    contentUrl += `&filter_level=${encodeURIComponent(levelFilter)}`;
+                    contentUrl += `&level=${encodeURIComponent(levelFilter)}`;
                 }
                 
                 // Load log content
@@ -1007,7 +1042,7 @@ def get_dashboard_html():
                     applyLogFilters(); // This now only applies search filters
                 }
                 
-                // Load log stats
+                // Load log stats (without filters to show complete stats)
                 const statsResponse = await fetch(`/api/logs/stats?file=${encodeURIComponent(currentLogFile)}`);
                 const statsData = await statsResponse.json();
                 
@@ -1020,6 +1055,7 @@ def get_dashboard_html():
             } catch (error) {
                 contentDiv.innerHTML = `<div style="color: #f44336;">Network error: ${error.message}</div>`;
                 statsDiv.innerHTML = `<div style="color: #f44336;">Network error: ${error.message}</div>`;
+                // Don't clear currentLogFile on network error - allow retry
             }
         }
         
@@ -1043,10 +1079,13 @@ def get_dashboard_html():
                     contentDiv.innerHTML = `
                         <div style="color: #ff9800; text-align: center; padding: 2rem;">
                             <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">No matching log entries found</div>
-                            <div style="font-size: 0.9rem; opacity: 0.8;">
+                            <div style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 1rem;">
                                 ${levelFilter !== 'ALL' ? `Level: ${levelFilter}` : ''}
                                 ${levelFilter !== 'ALL' && searchInput ? ' | ' : ''}
                                 ${searchInput ? `Search: "${searchInput}"` : ''}
+                            </div>
+                            <div style="font-size: 0.8rem; color: #64ffda;">
+                                💡 Try changing the level filter or search terms to see more results
                             </div>
                         </div>
                     `;
@@ -1056,7 +1095,23 @@ def get_dashboard_html():
                 return;
             }
             
+            // Show filtered results count
+            const totalLines = currentLogContent.length;
+            const filteredCount = filteredLines.length;
+            const showFilterInfo = (searchInput || levelFilter !== 'ALL') && totalLines > 0;
+            
             let html = '';
+            
+            if (showFilterInfo) {
+                html += `
+                    <div style="color: #64ffda; font-size: 0.9rem; margin-bottom: 1rem; text-align: center; padding: 0.5rem; background: rgba(100,255,218,0.1); border-radius: 4px;">
+                        Showing ${filteredCount} of ${totalLines} log entries
+                        ${levelFilter !== 'ALL' ? ` (Level: ${levelFilter})` : ''}
+                        ${searchInput ? ` (Search: "${searchInput}")` : ''}
+                    </div>
+                `;
+            }
+            
             filteredLines.forEach(line => {
                 let colorClass = '';
                 const lineUpper = line.toUpperCase();
@@ -1077,6 +1132,29 @@ def get_dashboard_html():
             });
             
             contentDiv.innerHTML = html;
+        }
+        
+        function clearLogFilters() {
+            // Reset level filter to "ALL"
+            const levelFilter = document.getElementById('log-level-filter');
+            if (levelFilter) {
+                levelFilter.value = 'ALL';
+            }
+            
+            // Clear search input
+            const searchInput = document.getElementById('log-search-input');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // Refresh content with cleared filters
+            if (currentLogFile) {
+                refreshLogContent();
+            } else {
+                // If no file selected, just clear the content
+                const contentDiv = document.getElementById('log-content');
+                contentDiv.innerHTML = '<div style="color: #90a4ae; text-align: center; padding: 2rem;">Select a log file to view its content</div>';
+            }
         }
         
         function displayLogStats(stats) {
@@ -1365,3 +1443,5 @@ def get_dashboard_html():
     </script>
 </body>
 </html>'''
+    
+    return html_template.replace('__CACHE_BUST__', str(cache_bust))

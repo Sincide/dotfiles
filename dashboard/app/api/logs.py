@@ -489,21 +489,41 @@ def _get_journal_stats(journal_identifier):
             lines = result.stdout.strip().split('\n')
             stats['total_lines'] = len(lines)
             
-            # Count log levels (approximate)
+            # Count log levels using systemd priority system (same as content filtering)
             log_levels = {'ERROR': 0, 'WARNING': 0, 'INFO': 0, 'DEBUG': 0, 'OTHER': 0}
             
-            for line in lines:
-                line_upper = line.upper()
-                if 'ERROR' in line_upper or 'CRITICAL' in line_upper:
-                    log_levels['ERROR'] += 1
-                elif 'WARNING' in line_upper or 'WARN' in line_upper:
-                    log_levels['WARNING'] += 1
-                elif 'INFO' in line_upper:
-                    log_levels['INFO'] += 1
-                elif 'DEBUG' in line_upper:
-                    log_levels['DEBUG'] += 1
-                else:
-                    log_levels['OTHER'] += 1
+            # Count each level using journalctl priority filters for accuracy
+            priority_map = {
+                'ERROR': '0..3',    # emerg, alert, crit, err
+                'WARNING': '4',     # warning  
+                'INFO': '6',        # info
+                'DEBUG': '7'        # debug
+            }
+            
+            base_cmd = ['journalctl', '--no-pager', '-n', '1000', '--quiet']
+            if journal_identifier == 'journal:current':
+                base_cmd.extend(['-b'])
+            elif journal_identifier.startswith('journal:') and journal_identifier != 'journal:unavailable':
+                boot_id = journal_identifier.split(':', 1)[1]
+                if boot_id != 'current':
+                    base_cmd.extend(['-b', boot_id])
+            
+            # Count each priority level
+            for level, priority in priority_map.items():
+                try:
+                    count_cmd = base_cmd + ['-p', priority]
+                    count_result = subprocess.run(count_cmd, capture_output=True, text=True, timeout=5)
+                    if count_result.returncode == 0:
+                        count_lines = count_result.stdout.strip().split('\n')
+                        # Filter out empty lines
+                        count_lines = [line for line in count_lines if line.strip()]
+                        log_levels[level] = len(count_lines)
+                except:
+                    log_levels[level] = 0
+            
+            # Calculate OTHER as total minus categorized
+            categorized = sum(log_levels[level] for level in ['ERROR', 'WARNING', 'INFO', 'DEBUG'])
+            log_levels['OTHER'] = max(0, stats['total_lines'] - categorized)
             
             stats['log_levels'] = log_levels
         else:

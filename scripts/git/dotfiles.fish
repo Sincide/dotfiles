@@ -112,41 +112,30 @@ function generate_ai_commit
     
     info "🤖 Generating commit with $model..." >&2
     
-    set prompt "Generate a concise git commit message for these dotfiles changes:
+    set prompt "You are a git commit message generator. Generate ONLY a single line commit message, no explanation or extra text.
 
-Files changed:
-$files_changed
+Files changed: $files_changed
 
-Diff summary:
-$diff_summary
-
-Requirements:
-- Use conventional commit format (feat:, fix:, chore:, docs:, style:)
-- Keep under 72 characters
-- Be specific about what changed
+Use conventional commit format: type(scope): description
+- Types: feat, fix, chore, docs, style, refactor
+- Keep under 60 characters  
 - Use present tense
-- Don't include 'dotfiles' unless necessary
+- Be specific
 
-Generate ONLY the commit message, no explanation:"
+Example: fix(waybar): correct volume widget spacing
 
-    # Run AI with timeout and capture both output and errors
-    set ai_result (timeout 25s ollama run $model $prompt 2>&1)
-    set ai_exit_code $status
-    set ai_output (echo $ai_result | head -1 | string trim)
+Commit message:"
+
+    # Run AI with timeout 
+    set ai_output (timeout 15s ollama run $model $prompt 2>/dev/null | head -1 | string trim | sed 's/[^a-zA-Z0-9:().,!? -]//g')
     
-    debug "AI exit code: $ai_exit_code" >&2
-    debug "AI processed: '$ai_output'" >&2
+    debug "AI generated: '$ai_output'" >&2
     
-    if test $ai_exit_code -eq 0 -a -n "$ai_output" -a (string length "$ai_output") -gt 5 -a (string length "$ai_output") -lt 150
+    # Use AI output if it looks decent, otherwise fallback
+    if test -n "$ai_output" -a (string length "$ai_output") -gt 15 -a (string length "$ai_output") -lt 72
         echo $ai_output
     else
-        if test $ai_exit_code -eq 124
-            warn "AI generation timed out" >&2
-        else if test $ai_exit_code -ne 0
-            warn "AI failed with exit code $ai_exit_code" >&2
-        else
-            warn "AI generated invalid message: '$ai_output'" >&2
-        end
+        debug "AI failed or output too short/long, using fallback" >&2
         generate_fallback_commit
     end
 end
@@ -154,36 +143,59 @@ end
 # Generate fallback commit message
 function generate_fallback_commit
     set files_changed (git diff --cached --name-only)
-    set file_count (echo $files_changed | wc -l)
+    set file_count (count $files_changed)
     
-    # Categorize files
-    set config_files (echo $files_changed | grep -E '^(config/|\..*rc|\..*config)')
-    set script_files (echo $files_changed | grep -E '^(scripts/|bin/|.*\.sh|.*\.fish)')
-    set doc_files (echo $files_changed | grep -E '^(README|.*\.md|docs/)')
+    if test $file_count -eq 0
+        echo "chore: update dotfiles"
+        return
+    end
     
-    if test -n "$config_files"
-        # Extract app names from config files
-        set apps (echo $config_files | sed -E 's|^config/([^/]+)/.*|\1|;s|^\.([^.]+).*|\1|' | sort -u)
-        set app_count (count $apps)
-        
-        if test $app_count -eq 1
-            echo "config: update $apps[1] settings"
-        else if test $app_count -le 3
-            echo "config: update "(string join ", " $apps)
+    # Categorize files by directory structure
+    set config_dirs ""
+    set script_dirs ""
+    set doc_files ""
+    set other_files ""
+    
+    for file in $files_changed
+        if string match -q "*/config*" $file; or string match -q ".*rc" $file
+            set config_dirs $config_dirs (dirname $file | cut -d/ -f1)
+        else if string match -q "scripts/*" $file; or string match -q "*.fish" $file; or string match -q "*.sh" $file
+            set script_dirs $script_dirs (dirname $file | cut -d/ -f1)
+        else if string match -q "*.md" $file; or string match -q "docs/*" $file; or string match -q "README*" $file
+            set doc_files $doc_files $file
         else
-            echo "config: update multiple configurations"
-        end
-    else if test -n "$script_files"
-        echo "scripts: update automation scripts"
-    else if test -n "$doc_files"
-        echo "docs: update documentation"
-    else
-        if test $file_count -eq 1
-            echo "chore: update "(basename $files_changed)
-        else
-            echo "chore: update $file_count files"
+            set other_files $other_files $file
         end
     end
+    
+         # Generate smart commit based on what changed
+     if test (count $script_dirs) -gt 0
+         set unique_scripts (printf '%s\n' $script_dirs | sort -u | head -3)
+         if test (count $unique_scripts) -eq 1 -a "$unique_scripts[1]" != ""
+             echo "scripts($unique_scripts[1]): update automation tools"
+         else
+             echo "scripts: update automation and tools"
+         end
+     else if test (count $config_dirs) -gt 0
+         set unique_configs (printf '%s\n' $config_dirs | sort -u | head -3)
+         if test (count $unique_configs) -eq 1 -a "$unique_configs[1]" != ""
+             echo "config($unique_configs[1]): update settings"
+         else
+             echo "config: update configuration files"
+         end
+     else if test (count $doc_files) -gt 0
+         echo "docs: update documentation"
+     else if test $file_count -eq 1
+         set basename_file (basename $files_changed[1])
+         set dir_name (dirname $files_changed[1] | cut -d/ -f1)
+         if test "$dir_name" != "." -a "$dir_name" != ""
+             echo "chore($dir_name): update $basename_file"
+         else
+             echo "chore: update $basename_file"
+         end
+     else
+         echo "chore: update $file_count files"
+     end
 end
 
 # Show repository status

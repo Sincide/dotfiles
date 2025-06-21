@@ -278,6 +278,7 @@ get_config_directories() {
         "matugen"
         "gtk-3.0"
         "gtk-4.0"
+        "nvim"
     )
     printf '%s\n' "${configs[@]}"
 }

@@ -9,12 +9,12 @@ set -gx EDITOR nano
 fish_add_path ~/.local/bin
 
 # Dotfiles management aliases
-alias dot='$HOME/dotfiles/scripts/git/dotfiles.sh'
-alias dots='$HOME/dotfiles/scripts/git/dotfiles.sh sync'
-alias dotst='$HOME/dotfiles/scripts/git/dotfiles.sh status'
-alias dotd='$HOME/dotfiles/scripts/git/dotfiles.sh diff'
-alias dotr='$HOME/dotfiles/scripts/git/dotfiles.sh --remote=ssh'
-alias dotrh='$HOME/dotfiles/scripts/git/dotfiles.sh --remote=https'
+alias dot='$HOME/dotfiles/scripts/git/dotfiles.fish'
+alias dots='$HOME/dotfiles/scripts/git/dotfiles.fish sync'
+alias dotst='$HOME/dotfiles/scripts/git/dotfiles.fish status'
+alias dotd='$HOME/dotfiles/scripts/git/dotfiles.fish diff'
+alias dotr='$HOME/dotfiles/scripts/git/dotfiles.fish --remote=ssh'
+alias dotrh='$HOME/dotfiles/scripts/git/dotfiles.fish --remote=https'
 
 # Aliases
 alias ll='ls -alF'

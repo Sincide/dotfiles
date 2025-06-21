@@ -1,130 +1,261 @@
 #!/bin/bash
+set -euo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Advanced Dotfiles Management Script
+# Version: 2.0
+# Features: AI commits, smart sync, backups, templates, hooks
 
-print_status()    { echo -e "${BLUE}[*]${NC} $1"; }
-print_success()   { echo -e "${GREEN}[✓]${NC} $1"; }
-print_error()     { echo -e "${RED}[✗]${NC} $1"; }
-print_warning()   { echo -e "${YELLOW}[!]${NC} $1"; }
+# ============================================================================
+# CONFIGURATION & COLORS
+# ============================================================================
 
-print_help() {
-    cat <<EOF
-Usage: $(basename "$0") [--remote=ssh|https] <command> [options]
+# Colors (optimized for kitty terminal)
+declare -r RED='\033[0;31m'
+declare -r GREEN='\033[0;32m'
+declare -r BLUE='\033[0;34m'
+declare -r YELLOW='\033[1;33m'
+declare -r PURPLE='\033[0;35m'
+declare -r CYAN='\033[0;36m'
+declare -r WHITE='\033[1;37m'
+declare -r GRAY='\033[0;90m'
+declare -r NC='\033[0m'
 
-Commands:
-  status, st         Show status of dotfiles (local and remote sync info)
-  sync, s [msg]      Sync dotfiles (add, commit, pull, push). 
-                     Uses AI-generated commit messages if no message provided.
-                     Optionally provide a custom commit message.
-  diff, d            Show diff of changes
-  help, -h, --help   Show this help message
+# Script configuration
+declare -r SCRIPT_VERSION="2.0"
+declare -r CONFIG_FILE="$HOME/.dotfiles-config"
+declare -r LOG_FILE="/tmp/dotfiles-$(date +%Y%m%d).log"
+declare -r BACKUP_DIR="$HOME/.dotfiles-backups"
 
-Features:
-  🤖 AI Commit Messages - Uses local Ollama (mistral:7b-instruct) to generate
-                         smart commit messages based on your changes.
-                         Falls back to basic messages if AI unavailable.
+# Default settings
+declare -A CONFIG=(
+    [ai_enabled]="true"
+    [ai_model]="auto"
+    [auto_backup]="true"
+    [confirm_actions]="true"
+    [log_level]="info"
+    [remote_protocol]="ssh"
+    [max_backups]="10"
+    [hook_dir]="$HOME/.dotfiles-hooks"
+)
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+log() {
+    local level="$1"
+    shift
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $*" >> "$LOG_FILE"
+}
+
+print_status()   { echo -e "${BLUE}[*]${NC} $1"; log "INFO" "$1"; }
+print_success()  { echo -e "${GREEN}[✓]${NC} $1"; log "SUCCESS" "$1"; }
+print_error()    { echo -e "${RED}[✗]${NC} $1"; log "ERROR" "$1"; }
+print_warning()  { echo -e "${YELLOW}[!]${NC} $1"; log "WARNING" "$1"; }
+print_info()     { echo -e "${CYAN}[i]${NC} $1"; log "INFO" "$1"; }
+print_debug()    { [[ "${CONFIG[log_level]}" == "debug" ]] && echo -e "${GRAY}[d]${NC} $1"; log "DEBUG" "$1"; }
+
+print_header() {
+    echo -e "${PURPLE}╭─────────────────────────────────────────────╮${NC}"
+    echo -e "${PURPLE}│${NC} $1 ${PURPLE}│${NC}"
+    echo -e "${PURPLE}╰─────────────────────────────────────────────╯${NC}"
+}
+
+print_banner() {
+    cat << 'EOF'
+╭──────────────────────────────────────────────────────────────╮
+│  ____        _    __ _ _             __  __                   │
+│ |  _ \  ___ | |_ / _(_) | ___  ___  |  \/  | __ _ _ __   __ _  │
+│ | | | |/ _ \| __| |_| | |/ _ \/ __| | |\/| |/ _` | '_ \ / _` | │
+│ | |_| | (_) | |_|  _| | |  __/\__ \ | |  | | (_| | | | | (_| | │
+│ |____/ \___/ \__|_| |_|_|\___||___/ |_|  |_|\__, |_| |_|\__,_| │
+│                                             |___/             │
+│                    Advanced Edition v2.0                     │
+╰──────────────────────────────────────────────────────────────╯
 EOF
 }
 
-# Check if inside a git repo
-if ! git rev-parse --is-inside-work-tree &>/dev/null; then
-    print_error "Not inside a Git repository! Aborting."
-    exit 2
-fi
+confirm_action() {
+    if [[ "${CONFIG[confirm_actions]}" == "false" ]]; then
+        return 0
+    fi
+    
+    local message="$1"
+    local default="${2:-n}"
+    
+    if [[ "$default" == "y" ]]; then
+        read -p "$message [Y/n]: " -n 1 -r
+        echo
+        [[ -z "$REPLY" || "$REPLY" =~ ^[Yy]$ ]]
+    else
+        read -p "$message [y/N]: " -n 1 -r
+        echo
+        [[ "$REPLY" =~ ^[Yy]$ ]]
+    fi
+}
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
-cd "$REPO_ROOT" || { print_error "Failed to cd to repo root: $REPO_ROOT"; exit 1; }
-print_status "Using repository root: $REPO_ROOT"
+spinner() {
+    local pid=$1
+    local message="$2"
+    local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    
+    while kill -0 $pid 2>/dev/null; do
+        for (( i=0; i<${#chars}; i++ )); do
+            printf "\r${BLUE}[${chars:$i:1}]${NC} $message..."
+            sleep 0.1
+        done
+    done
+    printf "\r${GREEN}[✓]${NC} $message completed!\n"
+}
 
-# Parse and apply remote override early
-for arg in "$@"; do
-    case "$arg" in
-        --remote=ssh)
-            repo_url=$(git remote get-url origin)
-            domain=$(echo "$repo_url" | sed -E 's|.*@([^:]+):.*|\1|;s|https?://([^/]+)/.*|\1|')
-            repo_path=$(echo "$repo_url" | sed -E 's|.*[:/](.+/.+)(\.git)?$|\1|')
-            git remote set-url origin "git@$domain:$repo_path"
-            print_success "Remote set to SSH"
-            shift
-            ;;
-        --remote=https)
-            repo_url=$(git remote get-url origin)
-            domain=$(echo "$repo_url" | sed -E 's|.*@([^:]+):.*|\1|;s|https?://([^/]+)/.*|\1|')
-            repo_path=$(echo "$repo_url" | sed -E 's|.*[:/](.+/.+)(\.git)?$|\1|')
-            git remote set-url origin "https://$domain/$repo_path"
-            print_success "Remote set to HTTPS"
-            shift
-            ;;
-    esac
-done
+# ============================================================================
+# CONFIGURATION MANAGEMENT
+# ============================================================================
 
-# Show current repo info
-REPO_NAME=$(basename -s .git "$(git remote get-url origin 2>/dev/null)" 2>/dev/null)
-REMOTE_URL=$(git remote get-url origin 2>/dev/null)
+load_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        print_debug "Loading configuration from $CONFIG_FILE"
+        source "$CONFIG_FILE"
+    else
+        print_debug "No config file found, using defaults"
+    fi
+}
 
-echo
-echo -e "${YELLOW}==============================${NC}"
-echo -e "${YELLOW}  GIT REPOSITORY IN USE:${NC}"
-echo -e "${YELLOW}  → ${BLUE}${REPO_NAME:-<unknown>}${NC}"
-echo -e "${YELLOW}  → ${REMOTE_URL:-<no remote found>}${NC}"
-echo -e "${YELLOW}==============================${NC}"
-echo
+save_config() {
+    print_status "Saving configuration..."
+    cat > "$CONFIG_FILE" << EOF
+# Dotfiles Management Configuration
+# Generated on $(date)
 
-# Only allow [Enter] or [Y/y] to proceed
-read -n 1 -p "Press [Y] or [Enter] to continue, anything else to abort: " confirm
-echo
-if [[ -n "$confirm" && "$confirm" != "y" && "$confirm" != "Y" ]]; then
-    print_error "Aborted by user."
-    exit 4
-fi
+declare -A CONFIG=(
+$(for key in "${!CONFIG[@]}"; do
+    echo "    [$key]=\"${CONFIG[$key]}\""
+done)
+)
+EOF
+    print_success "Configuration saved to $CONFIG_FILE"
+}
 
-# Function to generate AI-powered commit message
+show_config() {
+    print_header "Current Configuration"
+    for key in "${!CONFIG[@]}"; do
+        echo -e "${YELLOW}$key${NC}: ${CONFIG[$key]}"
+    done
+}
+
+configure() {
+    print_header "Interactive Configuration"
+    
+    echo -e "${CYAN}AI Settings:${NC}"
+    read -p "Enable AI commit messages? [${CONFIG[ai_enabled]}]: " -r
+    [[ -n "$REPLY" ]] && CONFIG[ai_enabled]="$REPLY"
+    
+    if [[ "${CONFIG[ai_enabled]}" == "true" ]]; then
+        echo -e "\nAvailable AI models:"
+        if command -v ollama >/dev/null 2>&1 && ollama list >/dev/null 2>&1; then
+            ollama list | tail -n +2 | awk '{print "  - " $1}'
+        fi
+        read -p "Preferred AI model [${CONFIG[ai_model]}]: " -r
+        [[ -n "$REPLY" ]] && CONFIG[ai_model]="$REPLY"
+    fi
+    
+    echo -e "\n${CYAN}Backup Settings:${NC}"
+    read -p "Auto-backup before major operations? [${CONFIG[auto_backup]}]: " -r
+    [[ -n "$REPLY" ]] && CONFIG[auto_backup]="$REPLY"
+    
+    read -p "Maximum backups to keep [${CONFIG[max_backups]}]: " -r
+    [[ -n "$REPLY" ]] && CONFIG[max_backups]="$REPLY"
+    
+    echo -e "\n${CYAN}General Settings:${NC}"
+    read -p "Confirm actions? [${CONFIG[confirm_actions]}]: " -r
+    [[ -n "$REPLY" ]] && CONFIG[confirm_actions]="$REPLY"
+    
+    read -p "Log level (info/debug) [${CONFIG[log_level]}]: " -r
+    [[ -n "$REPLY" ]] && CONFIG[log_level]="$REPLY"
+    
+    save_config
+}
+
+# ============================================================================
+# AI COMMIT MESSAGE GENERATION
+# ============================================================================
+
+detect_ai_model() {
+    if [[ "${CONFIG[ai_model]}" != "auto" ]]; then
+        echo "${CONFIG[ai_model]}"
+        return
+    fi
+    
+    if ! command -v ollama >/dev/null 2>&1; then
+        return 1
+    fi
+    
+    local available_models
+    available_models=$(ollama list 2>/dev/null | tail -n +2 | awk '{print $1}' || echo "")
+    
+    # Priority order for model selection
+    local priority_models=(
+        "qwen2.5-coder:14b"
+        "qwen2.5-coder:7b"
+        "qwen2.5-coder:1.5b"
+        "codegemma:7b"
+        "codegemma:2b"
+        "mistral:7b-instruct"
+        "mistral:7b"
+        "llama3.2:3b"
+        "llama3.2:1b"
+    )
+    
+    for model in "${priority_models[@]}"; do
+        if echo "$available_models" | grep -q "^${model}$"; then
+            echo "$model"
+            return 0
+        fi
+    done
+    
+    # If no priority model found, use the first available
+    echo "$available_models" | head -1
+}
+
 generate_ai_commit_message() {
-    local files_changed
+    if [[ "${CONFIG[ai_enabled]}" != "true" ]]; then
+        generate_fallback_commit_message
+        return
+    fi
+    
+    local files_changed diff_summary
     files_changed=$(git diff --cached --name-only)
-    local diff_summary
     diff_summary=$(git diff --cached --stat)
     
-    if [ -z "$files_changed" ]; then
+    if [[ -z "$files_changed" ]]; then
         echo "No changes staged"
         return 1
     fi
     
-    # Check if Ollama is available
+    # Check Ollama availability
     if ! command -v ollama >/dev/null 2>&1; then
-        print_warning "Ollama not found, falling back to basic commit message"
-        generate_commit_message
+        print_warning "Ollama not found, using fallback commit message"
+        generate_fallback_commit_message
         return
     fi
     
-    # Check if Ollama is running
-    if ! ollama list >/dev/null 2>&1; then
-        print_warning "Ollama not running, falling back to basic commit message"
-        generate_commit_message
+    if ! timeout 3 ollama list >/dev/null 2>&1; then
+        print_warning "Ollama not responding, using fallback commit message"
+        generate_fallback_commit_message
         return
     fi
     
-    # Detect best available model (prioritize coding models)
-    local model="mistral:7b-instruct"  # fallback
-    if ollama list | grep -q "qwen2.5-coder:14b"; then
-        model="qwen2.5-coder:14b"  # Best for coding tasks
-    elif ollama list | grep -q "codegemma:7b"; then
-        model="codegemma:7b"  # Good for coding
-    elif ollama list | grep -q "mistral:7b-instruct"; then
-        model="mistral:7b-instruct"  # Good for instructions
-    elif ollama list | grep -q "mistral:7b"; then
-        model="mistral:7b"  # Basic fallback
+    local model
+    model=$(detect_ai_model)
+    if [[ -z "$model" ]]; then
+        print_warning "No suitable AI model found, using fallback commit message"
+        generate_fallback_commit_message
+        return
     fi
     
     print_status "🤖 Generating AI commit message using ${BLUE}$model${NC}..."
     
-    # Create prompt for AI
-    local prompt="You are a git commit message expert. Generate a concise, descriptive commit message for these dotfiles changes.
+    local prompt="You are an expert at writing git commit messages. Create a concise, descriptive commit message for these dotfiles changes.
 
 Files changed:
 $files_changed
@@ -132,300 +263,780 @@ $files_changed
 Diff summary:
 $diff_summary
 
-Rules:
-- Use conventional commit format when appropriate (feat:, fix:, chore:, docs:, style:)
+Requirements:
+- Use conventional commit format (feat:, fix:, chore:, docs:, style:, refactor:)
+- Keep the subject line under 72 characters
 - Be specific about what changed
-- Keep it under 72 characters for the first line
+- Use present tense imperative mood
 - Focus on the most important changes
-- Use present tense
-- Don't include 'dotfiles' in every message
+- Don't mention 'dotfiles' unless necessary
 
-Generate only the commit message, no explanation:"
+Generate ONLY the commit message with no explanation or quotes:"
 
-    # Show spinner while AI is working
-    local spinner_pid
-    spinner() {
-        local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
-        while :; do
-            for (( i=0; i<${#chars}; i++ )); do
-                printf "\r${BLUE}[${chars:$i:1}]${NC} AI thinking..."
-                sleep 0.1
-            done
-        done
-    }
+    # Generate AI message with timeout and error handling
+    local ai_output exit_code
+    {
+        ai_output=$(timeout 30 ollama run "$model" "$prompt" 2>&1)
+        exit_code=$?
+    } &
     
-    # Start spinner in background
-    spinner &
-    spinner_pid=$!
+    local ollama_pid=$!
+    spinner $ollama_pid "AI generating commit message"
+    wait $ollama_pid
     
-    # Try to get AI response
+    if [[ $exit_code -ne 0 ]]; then
+        print_warning "AI generation failed (exit code: $exit_code), using fallback"
+        print_debug "AI error output: $ai_output"
+        generate_fallback_commit_message
+        return
+    fi
+    
+    # Process AI output
     local ai_message
-    ai_message=$(ollama run "$model" "$prompt" 2>/dev/null | head -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    ai_message=$(echo "$ai_output" | head -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | sed 's/^["'\'']*//;s/["'\'']*$//')
     
-    # Stop spinner
-    kill $spinner_pid 2>/dev/null
-    wait $spinner_pid 2>/dev/null
-    printf "\r${GREEN}[✓]${NC} AI completed!     \n"
-    
-    if [ -n "$ai_message" ] && [ ${#ai_message} -gt 5 ]; then
+    # Validate message
+    if [[ -n "$ai_message" ]] && [[ ${#ai_message} -ge 10 ]] && [[ ${#ai_message} -le 200 ]]; then
         echo "$ai_message"
     else
-        print_warning "AI failed to generate message, falling back to basic commit message"
-        generate_commit_message
+        print_warning "AI generated invalid message (length: ${#ai_message}): '$ai_message'"
+        generate_fallback_commit_message
     fi
 }
 
-# Function to generate commit message based on changes (fallback)
-generate_commit_message() {
+generate_fallback_commit_message() {
     local files_changed
     files_changed=$(git diff --cached --name-only)
-    local changes=""
-
-    if echo "$files_changed" | grep -q "config/"; then
-        local configs
-        configs=$(echo "$files_changed" | grep "config/" | cut -d'/' -f2 | sort -u | tr '\n' ',' | sed 's/,$//')
-        [ -n "$configs" ] && changes+="Updated ${configs} configs. "
-    fi
-    if echo "$files_changed" | grep -q "scripts/"; then
-        local scripts
-        scripts=$(echo "$files_changed" | grep "scripts/" | cut -d'/' -f2 | sort -u | tr '\n' ',' | sed 's/,$//')
-        [ -n "$scripts" ] && changes+="Modified ${scripts} scripts. "
-    fi
-    for app in waybar hypr kitty fish fuzzel dunst; do
-        if echo "$files_changed" | grep -q "config/$app/"; then
-            local files
-            files=$(echo "$files_changed" | grep "config/$app/" | rev | cut -d'/' -f1 | rev | sort -u | tr '\n' ',' | sed 's/,$//')
-            changes+="[$app] Changed $files. "
-        fi
-    done
-    if [ -z "$changes" ]; then
-        changes="Updated dotfiles: $(echo "$files_changed" | tr '\n' ',' | sed 's/,$//')"
-    fi
-    echo "$changes"
-}
-
-show_status() {
-    print_status "Current dotfiles status:"
-    echo
-    while IFS= read -r line; do
-        local status="${line:0:2}"
-        local filename="${line:3}"
-        case "$status" in
-            " M"|"M "|"MM") echo -e "${YELLOW}Modified:${NC}  $filename";;
-            "A "|"AM")      echo -e "${GREEN}Added:${NC}     $filename";;
-            "D "|" D")      echo -e "${RED}Deleted:${NC}   $filename";;
-            "R ")           echo -e "${BLUE}Renamed:${NC}   $filename";;
-            "??")           echo -e "${BLUE}Untracked:${NC} $filename";;
-            *)              echo -e "Unknown:    $filename";;
+    
+    # Smart message generation based on file patterns
+    local message=""
+    local file_count
+    file_count=$(echo "$files_changed" | wc -l)
+    
+    # Categorize changes
+    local configs=() scripts=() docs=() other=()
+    
+    while IFS= read -r file; do
+        case "$file" in
+            config/*|.*rc|.*config*) configs+=("$file") ;;
+            scripts/*|bin/*|*.sh) scripts+=("$file") ;;
+            README*|*.md|docs/*) docs+=("$file") ;;
+            *) other+=("$file") ;;
         esac
-    done < <(git status --porcelain)
-    echo
-
-    # --- Remote sync status ---
-    git fetch --quiet
-
-    LOCAL=$(git rev-parse @)
-    REMOTE=$(git rev-parse @{u} 2>/dev/null)
-    BASE=$(git merge-base @ @{u} 2>/dev/null)
-
-    if [[ "$LOCAL" = "$REMOTE" ]]; then
-        print_success "Local and remote are in sync."
-    elif [[ "$LOCAL" = "$BASE" ]]; then
-        print_warning "Your branch is BEHIND remote. Run 'dotfiles.sh sync' to pull changes!"
-    elif [[ "$REMOTE" = "$BASE" ]]; then
-        print_warning "Your branch is AHEAD of remote. Run 'dotfiles.sh sync' to push changes!"
+    done <<< "$files_changed"
+    
+    # Generate message based on dominant category
+    if [[ ${#configs[@]} -gt 0 ]]; then
+        local app_names=()
+        for config in "${configs[@]}"; do
+            local app
+            app=$(echo "$config" | sed -E 's|^config/([^/]+)/.*|\1|;s|^\.([^/]+).*|\1|' | head -1)
+            [[ -n "$app" && ! " ${app_names[*]} " =~ " $app " ]] && app_names+=("$app")
+        done
+        
+        if [[ ${#app_names[@]} -eq 1 ]]; then
+            message="config: update ${app_names[0]} configuration"
+        elif [[ ${#app_names[@]} -le 3 ]]; then
+            message="config: update $(IFS=", "; echo "${app_names[*]}")"
+        else
+            message="config: update multiple configurations"
+        fi
+    elif [[ ${#scripts[@]} -gt 0 ]]; then
+        message="scripts: update automation scripts"
+    elif [[ ${#docs[@]} -gt 0 ]]; then
+        message="docs: update documentation"
     else
-        print_error "Your branch and remote have diverged. Manual intervention needed."
+        if [[ $file_count -eq 1 ]]; then
+            message="chore: update $(basename "$files_changed")"
+        else
+            message="chore: update $file_count files"
+        fi
     fi
+    
+    echo "$message"
 }
 
-# Test SSH connection to remote
-test_ssh_connection() {
-    local remote_url="$1"
-    local domain=""
-    
-    # Extract domain from remote URL
-    if [[ "$remote_url" =~ git@([^:]+): ]]; then
-        domain="${BASH_REMATCH[1]}"
-    elif [[ "$remote_url" =~ https://([^/]+)/ ]]; then
-        domain="${BASH_REMATCH[1]}"
-        return 0  # HTTPS doesn't need SSH test
-    else
-        return 0  # Unknown format, skip test
-    fi
-    
-    print_status "Testing SSH connection to $domain..."
-    
-    # Test SSH connection
-    if ssh -T "git@$domain" 2>&1 | grep -q "successfully authenticated\|Welcome to"; then
-        print_success "SSH connection to $domain working"
+# ============================================================================
+# BACKUP MANAGEMENT
+# ============================================================================
+
+create_backup() {
+    if [[ "${CONFIG[auto_backup]}" != "true" ]]; then
         return 0
-    else
-        print_error "SSH authentication failed for $domain"
-        print_warning "You need to add your SSH key to $domain"
+    fi
+    
+    print_status "Creating backup..."
+    
+    mkdir -p "$BACKUP_DIR"
+    
+    local backup_name="backup-$(date +%Y%m%d-%H%M%S)"
+    local backup_path="$BACKUP_DIR/$backup_name"
+    
+    # Create backup using git bundle (includes history)
+    if git bundle create "$backup_path.bundle" --all; then
+        print_success "Backup created: $backup_path.bundle"
         
-        # Show the appropriate public key
-        local key_file=""
-        if [[ "$domain" == "github.com" && -f "$HOME/.ssh/id_ed25519_github.pub" ]]; then
-            key_file="$HOME/.ssh/id_ed25519_github.pub"
-        elif [[ "$domain" == "gitlab.com" && -f "$HOME/.ssh/id_ed25519_gitlab.pub" ]]; then
-            key_file="$HOME/.ssh/id_ed25519_gitlab.pub"
-        elif [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
-            key_file="$HOME/.ssh/id_ed25519.pub"
-        elif [[ -f "$HOME/.ssh/id_rsa.pub" ]]; then
-            key_file="$HOME/.ssh/id_rsa.pub"
+        # Clean old backups
+        cleanup_old_backups
+    else
+        print_error "Failed to create backup"
+        return 1
+    fi
+}
+
+cleanup_old_backups() {
+    local backup_count
+    backup_count=$(find "$BACKUP_DIR" -name "backup-*.bundle" | wc -l)
+    
+    if [[ $backup_count -gt ${CONFIG[max_backups]} ]]; then
+        print_status "Cleaning old backups (keeping ${CONFIG[max_backups]})"
+        find "$BACKUP_DIR" -name "backup-*.bundle" -type f -printf '%T@ %p\n' | \
+            sort -n | head -n -"${CONFIG[max_backups]}" | cut -d' ' -f2- | \
+            xargs rm -f
+    fi
+}
+
+list_backups() {
+    print_header "Available Backups"
+    
+    if [[ ! -d "$BACKUP_DIR" ]] || [[ -z "$(ls -A "$BACKUP_DIR"/*.bundle 2>/dev/null)" ]]; then
+        print_info "No backups found"
+        return
+    fi
+    
+    find "$BACKUP_DIR" -name "backup-*.bundle" -type f -printf '%T@ %p\n' | \
+        sort -rn | while read -r timestamp path; do
+            local date_str
+            date_str=$(date -d "@$timestamp" '+%Y-%m-%d %H:%M:%S')
+            local size
+            size=$(du -h "$path" | cut -f1)
+            echo -e "${CYAN}$(basename "$path")${NC} - ${date_str} (${size})"
+        done
+}
+
+restore_backup() {
+    local backup_name="$1"
+    
+    if [[ -z "$backup_name" ]]; then
+        list_backups
+        echo
+        read -p "Enter backup name to restore: " backup_name
+    fi
+    
+    local backup_path="$BACKUP_DIR/$backup_name"
+    if [[ ! -f "$backup_path" ]]; then
+        backup_path="$BACKUP_DIR/$backup_name.bundle"
+    fi
+    
+    if [[ ! -f "$backup_path" ]]; then
+        print_error "Backup not found: $backup_name"
+        return 1
+    fi
+    
+    if ! confirm_action "This will reset your repository to the backup state. Continue?"; then
+        print_info "Restore cancelled"
+        return 0
+    fi
+    
+    print_status "Restoring from backup: $backup_name"
+    
+    # Create a safety backup first
+    local safety_backup="$BACKUP_DIR/pre-restore-$(date +%Y%m%d-%H%M%S).bundle"
+    git bundle create "$safety_backup" --all
+    
+    # Restore from bundle
+    if git bundle verify "$backup_path" && git reset --hard && git clean -fd; then
+        print_success "Backup restored successfully"
+        print_info "Safety backup created: $(basename "$safety_backup")"
+    else
+        print_error "Failed to restore backup"
+        return 1
+    fi
+}
+
+# ============================================================================
+# ENHANCED GIT OPERATIONS
+# ============================================================================
+
+smart_status() {
+    print_header "Repository Status"
+    
+    # Basic git status with colors
+    local git_status
+    git_status=$(git status --porcelain)
+    
+    if [[ -z "$git_status" ]]; then
+        print_success "Working directory clean"
+    else
+        echo -e "${YELLOW}Changes detected:${NC}"
+        while IFS= read -r line; do
+            local status="${line:0:2}"
+            local filename="${line:3}"
+            case "$status" in
+                " M"|"M "|"MM") echo -e "  ${YELLOW}Modified:${NC}   $filename" ;;
+                "A "|"AM")      echo -e "  ${GREEN}Added:${NC}      $filename" ;;
+                "D "|" D")      echo -e "  ${RED}Deleted:${NC}    $filename" ;;
+                "R ")           echo -e "  ${BLUE}Renamed:${NC}    $filename" ;;
+                "??")           echo -e "  ${CYAN}Untracked:${NC}  $filename" ;;
+                *)              echo -e "  ${GRAY}Unknown:${NC}    $filename" ;;
+            esac
+        done <<< "$git_status"
+    fi
+    
+    echo
+    
+    # Branch information
+    local current_branch
+    current_branch=$(git branch --show-current)
+    echo -e "${PURPLE}Current branch:${NC} $current_branch"
+    
+    # Remote sync status
+    git fetch --quiet 2>/dev/null || true
+    
+    local local_commit remote_commit base_commit
+    local_commit=$(git rev-parse @ 2>/dev/null)
+    remote_commit=$(git rev-parse @{u} 2>/dev/null || echo "")
+    base_commit=$(git merge-base @ @{u} 2>/dev/null || echo "")
+    
+    if [[ -n "$remote_commit" ]]; then
+        if [[ "$local_commit" == "$remote_commit" ]]; then
+            print_success "Branch is up to date with remote"
+        elif [[ "$local_commit" == "$base_commit" ]]; then
+            print_warning "Branch is behind remote"
+            local commits_behind
+            commits_behind=$(git rev-list --count @..@{u})
+            echo -e "  ${GRAY}Behind by $commits_behind commits${NC}"
+        elif [[ "$remote_commit" == "$base_commit" ]]; then
+            print_info "Branch is ahead of remote"
+            local commits_ahead
+            commits_ahead=$(git rev-list --count @{u}..@)
+            echo -e "  ${GRAY}Ahead by $commits_ahead commits${NC}"
+        else
+            print_warning "Branch has diverged from remote"
+            local ahead behind
+            ahead=$(git rev-list --count @{u}..@)
+            behind=$(git rev-list --count @..@{u})
+            echo -e "  ${GRAY}Ahead by $ahead, behind by $behind commits${NC}"
+        fi
+    else
+        print_info "No remote tracking branch"
+    fi
+    
+    # Recent commits
+    echo -e "\n${PURPLE}Recent commits:${NC}"
+    git log --oneline --color=always -5 | sed 's/^/  /'
+}
+
+enhanced_diff() {
+    local target="${1:-}"
+    
+    print_header "Changes Overview"
+    
+    if [[ -n "$target" ]]; then
+        git --no-pager diff --color=always "$target"
+    else
+        # Show both staged and unstaged changes
+        local staged_changes unstaged_changes
+        staged_changes=$(git diff --cached --name-only)
+        unstaged_changes=$(git diff --name-only)
+        
+        if [[ -n "$staged_changes" ]]; then
+            echo -e "${GREEN}Staged changes:${NC}"
+            git --no-pager diff --cached --stat --color=always
+            echo
+            git --no-pager diff --cached --color=always
+            echo
         fi
         
-        if [[ -n "$key_file" ]]; then
+        if [[ -n "$unstaged_changes" ]]; then
+            echo -e "${YELLOW}Unstaged changes:${NC}"
+            git --no-pager diff --stat --color=always
             echo
-            print_status "Your SSH public key:"
-            echo -e "${BLUE}$(cat "$key_file")${NC}"
-            echo
-            
-            case "$domain" in
-                "github.com")
-                    print_status "Add this key to GitHub:"
-                    echo -e "${YELLOW}→ https://github.com/settings/keys${NC}"
-                    ;;
-                "gitlab.com")
-                    print_status "Add this key to GitLab:"
-                    echo -e "${YELLOW}→ https://gitlab.com/-/user_settings/ssh_keys${NC}"
-                    ;;
-            esac
-            
-            echo
-            read -p "Press Enter after adding the key to $domain, or Ctrl+C to abort: "
-            
-            # Test again
-            if ssh -T "git@$domain" 2>&1 | grep -q "successfully authenticated\|Welcome to"; then
-                print_success "SSH connection now working!"
-                return 0
-            else
-                print_error "SSH connection still failing. Please check your key was added correctly."
-                return 1
-            fi
-        else
-            print_error "No SSH public key found. Run the git-ssh-setup.sh script first."
-            
-            # Try to run the setup script if it exists
-            local setup_script="$REPO_ROOT/scripts/setup/git-ssh-setup.sh"
-            if [[ -f "$setup_script" ]]; then
-                echo
-                read -p "Run git-ssh-setup.sh now? (y/N): " -n 1 -r
-                echo
-                if [[ $REPLY =~ ^[Yy]$ ]]; then
-                    "$setup_script" -y
-                    return $?
-                fi
-            fi
-            return 1
+            git --no-pager diff --color=always
+        fi
+        
+        if [[ -z "$staged_changes" && -z "$unstaged_changes" ]]; then
+            print_info "No changes to display"
         fi
     fi
 }
 
-sync_dotfiles() {
-    print_status "Syncing dotfiles..."
-
-    local local_changes=0
+smart_sync() {
+    local commit_message="$1"
+    
+    print_header "Smart Sync Operation"
+    
+    # Create backup before major operation
+    create_backup
+    
+    # Check for uncommitted changes
     if git status --porcelain | grep -q '^'; then
-        local_changes=1
+        print_status "Staging and committing local changes..."
         git add -A
-
-        local commit_msg
-        if [ -n "$1" ]; then
-            commit_msg="$1"
-        else
-            # Try AI-generated commit message first
-            ai_commit_msg=$(generate_ai_commit_message)
+        
+        # Generate commit message
+        if [[ -z "$commit_message" ]]; then
+            local ai_message
+            ai_message=$(generate_ai_commit_message)
             
             echo
             print_status "🤖 AI suggests:"
-            echo -e "   ${GREEN}\"$ai_commit_msg\"${NC}"
-            echo
-            read -p "Use AI message? [Y/n/e=edit]: " -n 1 -r
+            echo -e "   ${GREEN}\"$ai_message\"${NC}"
             echo
             
-            case "$REPLY" in
-                                 [Nn])
-                     # Use fallback message
-                     commit_msg=$(generate_commit_message)
-                     print_status "Using basic commit message:"
-                     echo -e "   ${YELLOW}\"$commit_msg\"${NC}"
-                     ;;
-                [Ee])
-                    # Let user edit the AI message
+            local choice
+            echo "Choose an option:"
+            echo "  [1] Use AI message (default)"
+            echo "  [2] Use fallback message"
+            echo "  [3] Enter custom message"
+            echo "  [4] Show diff first"
+            read -p "Choice [1]: " choice
+            
+            case "${choice:-1}" in
+                1) commit_message="$ai_message" ;;
+                2) commit_message=$(generate_fallback_commit_message) ;;
+                3) 
                     echo -n "Enter commit message: "
-                    read -r commit_msg
-                    if [ -z "$commit_msg" ]; then
-                        commit_msg="$ai_commit_msg"
-                    fi
+                    read -r commit_message
+                    [[ -z "$commit_message" ]] && commit_message="$ai_message"
                     ;;
-                *)
-                    # Use AI message (default)
-                    commit_msg="$ai_commit_msg"
+                4)
+                    enhanced_diff
+                    echo
+                    read -p "Press Enter to continue with AI message or type new message: " commit_message
+                    [[ -z "$commit_message" ]] && commit_message="$ai_message"
                     ;;
+                *) commit_message="$ai_message" ;;
             esac
         fi
-
-        if ! git commit -m "$commit_msg"; then
+        
+        if git commit -m "$commit_message"; then
+            print_success "Changes committed: $commit_message"
+        else
             print_error "Failed to commit changes"
             return 1
-        else
-            echo -e "${YELLOW}[✓] Changes committed: $commit_msg${NC}"
         fi
     else
-        print_warning "No local changes to commit!"
+        print_info "No local changes to commit"
     fi
-
-    # Test SSH connection before attempting to pull/push
-    if ! test_ssh_connection "$REMOTE_URL"; then
-        print_error "Cannot proceed without working SSH connection"
-        return 1
-    fi
-
-    # Always pull from remote to get latest changes
-    print_status "Pulling latest changes..."
-    if ! git pull --rebase; then
-        print_error "Failed to pull (rebase) changes! You probably have merge conflicts."
-        print_warning "Resolve conflicts, run 'git rebase --continue' or 'git rebase --abort', then re-run this script."
-        return 1
-    else
+    
+    # Sync with remote
+    print_status "Syncing with remote..."
+    
+    if git pull --rebase; then
         print_success "Successfully pulled changes"
-    fi
-
-    # Always push (in case rebase rewrote local commits, or you resolved conflicts)
-    print_status "Pushing changes..."
-    if ! git push; then
-        print_error "Failed to push changes. Check your remote/network."
-        return 1
     else
+        print_error "Failed to pull changes - you may have conflicts to resolve"
+        print_info "Run 'git status' to see conflicts, then 'git rebase --continue' or 'git rebase --abort'"
+        return 1
+    fi
+    
+    if git push; then
         print_success "Successfully pushed changes"
+    else
+        print_error "Failed to push changes"
+        return 1
+    fi
+    
+    print_success "Sync completed successfully!"
+}
+
+# ============================================================================
+# HOOKS SYSTEM
+# ============================================================================
+
+run_hook() {
+    local hook_name="$1"
+    shift
+    local hook_file="${CONFIG[hook_dir]}/$hook_name"
+    
+    if [[ -f "$hook_file" && -x "$hook_file" ]]; then
+        print_debug "Running hook: $hook_name"
+        "$hook_file" "$@"
     fi
 }
 
-show_diff() {
-    print_status "Showing changes:"
-    echo
-    git --no-pager diff
-    echo
+create_hook() {
+    local hook_name="$1"
+    
+    if [[ -z "$hook_name" ]]; then
+        echo "Available hooks:"
+        echo "  pre-sync    - Run before sync operation"
+        echo "  post-sync   - Run after successful sync"
+        echo "  pre-commit  - Run before creating commit"
+        echo "  post-commit - Run after creating commit"
+        echo
+        read -p "Enter hook name: " hook_name
+    fi
+    
+    mkdir -p "${CONFIG[hook_dir]}"
+    local hook_file="${CONFIG[hook_dir]}/$hook_name"
+    
+    if [[ -f "$hook_file" ]]; then
+        if ! confirm_action "Hook already exists. Overwrite?"; then
+            return 0
+        fi
+    fi
+    
+    cat > "$hook_file" << EOF
+#!/bin/bash
+# Dotfiles hook: $hook_name
+# Arguments: \$@
+
+echo "Running $hook_name hook..."
+
+# Add your custom commands here
+# Examples:
+# - Restart services
+# - Update symlinks  
+# - Run tests
+# - Send notifications
+
+EOF
+    
+    chmod +x "$hook_file"
+    print_success "Hook created: $hook_file"
+    
+    if confirm_action "Edit hook now?"; then
+        "${EDITOR:-nano}" "$hook_file"
+    fi
 }
 
-# Main script dispatcher
-case "$1" in
-    "status"|"st")
-        show_status
-        ;;
-    "sync"|"s")
-        shift
-        sync_dotfiles "$*"
-        ;;
-    "diff"|"d")
-        show_diff
-        ;;
-    "help"|"-h"|"--help")
-        print_help
-        ;;
-    *)
-        print_help
-        ;;
-esac
+# ============================================================================
+# HELP AND USAGE
+# ============================================================================
+
+show_help() {
+    print_banner
+    cat << EOF
+
+${YELLOW}USAGE:${NC}
+  $(basename "$0") [--options] <command> [arguments]
+
+${YELLOW}COMMANDS:${NC}
+  ${GREEN}status, st${NC}           Show detailed repository status
+  ${GREEN}sync, s [msg]${NC}        Smart sync with AI commit messages
+  ${GREEN}diff, d [target]${NC}     Show enhanced diff view
+  ${GREEN}backup${NC}               Create manual backup
+  ${GREEN}restore [name]${NC}       Restore from backup
+  ${GREEN}backups${NC}              List available backups
+  ${GREEN}config${NC}               Interactive configuration
+  ${GREEN}config-show${NC}          Show current configuration
+  ${GREEN}hook [name]${NC}          Create or edit hooks
+  ${GREEN}install${NC}              Install/setup dotfiles
+  ${GREEN}cleanup${NC}              Clean repository and backups
+  ${GREEN}doctor${NC}               Diagnose common issues
+  ${GREEN}help, -h, --help${NC}     Show this help
+
+${YELLOW}OPTIONS:${NC}
+  ${CYAN}--no-confirm${NC}         Skip confirmation prompts
+  ${CYAN}--no-backup${NC}          Skip automatic backups
+  ${CYAN}--no-ai${NC}              Disable AI commit messages
+  ${CYAN}--debug${NC}              Enable debug logging
+  ${CYAN}--remote=ssh|https${NC}   Set remote protocol
+
+${YELLOW}FEATURES:${NC}
+  🤖 AI-powered commit messages using local Ollama
+  💾 Automatic backups before major operations
+  🔄 Smart sync with conflict detection
+  🎯 Hooks system for custom automation
+  📊 Enhanced status and diff views
+  ⚙️  Interactive configuration management
+  🩺 Built-in diagnostics and repair tools
+
+${YELLOW}EXAMPLES:${NC}
+  $(basename "$0") sync                    # AI-powered sync
+  $(basename "$0") sync "custom message"   # Sync with custom message
+  $(basename "$0") diff HEAD~1             # Show changes since last commit
+  $(basename "$0") restore backup-20240101 # Restore specific backup
+  $(basename "$0") --no-confirm sync       # Sync without prompts
+
+${YELLOW}CONFIGURATION:${NC}
+  Config file: ${CONFIG_FILE}
+  Log file: ${LOG_FILE}
+  Backup dir: ${BACKUP_DIR}
+  
+  Run '$(basename "$0") config' for interactive setup.
+
+EOF
+}
+
+# ============================================================================
+# ADVANCED FEATURES
+# ============================================================================
+
+doctor() {
+    print_header "System Diagnostics"
+    
+    local issues=0
+    
+    # Check git configuration
+    print_status "Checking git configuration..."
+    if git config user.name >/dev/null && git config user.email >/dev/null; then
+        print_success "Git user configuration OK"
+    else
+        print_error "Git user not configured"
+        echo -e "  Run: ${CYAN}git config --global user.name 'Your Name'${NC}"
+        echo -e "  Run: ${CYAN}git config --global user.email 'your@email.com'${NC}"
+        ((issues++))
+    fi
+    
+    # Check repository status
+    print_status "Checking repository..."
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        print_success "Inside git repository"
+    else
+        print_error "Not inside a git repository"
+        ((issues++))
+    fi
+    
+    # Check remote
+    if git remote get-url origin >/dev/null 2>&1; then
+        print_success "Remote origin configured"
+    else
+        print_warning "No remote origin found"
+    fi
+    
+    # Check AI setup
+    print_status "Checking AI setup..."
+    if command -v ollama >/dev/null 2>&1; then
+        if ollama list >/dev/null 2>&1; then
+            local model_count
+            model_count=$(ollama list | tail -n +2 | wc -l)
+            print_success "Ollama running with $model_count models"
+        else
+            print_warning "Ollama installed but not running"
+            echo -e "  Run: ${CYAN}ollama serve${NC}"
+        fi
+    else
+        print_info "Ollama not installed (AI features disabled)"
+        echo -e "  Install: ${CYAN}curl -fsSL https://ollama.ai/install.sh | sh${NC}"
+    fi
+    
+    # Check backup directory
+    print_status "Checking backup system..."
+    if [[ -d "$BACKUP_DIR" ]]; then
+        local backup_count
+        backup_count=$(find "$BACKUP_DIR" -name "*.bundle" 2>/dev/null | wc -l)
+        print_success "Backup directory OK ($backup_count backups)"
+    else
+        print_info "Backup directory will be created when needed"
+    fi
+    
+    # Check hooks
+    print_status "Checking hooks..."
+    if [[ -d "${CONFIG[hook_dir]}" ]]; then
+        local hook_count
+        hook_count=$(find "${CONFIG[hook_dir]}" -type f -executable 2>/dev/null | wc -l)
+        if [[ $hook_count -gt 0 ]]; then
+            print_success "Found $hook_count executable hooks"
+        else
+            print_info "No hooks configured"
+        fi
+    else
+        print_info "No hooks directory"
+    fi
+    
+    echo
+    if [[ $issues -eq 0 ]]; then
+        print_success "All checks passed! 🎉"
+    else
+        print_warning "Found $issues issues that should be addressed"
+    fi
+}
+
+cleanup() {
+    print_header "Repository Cleanup"
+    
+    if confirm_action "This will clean untracked files and optimize the repository. Continue?"; then
+        print_status "Cleaning untracked files..."
+        git clean -fd
+        
+        print_status "Running git maintenance..."
+        git gc --prune=now
+        
+        print_status "Cleaning old backups..."
+        cleanup_old_backups
+        
+        print_success "Cleanup completed"
+    fi
+}
+
+install_dotfiles() {
+    print_header "Dotfiles Installation"
+    
+    # This is a placeholder for installation logic
+    # You can customize this based on your dotfiles structure
+    
+    print_status "Setting up dotfiles environment..."
+    
+    # Create necessary directories
+    mkdir -p "$BACKUP_DIR"
+    mkdir -p "${CONFIG[hook_dir]}"
+    
+    # Set up initial configuration
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        save_config
+    fi
+    
+    # Check for install script
+    local install_script="./install.sh"
+    if [[ -f "$install_script" ]]; then
+        if confirm_action "Run local install script?"; then
+            bash "$install_script"
+        fi
+    fi
+    
+    print_success "Installation completed!"
+    print_info "Run '$(basename "$0") config' to customize settings"
+}
+
+# ============================================================================
+# ARGUMENT PARSING AND MAIN EXECUTION
+# ============================================================================
+
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --no-confirm)
+                CONFIG[confirm_actions]="false"
+                shift
+                ;;
+            --no-backup)
+                CONFIG[auto_backup]="false"
+                shift
+                ;;
+            --no-ai)
+                CONFIG[ai_enabled]="false"
+                shift
+                ;;
+            --debug)
+                CONFIG[log_level]="debug"
+                shift
+                ;;
+            --remote=*)
+                CONFIG[remote_protocol]="${1#*=}"
+                shift
+                ;;
+            --remote)
+                CONFIG[remote_protocol]="$2"
+                shift 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                print_error "Unknown option: $1"
+                exit 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    
+    # Return remaining arguments
+    echo "$@"
+}
+
+main() {
+    # Load configuration
+    load_config
+    
+    # Parse arguments
+    local remaining_args
+    remaining_args=$(parse_arguments "$@")
+    eval set -- "$remaining_args"
+    
+    # Ensure we're in a git repository for most commands
+    local git_commands=("status" "st" "sync" "s" "diff" "d" "backup" "cleanup")
+    local command="${1:-help}"
+    
+    if [[ " ${git_commands[*]} " =~ " $command " ]]; then
+        if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            print_error "Not inside a Git repository!"
+            exit 2
+        fi
+        
+        # Change to repository root
+        local repo_root
+        repo_root=$(git rev-parse --show-toplevel)
+        cd "$repo_root" || {
+            print_error "Failed to change to repository root: $repo_root"
+            exit 1
+        }
+        print_debug "Using repository root: $repo_root"
+    fi
+    
+    # Run pre-command hook
+    run_hook "pre-$command" "$@"
+    
+    # Command dispatcher
+    case "$command" in
+        "status"|"st")
+            smart_status
+            ;;
+        "sync"|"s")
+            shift
+            smart_sync "$*"
+            ;;
+        "diff"|"d")
+            shift
+            enhanced_diff "$1"
+            ;;
+        "backup")
+            create_backup
+            ;;
+        "restore")
+            shift
+            restore_backup "$1"
+            ;;
+        "backups")
+            list_backups
+            ;;
+        "config")
+            configure
+            ;;
+        "config-show")
+            show_config
+            ;;
+        "hook")
+            shift
+            create_hook "$1"
+            ;;
+        "install")
+            install_dotfiles
+            ;;
+        "cleanup")
+            cleanup
+            ;;
+        "doctor")
+            doctor
+            ;;
+        "help"|"-h"|"--help"|"")
+            show_help
+            ;;
+        *)
+            print_error "Unknown command: $command"
+            echo "Run '$(basename "$0") help' for usage information"
+            exit 1
+            ;;
+    esac
+    
+    # Run post-command hook
+    run_hook "post-$command" "$@"
+}
+
+# ============================================================================
+# SCRIPT EXECUTION
+# ============================================================================
+
+# Handle script interruption gracefully
+trap 'print_error "Script interrupted"; exit 130' INT TERM
+
+# Create log file directory if needed
+mkdir -p "$(dirname "$LOG_FILE")"
+
+# Execute main function with all arguments
+main "$@"

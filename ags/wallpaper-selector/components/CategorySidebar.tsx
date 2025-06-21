@@ -1,53 +1,48 @@
-import { Variable, bind } from 'astal'
-import { Widget } from 'astal/gtk3'
-import Gtk from 'gi://Gtk'
+import { Gtk } from "astal/gtk3"
+import { Variable } from "astal"
 
 interface CategorySidebarProps {
-  categories: Variable<string[]>
-  selectedCategory: Variable<string>
-  onCategorySelect: (category: string) => void
+    categories: string[]
+    selectedCategory: Variable<string>
+    onCategorySelect: (category: string) => void
 }
 
-export function CategorySidebar({ categories, selectedCategory, onCategorySelect }: CategorySidebarProps) {
-  function createCategoryButton(category: string) {
-    return (
-      <button
-        className={bind(selectedCategory).as(sel => 
-          `category-button ${sel === category ? 'selected' : ''}`
-        )}
-        onClicked={() => onCategorySelect(category)}
-      >
-        <box>
-          <label 
-            label={category.charAt(0).toUpperCase() + category.slice(1)} 
+export default function CategorySidebar({ 
+    categories, 
+    selectedCategory, 
+    onCategorySelect 
+}: CategorySidebarProps) {
+    return <box 
+        className="category-sidebar"
+        orientation={Gtk.Orientation.VERTICAL}
+        spacing={8}
+    >
+        <label 
+            className="sidebar-title"
+            label="Categories"
             halign={Gtk.Align.START}
-          />
+        />
+        
+        <box 
+            className="category-list"
+            orientation={Gtk.Orientation.VERTICAL}
+            spacing={4}
+        >
+            {categories.map(category => (
+                <button
+                    key={category}
+                    className={selectedCategory().bind().as(selected => 
+                        `category-button ${selected === category ? 'active' : ''}`
+                    )}
+                    onClicked={() => onCategorySelect(category)}
+                    halign={Gtk.Align.FILL}
+                >
+                    <label 
+                        label={category.charAt(0).toUpperCase() + category.slice(1)}
+                        halign={Gtk.Align.START}
+                    />
+                </button>
+            ))}
         </box>
-      </button>
-    )
-  }
-
-  return (
-    <box className="sidebar" orientation={Gtk.Orientation.VERTICAL} widthRequest={250}>
-      <box className="sidebar-header">
-        <label label="Categories" className="sidebar-title" />
-      </box>
-      
-      <separator />
-      
-      <scrollable vexpand>
-        <box orientation={Gtk.Orientation.VERTICAL}>
-          {bind(categories).as(cats => 
-            cats.map(category => createCategoryButton(category))
-          )}
-        </box>
-      </scrollable>
-      
-      <separator />
-      
-      <button className="refresh-button" onClicked={() => console.log("Refreshing...")}>
-        <label label="Refresh" />
-      </button>
     </box>
-  )
 } 

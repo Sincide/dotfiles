@@ -97,40 +97,36 @@ function check_gpu
     # Check for AMD ROCm first (since you're AMD-only)
     if command -v rocm-smi >/dev/null 2>&1
         good "AMD ROCm detected"
-        set rocm_info (rocm-smi --showtemp --showmeminfo vram --showuse 2>/dev/null)
-        if test -n "$rocm_info"
-            # Parse temperature info using sed to extract numbers
-            set temp_edge (echo $rocm_info | grep "Temperature (Sensor edge)" | sed 's/.*: \([0-9.]*\)$/\1/')
-            set temp_junction (echo $rocm_info | grep "Temperature (Sensor junction)" | sed 's/.*: \([0-9.]*\)$/\1/')
-            set temp_memory (echo $rocm_info | grep "Temperature (Sensor memory)" | sed 's/.*: \([0-9.]*\)$/\1/')
-            
-            if test -n "$temp_edge"
-                item "Temperature: Edge $temp_edge°C, Junction $temp_junction°C, Memory $temp_memory°C"
-            end
-            
-            # Parse GPU utilization using sed
-            set gpu_use (echo $rocm_info | grep "GPU use" | sed 's/.*: \([0-9]*\)$/\1/')
-            if test -n "$gpu_use"
-                item "GPU utilization: $gpu_use%"
-            end
-            
-            # Parse VRAM info using sed to extract numbers
-            set vram_total (echo $rocm_info | grep "VRAM Total Memory" | sed 's/.*: \([0-9]*\)$/\1/')
-            set vram_used (echo $rocm_info | grep "VRAM Total Used Memory" | sed 's/.*: \([0-9]*\)$/\1/')
-            
-            if test -n "$vram_total" -a -n "$vram_used"
-                set vram_total_gb (math "$vram_total / 1024 / 1024 / 1024")
-                set vram_used_gb (math "$vram_used / 1024 / 1024 / 1024")
-                item "VRAM: "(printf "%.1f GB" $vram_used_gb)" / "(printf "%.1f GB" $vram_total_gb)" used"
-            end
-            
-            # Try to get GPU name from ROCm
-            set gpu_name (rocm-smi --showproductname 2>/dev/null | grep "Card" | head -1)
-            if test -n "$gpu_name"
-                item "GPU: "(echo $gpu_name | cut -d: -f2 | string trim)
-            end
-        else
-            item "ROCm tools installed but no detailed info available"
+        
+        # Parse temperature info directly from individual commands
+        set temp_edge (rocm-smi --showtemp 2>/dev/null | grep "Temperature (Sensor edge)" | awk '{print $NF}')
+        set temp_junction (rocm-smi --showtemp 2>/dev/null | grep "Temperature (Sensor junction)" | awk '{print $NF}')
+        set temp_memory (rocm-smi --showtemp 2>/dev/null | grep "Temperature (Sensor memory)" | awk '{print $NF}')
+        
+        if test -n "$temp_edge"
+            item "Temperature: Edge $temp_edge°C, Junction $temp_junction°C, Memory $temp_memory°C"
+        end
+        
+        # Parse GPU utilization directly
+        set gpu_use (rocm-smi --showuse 2>/dev/null | grep "GPU use" | awk '{print $NF}')
+        if test -n "$gpu_use"
+            item "GPU utilization: $gpu_use%"
+        end
+        
+        # Parse VRAM info directly
+        set vram_total (rocm-smi --showmeminfo vram 2>/dev/null | grep "VRAM Total Memory" | awk '{print $NF}')
+        set vram_used (rocm-smi --showmeminfo vram 2>/dev/null | grep "VRAM Total Used Memory" | awk '{print $NF}')
+        
+        if test -n "$vram_total" -a -n "$vram_used"
+            set vram_total_gb (math "$vram_total / 1024 / 1024 / 1024")
+            set vram_used_gb (math "$vram_used / 1024 / 1024 / 1024")
+            item "VRAM: "(printf "%.1f GB" $vram_used_gb)" / "(printf "%.1f GB" $vram_total_gb)" used"
+        end
+        
+        # Try to get GPU name from ROCm
+        set gpu_name (rocm-smi --showproductname 2>/dev/null | grep "Card" | head -1 | cut -d: -f2 | string trim)
+        if test -n "$gpu_name"
+            item "GPU: $gpu_name"
         end
     else if test -e /sys/class/drm/card0/device/vendor
         set vendor_id (cat /sys/class/drm/card0/device/vendor 2>/dev/null)
@@ -179,7 +175,7 @@ function check_system
     # RAM - handle different free output formats
     set free_output (free -h 2>/dev/null)
     if test $status -eq 0
-        set mem_line (echo $free_output | grep "^Mem:")
+        set mem_line (free -h | grep "^Mem:")
         
         if test -n "$mem_line"
             # Parse human-readable output (handle both spaces and multiple spaces)
@@ -296,10 +292,10 @@ function check_models
         return 1
     end
     
-    set models_raw (ollama list 2>/dev/null)
-    set models_output (echo $models_raw | tail -n +2)
+    # Get list of models directly from ollama
+    set models_list (ollama list 2>/dev/null | tail -n +2)
     
-    if test -z "$models_output"
+    if test -z "$models_list"
         warn "No models installed"
         item "Install a model: ollama pull llama3.2:3b"
         return
@@ -308,46 +304,25 @@ function check_models
     set model_count 0
     set total_size_gb 0
     
-    # Debug: show raw output format
-    # item "Debug - Raw ollama list output:"
-    # echo $models_raw | head -5
-    
-    # Parse each line more carefully
-    echo $models_output | while read -l line
+    # Parse each model line
+    for line in $models_list
         if test -n (string trim $line)
             set model_count (math "$model_count + 1")
             
-            # Split by whitespace, but be more careful about the parsing
-            set line_clean (string trim $line)
-            set fields (string split -n ' ' $line_clean)
+            # Split by whitespace
+            set fields (string split -n ' ' (string trim $line))
             
-            # Extract fields more robustly
-            set name ""
-            set id ""
-            set size_str ""
-            set modified ""
-            
-            if test (count $fields) -ge 1
-                set name $fields[1]
-            end
-            if test (count $fields) -ge 2
-                set id $fields[2]
-            end
-            if test (count $fields) -ge 3
-                set size_str $fields[3]
-            end
-            if test (count $fields) -ge 4
-                # Join remaining fields for modified date
-                set modified (string join " " $fields[4..-1])
-            end
+            # Extract fields
+            set name $fields[1]
+            set size_str "$fields[3] $fields[4]"
             
             # Parse size and convert to GB for totaling
             if test -n "$size_str"
                 set size_num (echo $size_str | sed 's/[^0-9.]//g')
                 if test -n "$size_num"
-                    if string match -q "*GB" $size_str
+                    if string match -q "* GB" $size_str
                         set total_size_gb (math "$total_size_gb + $size_num")
-                    else if string match -q "*MB" $size_str
+                    else if string match -q "* MB" $size_str
                         set total_size_gb (math "$total_size_gb + ($size_num / 1000)")
                     end
                 end
@@ -370,19 +345,10 @@ function check_models
             end
             
             good "$name ($size_str) - $category"
-            if test -n "$id"
-                item "ID: $id"
-            end
-            if test -n "$modified"
-                item "Modified: $modified"
-            end
-            echo
         end
     end
     
-    # Count models properly
-    set actual_count (echo $models_output | grep -c "^")
-    item "Total models: $actual_count"
+    item "Total models: $model_count"
     item "Total size: "(printf "%.1f GB" $total_size_gb)
 end
 

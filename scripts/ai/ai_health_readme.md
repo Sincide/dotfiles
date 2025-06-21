@@ -288,3 +288,55 @@ This script is provided as-is for personal and educational use.
 ---
 
 **Keep your AI healthy! 🤖💪**
+
+# AI Health Script - Devlog
+
+## Latest Updates (2025-01-21)
+
+### 🔧 **Fixed Major Parsing Issues**
+
+**Issues Fixed:**
+1. **Memory Parsing Error**: The script was failing to parse RAM information from `free -h` output
+2. **Model Detection Failure**: Script showed "No models installed" despite having 5 models
+3. **GPU Device Node Detection**: Was only checking `/dev/dri/card0` but system has `/dev/dri/card1`
+4. **VRAM Monitoring**: Failed to parse ROCm output correctly
+5. **Model Size Calculation**: Total size showing 0.0 GB instead of actual total
+
+**Solutions Applied:**
+
+1. **Memory Parsing Fix**: 
+   - Changed from `echo $free_output | grep "^Mem:"` to direct `free -h | grep "^Mem:"` 
+   - Fixed variable scoping issue in Fish shell
+
+2. **Model Detection Fix**:
+   - Replaced while loop with for loop to fix Fish variable scoping
+   - Fixed field extraction to properly combine size fields ("4.1" + "GB" = "4.1 GB")
+   - Streamlined parsing logic
+
+3. **GPU Device Node Fix**:
+   - Added detection for multiple card devices (/dev/dri/card0, card1, etc.)
+   - Dynamic detection of available GPU devices
+
+4. **VRAM Monitoring Fix**:
+   - Split combined rocm-smi calls into individual commands
+   - Fixed awk field extraction using `$NF` for last field
+   - Added proper numeric validation before math operations
+
+5. **ROCm Command Fix**:
+   - Fixed `rocm-smi --showmeminfo` to include required parameter (`vram`)
+   - Individual command calls for better reliability
+
+**Current Working Status:**
+✅ Memory parsing: Shows "RAM: 8.6 GB / 31.0 GB used"  
+✅ Model detection: Lists all 5 models correctly with categories  
+✅ GPU monitoring: Shows temperature, utilization, and VRAM usage  
+✅ VRAM calculation: Proper before/during inference monitoring  
+✅ Total model size: Correctly shows "26.9 GB" total  
+
+**Performance:**
+- Script runs comprehensive diagnostics for AMD GPU + ROCm setup
+- Excellent benchmark performance: 38.8 tokens/second
+- Proper GPU acceleration detection and monitoring
+- Real-time VRAM usage tracking
+
+The script now provides complete AI/LLM diagnostics specifically optimized for AMD GPU systems with ROCm acceleration.

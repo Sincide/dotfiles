@@ -123,3 +123,6 @@ set -g fish_greeting ""
 
 # Enable vi mode (optional - uncomment if you prefer vi keybindings)
 # fish_vi_key_bindings
+set -gx PATH /opt/rocm/bin $PATH
+set -gx ROCM_PATH /opt/rocm
+set -gx HSA_OVERRIDE_GFX_VERSION 11.0.0

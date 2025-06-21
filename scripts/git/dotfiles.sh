@@ -18,9 +18,16 @@ Usage: $(basename "$0") [--remote=ssh|https] <command> [options]
 
 Commands:
   status, st         Show status of dotfiles (local and remote sync info)
-  sync, s [msg]      Sync dotfiles (add, commit, pull, push). Optionally provide a commit message.
+  sync, s [msg]      Sync dotfiles (add, commit, pull, push). 
+                     Uses AI-generated commit messages if no message provided.
+                     Optionally provide a custom commit message.
   diff, d            Show diff of changes
   help, -h, --help   Show this help message
+
+Features:
+  🤖 AI Commit Messages - Uses local Ollama (mistral:7b-instruct) to generate
+                         smart commit messages based on your changes.
+                         Falls back to basic messages if AI unavailable.
 EOF
 }
 
@@ -76,7 +83,66 @@ if [[ -n "$confirm" && "$confirm" != "y" && "$confirm" != "Y" ]]; then
     exit 4
 fi
 
-# Function to generate commit message based on changes
+# Function to generate AI-powered commit message
+generate_ai_commit_message() {
+    local files_changed
+    files_changed=$(git diff --cached --name-only)
+    local diff_summary
+    diff_summary=$(git diff --cached --stat)
+    
+    if [ -z "$files_changed" ]; then
+        echo "No changes staged"
+        return 1
+    fi
+    
+    # Check if Ollama is available
+    if ! command -v ollama >/dev/null 2>&1; then
+        print_warning "Ollama not found, falling back to basic commit message"
+        generate_commit_message
+        return
+    fi
+    
+    # Check if Ollama is running
+    if ! ollama list >/dev/null 2>&1; then
+        print_warning "Ollama not running, falling back to basic commit message"
+        generate_commit_message
+        return
+    fi
+    
+    print_status "🤖 Generating AI commit message..."
+    
+    # Create prompt for AI
+    local prompt="You are a git commit message expert. Generate a concise, descriptive commit message for these dotfiles changes.
+
+Files changed:
+$files_changed
+
+Diff summary:
+$diff_summary
+
+Rules:
+- Use conventional commit format when appropriate (feat:, fix:, chore:, docs:, style:)
+- Be specific about what changed
+- Keep it under 72 characters for the first line
+- Focus on the most important changes
+- Use present tense
+- Don't include 'dotfiles' in every message
+
+Generate only the commit message, no explanation:"
+
+    # Try to get AI response
+    local ai_message
+    ai_message=$(ollama run mistral:7b-instruct "$prompt" 2>/dev/null | head -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    
+    if [ -n "$ai_message" ] && [ ${#ai_message} -gt 5 ]; then
+        echo "$ai_message"
+    else
+        print_warning "AI failed to generate message, falling back to basic commit message"
+        generate_commit_message
+    fi
+}
+
+# Function to generate commit message based on changes (fallback)
 generate_commit_message() {
     local files_changed
     files_changed=$(git diff --cached --name-only)
@@ -236,7 +302,34 @@ sync_dotfiles() {
         if [ -n "$1" ]; then
             commit_msg="$1"
         else
-            commit_msg=$(generate_commit_message)
+            # Try AI-generated commit message first
+            ai_commit_msg=$(generate_ai_commit_message)
+            
+            echo
+            print_status "🤖 AI suggests: $ai_commit_msg"
+            echo
+            read -p "Use AI message? [Y/n/e=edit]: " -n 1 -r
+            echo
+            
+            case "$REPLY" in
+                [Nn])
+                    # Use fallback message
+                    commit_msg=$(generate_commit_message)
+                    print_status "Using basic commit message: $commit_msg"
+                    ;;
+                [Ee])
+                    # Let user edit the AI message
+                    echo -n "Enter commit message: "
+                    read -r commit_msg
+                    if [ -z "$commit_msg" ]; then
+                        commit_msg="$ai_commit_msg"
+                    fi
+                    ;;
+                *)
+                    # Use AI message (default)
+                    commit_msg="$ai_commit_msg"
+                    ;;
+            esac
         fi
 
         if ! git commit -m "$commit_msg"; then

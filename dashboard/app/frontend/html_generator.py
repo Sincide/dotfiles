@@ -265,7 +265,7 @@ def get_dashboard_html():
                         <select id="log-file-select" onchange="loadSelectedLog()" style="margin-right: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.6); border: 1px solid rgba(100,255,218,0.3); color: #e0e0e0; border-radius: 4px; min-width: 300px; max-height: 200px; overflow-y: auto;">
                             <option value="">Select a log file...</option>
                         </select>
-                        <select id="log-level-filter" onchange="applyLogFilters()" style="margin-right: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.6); border: 1px solid rgba(100,255,218,0.3); color: #e0e0e0; border-radius: 4px;">
+                        <select id="log-level-filter" onchange="refreshLogContent()" style="margin-right: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.6); border: 1px solid rgba(100,255,218,0.3); color: #e0e0e0; border-radius: 4px;">
                             <option value="ALL">All Levels</option>
                             <option value="ERROR">Errors</option>
                             <option value="WARNING">Warnings</option>
@@ -987,15 +987,24 @@ def get_dashboard_html():
             statsDiv.innerHTML = '<div style="color: #90a4ae; text-align: center; padding: 2rem;">Loading statistics...</div>';
             
             try {
+                // Get current filter settings
+                const levelFilter = document.getElementById('log-level-filter').value;
+                
+                // Build URL with filters
+                let contentUrl = `/api/logs/content?file=${encodeURIComponent(currentLogFile)}&lines=100`;
+                if (levelFilter && levelFilter !== 'ALL') {
+                    contentUrl += `&filter_level=${encodeURIComponent(levelFilter)}`;
+                }
+                
                 // Load log content
-                const contentResponse = await fetch(`/api/logs/content?file=${encodeURIComponent(currentLogFile)}&lines=100`);
+                const contentResponse = await fetch(contentUrl);
                 const contentData = await contentResponse.json();
                 
                 if (contentData.error) {
                     contentDiv.innerHTML = `<div style="color: #f44336;">Error: ${contentData.error}</div>`;
                 } else {
                     currentLogContent = contentData.lines || [];
-                    applyLogFilters();
+                    applyLogFilters(); // This now only applies search filters
                 }
                 
                 // Load log stats
@@ -1021,14 +1030,8 @@ def get_dashboard_html():
             
             let filteredLines = currentLogContent;
             
-            // Apply level filter
-            if (levelFilter !== 'ALL') {
-                filteredLines = filteredLines.filter(line => 
-                    line.toLowerCase().includes(levelFilter.toLowerCase())
-                );
-            }
-            
-            // Apply search filter
+            // Apply level filter - now using server-side filtering for better accuracy
+            // This function just applies the search filter to already filtered content
             if (searchInput) {
                 filteredLines = filteredLines.filter(line =>
                     line.toLowerCase().includes(searchInput)
@@ -1036,20 +1039,35 @@ def get_dashboard_html():
             }
             
             if (filteredLines.length === 0) {
-                contentDiv.innerHTML = '<div style="color: #90a4ae; text-align: center; padding: 2rem;">No matching log entries found</div>';
+                if (searchInput || levelFilter !== 'ALL') {
+                    contentDiv.innerHTML = `
+                        <div style="color: #ff9800; text-align: center; padding: 2rem;">
+                            <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">No matching log entries found</div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">
+                                ${levelFilter !== 'ALL' ? `Level: ${levelFilter}` : ''}
+                                ${levelFilter !== 'ALL' && searchInput ? ' | ' : ''}
+                                ${searchInput ? `Search: "${searchInput}"` : ''}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    contentDiv.innerHTML = '<div style="color: #90a4ae; text-align: center; padding: 2rem;">No log content available</div>';
+                }
                 return;
             }
             
             let html = '';
             filteredLines.forEach(line => {
                 let colorClass = '';
-                if (line.toLowerCase().includes('error')) {
+                const lineUpper = line.toUpperCase();
+                
+                if (lineUpper.includes('ERROR') || lineUpper.includes('CRITICAL') || lineUpper.includes('FATAL') || lineUpper.includes('FAIL')) {
                     colorClass = 'color: #f44336;';
-                } else if (line.toLowerCase().includes('warning') || line.toLowerCase().includes('warn')) {
+                } else if (lineUpper.includes('WARNING') || lineUpper.includes('WARN') || lineUpper.includes('CAUTION')) {
                     colorClass = 'color: #ff9800;';
-                } else if (line.toLowerCase().includes('info')) {
+                } else if (lineUpper.includes('INFO') || lineUpper.includes('INFORMATION') || lineUpper.includes('NOTICE')) {
                     colorClass = 'color: #2196f3;';
-                } else if (line.toLowerCase().includes('debug')) {
+                } else if (lineUpper.includes('DEBUG') || lineUpper.includes('TRACE') || lineUpper.includes('VERBOSE')) {
                     colorClass = 'color: #90a4ae;';
                 } else {
                     colorClass = 'color: #e0e0e0;';

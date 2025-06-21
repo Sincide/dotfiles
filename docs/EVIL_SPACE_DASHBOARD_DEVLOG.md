@@ -194,6 +194,36 @@ cd ~/dotfiles && fish dashboard/start_dashboard.fish
 
 ---
 
+## 🐛 **CURRENT ISSUE: Log Level Filtering Bug (June 21, 2025)**
+
+### Problem Description
+Log level filtering is broken and causing UX issues:
+
+1. **Filter Reset Issue**: When selecting a log level (e.g., "Errors"), the log content resets to "Select a log file" instead of showing filtered results
+2. **Dropdown Clearing**: After applying a level filter, the log file dropdown appears to reset, preventing further log selection
+3. **No Recovery**: Once the filter is applied and fails, users cannot select any log files until page refresh
+
+### Technical Analysis
+- **Backend Filtering**: Server-side filtering logic appears correct with proper journalctl priority mapping and file-based keyword detection
+- **Frontend Integration**: Level filter changes call `refreshLogContent()` which should preserve the selected log file
+- **Suspected Issue**: The `currentLogFile` variable or dropdown selection may be getting cleared when API returns empty results
+
+### Attempted Fixes
+1. ✅ **Fixed journalctl priority mapping**: Changed ERROR from `'3'` to `'0..3'` for proper systemd priority ranges
+2. ✅ **Enhanced file-based filtering**: Improved keyword detection for ERROR, WARNING, INFO, DEBUG levels
+3. ✅ **Server-side filtering**: Modified frontend to send `filter_level` parameter to API instead of client-side filtering
+4. ✅ **Better error messaging**: Enhanced "no results" display with active filter information
+
+### Next Steps
+- **Debug frontend state**: Check if `currentLogFile` variable is being preserved during filtering
+- **Investigate dropdown behavior**: Ensure log file selection remains intact when content is empty
+- **Add fallback handling**: Preserve log selection even when filtering returns no results
+- **Consider alternative approach**: Hybrid client/server filtering to maintain selection state
+
+### Status: **NEEDS INVESTIGATION** 🔍
+
+---
+
 ## Phase 2: Complete System Monitoring (June 21, 2025) ✅
 
 ### 🎯 **Comprehensive Monitoring Implementation**

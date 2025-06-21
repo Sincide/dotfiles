@@ -238,3 +238,92 @@ This script is provided as-is for personal and educational use.
 ---
 
 **Happy dotfile management! 🐟✨**
+
+# Dotfiles Manager - Fish Edition - Devlog
+
+## Latest Updates (2025-01-21)
+
+### 🔧 **Major Fixes - Simplified AI Integration**
+
+**Issues Fixed:**
+1. **AI Response Parsing Failure**: Complex regex validation was rejecting valid commit messages
+2. **String Cleaning Problems**: Extra quotes and characters weren't being removed properly
+3. **Overcomplicated Validation**: 30+ lines of validation logic causing failures
+4. **Verbose AI Output**: AI was generating explanatory text instead of clean commit messages
+5. **Timeout Issues**: Long processing times with complex error handling
+
+**Solutions Applied:**
+
+1. **Simplified String Cleaning**: 
+   - Replaced complex regex with simple `sed 's/[^a-zA-Z0-9:().,!? -]//g'`
+   - Removes unwanted characters, keeps essentials
+   - One-liner instead of multi-step processing
+
+2. **Streamlined Validation**:
+   - Removed complex regex pattern matching
+   - Simple length check: 15-72 characters
+   - From 30+ lines to 3 lines of validation logic
+
+3. **Improved AI Prompting**:
+   - Clearer, more direct prompt structure
+   - Explicit examples and format requirements
+   - Reduced timeout from 25s to 15s
+
+4. **Better Error Handling**:
+   - Simplified fallback logic with smart categorization
+   - Proper directory-based commit message generation
+   - No complex error state management
+
+**Current Working Status:**
+✅ AI Generation: Produces clean commit messages like `fix(gitdotfiles.fish): update script to handle new git commands`  
+✅ String Processing: Proper cleaning without complex regex  
+✅ Full Workflow: Complete sync process (generate → commit → pull → push)  
+✅ Fallback Logic: Smart categorization by file types and directories  
+✅ Performance: Fast 15s generation with immediate validation  
+
+**Performance Results:**
+- AI commit generation: ~3-5 seconds
+- Full sync workflow: ~10-15 seconds
+- Interactive menu: Instant response
+- Ollama model detection: Works with qwen2.5-coder:14b, mistral:7b, etc.
+
+**Example Generated Commits:**
+- `fix(gitdotfiles.fish): update script to handle new git commands`
+- `chore(fish): update dotfiles configuration`
+- `scripts: update automation and tools`
+- `config(waybar): update settings`
+
+### 🎯 **Key Lesson Learned:**
+**Simplicity wins!** The original implementation was overengineered with complex validation, error handling, and string processing. The working solution uses:
+- Simple character filtering instead of complex regex
+- Basic length validation instead of format validation  
+- Direct timeout handling instead of complex error states
+- Clean prompts instead of verbose instructions
+
+The script now provides reliable AI-powered git commit generation with proper fallbacks and a smooth user experience.
+
+## Features Overview
+
+### 🤖 **AI Integration**
+- Automatic commit message generation using Ollama
+- Support for multiple models (qwen2.5-coder, mistral, etc.)
+- Smart fallback when AI is unavailable
+- Conventional commit format compliance
+
+### 🔄 **Git Workflow**
+- Smart sync: pull → commit → push
+- Interactive commit message confirmation
+- Repository status and diff viewing
+- Automatic staging of changes
+
+### 📱 **User Interface**
+- Beautiful Fish-native colors and formatting
+- Interactive menu system
+- Command-line interface support
+- Debug and testing modes
+
+### 🐟 **Fish Shell Optimized**
+- Native Fish functions and syntax
+- Proper variable scoping
+- Fish-style string processing
+- Colorized output using set_color

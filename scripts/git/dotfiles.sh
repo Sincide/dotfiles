@@ -109,7 +109,19 @@ generate_ai_commit_message() {
         return
     fi
     
-    print_status "🤖 Generating AI commit message..."
+    # Detect best available model (prioritize coding models)
+    local model="mistral:7b-instruct"  # fallback
+    if ollama list | grep -q "qwen2.5-coder:14b"; then
+        model="qwen2.5-coder:14b"  # Best for coding tasks
+    elif ollama list | grep -q "codegemma:7b"; then
+        model="codegemma:7b"  # Good for coding
+    elif ollama list | grep -q "mistral:7b-instruct"; then
+        model="mistral:7b-instruct"  # Good for instructions
+    elif ollama list | grep -q "mistral:7b"; then
+        model="mistral:7b"  # Basic fallback
+    fi
+    
+    print_status "🤖 Generating AI commit message using ${BLUE}$model${NC}..."
     
     # Create prompt for AI
     local prompt="You are a git commit message expert. Generate a concise, descriptive commit message for these dotfiles changes.
@@ -130,9 +142,30 @@ Rules:
 
 Generate only the commit message, no explanation:"
 
+    # Show spinner while AI is working
+    local spinner_pid
+    spinner() {
+        local chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+        while :; do
+            for (( i=0; i<${#chars}; i++ )); do
+                printf "\r${BLUE}[${chars:$i:1}]${NC} AI thinking..."
+                sleep 0.1
+            done
+        done
+    }
+    
+    # Start spinner in background
+    spinner &
+    spinner_pid=$!
+    
     # Try to get AI response
     local ai_message
-    ai_message=$(ollama run mistral:7b-instruct "$prompt" 2>/dev/null | head -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    ai_message=$(ollama run "$model" "$prompt" 2>/dev/null | head -1 | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    
+    # Stop spinner
+    kill $spinner_pid 2>/dev/null
+    wait $spinner_pid 2>/dev/null
+    printf "\r${GREEN}[✓]${NC} AI completed!     \n"
     
     if [ -n "$ai_message" ] && [ ${#ai_message} -gt 5 ]; then
         echo "$ai_message"
@@ -306,17 +339,19 @@ sync_dotfiles() {
             ai_commit_msg=$(generate_ai_commit_message)
             
             echo
-            print_status "🤖 AI suggests: $ai_commit_msg"
+            print_status "🤖 AI suggests:"
+            echo -e "   ${GREEN}\"$ai_commit_msg\"${NC}"
             echo
             read -p "Use AI message? [Y/n/e=edit]: " -n 1 -r
             echo
             
             case "$REPLY" in
-                [Nn])
-                    # Use fallback message
-                    commit_msg=$(generate_commit_message)
-                    print_status "Using basic commit message: $commit_msg"
-                    ;;
+                                 [Nn])
+                     # Use fallback message
+                     commit_msg=$(generate_commit_message)
+                     print_status "Using basic commit message:"
+                     echo -e "   ${YELLOW}\"$commit_msg\"${NC}"
+                     ;;
                 [Ee])
                     # Let user edit the AI message
                     echo -n "Enter commit message: "

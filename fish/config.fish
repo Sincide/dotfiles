@@ -50,6 +50,7 @@ alias dotst='$HOME/dotfiles/scripts/git/dotfiles.fish status'     # Repository s
 alias dotd='$HOME/dotfiles/scripts/git/dotfiles.fish diff'        # Show changes
 alias dotai='$HOME/dotfiles/scripts/git/dotfiles.fish ai-test'    # Test AI commits
 alias dotfix='$HOME/dotfiles/scripts/git/dotfiles.fish ai-debug'  # Debug AI issues
+alias dotr='$HOME/dotfiles/scripts/git/dotfiles.fish toggle-remote' # Toggle SSH/HTTPS remote
 
 # AI Health & Diagnostics  
 alias ai='$HOME/dotfiles/scripts/ai/ai-health.fish'               # Interactive AI health menu

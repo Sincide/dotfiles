@@ -198,6 +198,131 @@ function generate_fallback_commit
      end
 end
 
+# Toggle git remote between SSH and HTTPS
+function toggle_remote
+    set current_remote (git remote get-url origin 2>/dev/null)
+    
+    if test -z "$current_remote"
+        error "No remote 'origin' found"
+        error "Add a remote first: git remote add origin <url>"
+        return 1
+    end
+    
+    info "Current remote: $current_remote"
+    
+    # Extract repository info
+    set repo_info ""
+    if string match -q "git@github.com:*" $current_remote
+        # SSH to HTTPS
+        set repo_info (string replace "git@github.com:" "" $current_remote | string replace ".git" "")
+        set new_remote "https://github.com/$repo_info.git"
+        set new_type "HTTPS"
+    else if string match -q "https://github.com/*" $current_remote
+        # HTTPS to SSH
+        set repo_info (string replace "https://github.com/" "" $current_remote | string replace ".git" "")
+        set new_remote "git@github.com:$repo_info.git"
+        set new_type "SSH"
+    else if string match -q "git@gitlab.com:*" $current_remote
+        # GitLab SSH to HTTPS
+        set repo_info (string replace "git@gitlab.com:" "" $current_remote | string replace ".git" "")
+        set new_remote "https://gitlab.com/$repo_info.git"
+        set new_type "HTTPS"
+    else if string match -q "https://gitlab.com/*" $current_remote
+        # GitLab HTTPS to SSH
+        set repo_info (string replace "https://gitlab.com/" "" $current_remote | string replace ".git" "")
+        set new_remote "git@gitlab.com:$repo_info.git"
+        set new_type "SSH"
+    else
+        error "Unsupported remote format: $current_remote"
+        error "Only GitHub and GitLab SSH/HTTPS remotes are supported"
+        return 1
+    end
+    
+    info "🔄 Switching to $new_type..."
+    info "New remote: $new_remote"
+    
+    # Confirm with user
+    read -P "Switch remote URL? [Y/n]: " -n 1 confirm
+    echo
+    
+    if test "$confirm" = "n" -o "$confirm" = "N"
+        info "Remote URL unchanged"
+        return 0
+    end
+    
+    # Update remote
+    if git remote set-url origin "$new_remote"
+        success "✅ Remote switched to $new_type"
+        success "New URL: $new_remote"
+        
+        # Test connectivity
+        info "Testing connectivity..."
+        if git ls-remote origin HEAD >/dev/null 2>&1
+            success "🌐 Connection test passed!"
+        else
+            error "⚠️  Connection test failed!"
+            echo
+            
+            if test "$new_type" = "SSH"
+                # SSH-specific troubleshooting
+                if string match -q "*github.com*" $new_remote
+                    error "🔧 GitHub SSH Setup Required:"
+                    echo "   1. Generate SSH key: ssh-keygen -t ed25519 -C \"your-email@example.com\""
+                    echo "   2. Start ssh-agent:   eval \"\$(ssh-agent -s)\""
+                    echo "   3. Add key:          ssh-add ~/.ssh/id_ed25519"
+                    echo "   4. Copy public key:  cat ~/.ssh/id_ed25519.pub"
+                    echo "   5. Add to GitHub:    https://github.com/settings/ssh/new"
+                    echo "   6. Test connection:  ssh -T git@github.com"
+                else if string match -q "*gitlab.com*" $new_remote
+                    error "🔧 GitLab SSH Setup Required:"
+                    echo "   1. Generate SSH key: ssh-keygen -t ed25519 -C \"your-email@example.com\""
+                    echo "   2. Start ssh-agent:   eval \"\$(ssh-agent -s)\""
+                    echo "   3. Add key:          ssh-add ~/.ssh/id_ed25519"
+                    echo "   4. Copy public key:  cat ~/.ssh/id_ed25519.pub"
+                    echo "   5. Add to GitLab:    https://gitlab.com/-/profile/keys"
+                    echo "   6. Test connection:  ssh -T git@gitlab.com"
+                end
+                echo
+                warn "💡 If you have existing keys, try: ssh-add ~/.ssh/id_rsa or ssh-add ~/.ssh/id_ed25519"
+                warn "💡 To see your keys: ls -la ~/.ssh/"
+                warn "💡 To check ssh-agent: ssh-add -l"
+            else
+                # HTTPS-specific troubleshooting
+                if string match -q "*github.com*" $new_remote
+                    error "🔧 GitHub HTTPS Authentication Required:"
+                    echo "   1. Create Personal Access Token:"
+                    echo "      → Go to: https://github.com/settings/tokens"
+                    echo "      → Generate new token (classic)"
+                    echo "      → Select scopes: repo, workflow"
+                    echo "   2. Configure git credentials:"
+                    echo "      git config --global credential.helper store"
+                    echo "   3. Next git command will prompt for username/token"
+                    echo "      Username: your-github-username"
+                    echo "      Password: your-personal-access-token"
+                else if string match -q "*gitlab.com*" $new_remote
+                    error "🔧 GitLab HTTPS Authentication Required:"
+                    echo "   1. Create Personal Access Token:"
+                    echo "      → Go to: https://gitlab.com/-/profile/personal_access_tokens"
+                    echo "      → Create token with 'read_repository' and 'write_repository' scopes"
+                    echo "   2. Configure git credentials:"
+                    echo "      git config --global credential.helper store"
+                    echo "   3. Next git command will prompt for username/token"
+                    echo "      Username: your-gitlab-username"
+                    echo "      Password: your-personal-access-token"
+                end
+                echo
+                warn "💡 Token will be stored securely after first use"
+                warn "💡 Alternative: Use 'git config --global credential.helper cache' for temporary storage"
+            end
+            echo
+            warn "🔄 After setup, test with: git fetch origin"
+        end
+    else
+        error "Failed to update remote URL"
+        return 1
+    end
+end
+
 # Show repository status
 function show_status
     set_color purple; echo "Repository Status"; set_color normal
@@ -443,11 +568,12 @@ function show_interactive_menu
         echo "  3️⃣  Diff (show changes)"
         echo "  4️⃣  AI Test (test commit generation)"
         echo "  5️⃣  AI Debug (detailed AI diagnostics)"
+        echo "  6️⃣  Toggle Remote (SSH ↔ HTTPS)"
         echo
         echo "  0️⃣  Exit"
         echo
         
-        read -P "Enter your choice [1-5, 0 to exit]: " choice
+        read -P "Enter your choice [1-6, 0 to exit]: " choice
         echo
         
         switch $choice
@@ -467,6 +593,9 @@ function show_interactive_menu
             case 5
                 debug_ai
                 break
+            case 6
+                toggle_remote
+                break
             case 0 q quit exit
                 info "Goodbye! 👋"
                 exit 0
@@ -476,7 +605,7 @@ function show_interactive_menu
                 break
             case "*"
                 error "Invalid choice: $choice"
-                echo "Please enter a number from 1-5, or 0 to exit"
+                echo "Please enter a number from 1-6, or 0 to exit"
                 echo
                 read -P "Press Enter to continue..." dummy
                 clear
@@ -514,6 +643,7 @@ function show_help
     echo "  diff             - Show changes"
     echo "  ai-test          - Test AI commit generation"
     echo "  ai-debug         - Debug AI generation with details"
+    echo "  toggle-remote    - Toggle remote between SSH and HTTPS"
     echo "  help             - Show this help"
     
     echo
@@ -561,6 +691,8 @@ function main
             test_ai
         case ai-debug
             debug_ai
+        case toggle-remote tr remote
+            toggle_remote
         case interactive menu i
             show_interactive_menu
         case help h --help -h

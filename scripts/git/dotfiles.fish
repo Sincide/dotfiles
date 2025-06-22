@@ -260,62 +260,106 @@ function toggle_remote
         if git ls-remote origin HEAD >/dev/null 2>&1
             success "🌐 Connection test passed!"
         else
-            error "⚠️  Connection test failed!"
-            echo
+            warn "⚠️  Connection test failed, attempting to fix SSH..."
             
             if test "$new_type" = "SSH"
-                # SSH-specific troubleshooting
-                if string match -q "*github.com*" $new_remote
-                    error "🔧 GitHub SSH Setup Required:"
-                    echo "   1. Generate SSH key: ssh-keygen -t ed25519 -C \"your-email@example.com\""
-                    echo "   2. Start ssh-agent:   eval \"\$(ssh-agent -s)\""
-                    echo "   3. Add key:          ssh-add ~/.ssh/id_ed25519"
-                    echo "   4. Copy public key:  cat ~/.ssh/id_ed25519.pub"
-                    echo "   5. Add to GitHub:    https://github.com/settings/ssh/new"
-                    echo "   6. Test connection:  ssh -T git@github.com"
-                else if string match -q "*gitlab.com*" $new_remote
-                    error "🔧 GitLab SSH Setup Required:"
-                    echo "   1. Generate SSH key: ssh-keygen -t ed25519 -C \"your-email@example.com\""
-                    echo "   2. Start ssh-agent:   eval \"\$(ssh-agent -s)\""
-                    echo "   3. Add key:          ssh-add ~/.ssh/id_ed25519"
-                    echo "   4. Copy public key:  cat ~/.ssh/id_ed25519.pub"
-                    echo "   5. Add to GitLab:    https://gitlab.com/-/profile/keys"
-                    echo "   6. Test connection:  ssh -T git@gitlab.com"
+                # Auto-fix SSH issues since SSH is already set up
+                info "🔧 Attempting SSH auto-fix..."
+                
+                # Start ssh-agent and set environment variables
+                if not set -q SSH_AUTH_SOCK; or not test -S "$SSH_AUTH_SOCK"
+                    info "Starting ssh-agent..."
+                    eval (ssh-agent -c)
+                    info "ssh-agent started with PID $SSH_AGENT_PID"
                 end
-                echo
-                warn "💡 If you have existing keys, try: ssh-add ~/.ssh/id_rsa or ssh-add ~/.ssh/id_ed25519"
-                warn "💡 To see your keys: ls -la ~/.ssh/"
-                warn "💡 To check ssh-agent: ssh-add -l"
+                
+                # Add platform-specific SSH keys
+                set ssh_keys_added false
+                set platform_key ""
+                
+                # Determine which platform-specific key to use
+                if string match -q "*github.com*" $new_remote
+                    set platform_key ~/.ssh/id_ed25519_github
+                else if string match -q "*gitlab.com*" $new_remote
+                    set platform_key ~/.ssh/id_ed25519_gitlab
+                end
+                
+                # Try platform-specific key first, then fallback to generic keys
+                set key_files $platform_key ~/.ssh/id_ed25519 ~/.ssh/id_rsa ~/.ssh/id_ecdsa
+                
+                for key_file in $key_files
+                    if test -f "$key_file"
+                        info "Adding SSH key: $key_file"
+                        if ssh-add "$key_file" 2>/dev/null
+                            set ssh_keys_added true
+                            success "✓ Added $key_file to ssh-agent"
+                            # If this is the platform-specific key, we can break
+                            if test "$key_file" = "$platform_key"
+                                break
+                            end
+                        else
+                            warn "Failed to add $key_file (might need passphrase)"
+                        end
+                    end
+                end
+                
+                if test "$ssh_keys_added" = "true"
+                    info "Checking loaded keys..."
+                    ssh-add -l
+                    echo
+                    
+                    info "Retesting connection..."
+                    if git ls-remote origin HEAD >/dev/null 2>&1
+                        success "🎉 SSH connection fixed!"
+                    else
+                        error "SSH still not working. Debugging..."
+                        echo
+                        
+                        # Test direct SSH connection
+                        if string match -q "*github.com*" $new_remote
+                            info "Testing GitHub SSH connection..."
+                            ssh -T git@github.com
+                        else if string match -q "*gitlab.com*" $new_remote
+                            info "Testing GitLab SSH connection..."  
+                            ssh -T git@gitlab.com
+                        end
+                        
+                        echo
+                        error "Possible solutions:"
+                        echo "   1. Check if public key is added to your Git platform:"
+                        if string match -q "*github.com*" $new_remote
+                            echo "      → GitHub: https://github.com/settings/keys"
+                            if test -f ~/.ssh/id_ed25519_github.pub
+                                echo "      → Your key: cat ~/.ssh/id_ed25519_github.pub"
+                            end
+                        else if string match -q "*gitlab.com*" $new_remote
+                            echo "      → GitLab: https://gitlab.com/-/profile/keys"
+                            if test -f ~/.ssh/id_ed25519_gitlab.pub
+                                echo "      → Your key: cat ~/.ssh/id_ed25519_gitlab.pub"
+                            end
+                        end
+                        echo "   2. Check SSH config: cat ~/.ssh/config"
+                        echo "   3. Re-run SSH setup: ~/dotfiles/scripts/setup/git-ssh-setup.sh"
+                    end
+                else
+                    error "No SSH keys found or failed to add. Run SSH setup:"
+                    echo "   ~/dotfiles/scripts/setup/git-ssh-setup.sh"
+                end
             else
-                # HTTPS-specific troubleshooting
+                # HTTPS-specific troubleshooting (unchanged)
+                error "🔧 HTTPS Authentication Required:"
                 if string match -q "*github.com*" $new_remote
-                    error "🔧 GitHub HTTPS Authentication Required:"
-                    echo "   1. Create Personal Access Token:"
-                    echo "      → Go to: https://github.com/settings/tokens"
-                    echo "      → Generate new token (classic)"
-                    echo "      → Select scopes: repo, workflow"
-                    echo "   2. Configure git credentials:"
-                    echo "      git config --global credential.helper store"
+                    echo "   1. Create Personal Access Token: https://github.com/settings/tokens"
+                    echo "   2. Configure: git config --global credential.helper store"
                     echo "   3. Next git command will prompt for username/token"
-                    echo "      Username: your-github-username"
-                    echo "      Password: your-personal-access-token"
                 else if string match -q "*gitlab.com*" $new_remote
-                    error "🔧 GitLab HTTPS Authentication Required:"
-                    echo "   1. Create Personal Access Token:"
-                    echo "      → Go to: https://gitlab.com/-/profile/personal_access_tokens"
-                    echo "      → Create token with 'read_repository' and 'write_repository' scopes"
-                    echo "   2. Configure git credentials:"
-                    echo "      git config --global credential.helper store"
+                    echo "   1. Create Personal Access Token: https://gitlab.com/-/profile/personal_access_tokens"
+                    echo "   2. Configure: git config --global credential.helper store"
                     echo "   3. Next git command will prompt for username/token"
-                    echo "      Username: your-gitlab-username"
-                    echo "      Password: your-personal-access-token"
                 end
                 echo
-                warn "💡 Token will be stored securely after first use"
-                warn "💡 Alternative: Use 'git config --global credential.helper cache' for temporary storage"
+                warn "🔄 After setup, test with: git fetch origin"
             end
-            echo
-            warn "🔄 After setup, test with: git fetch origin"
         end
     else
         error "Failed to update remote URL"

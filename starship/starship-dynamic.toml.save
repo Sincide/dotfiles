@@ -1,0 +1,187 @@
+qstarship config --list 2>&1 | head -5
+ ✨ Evil Space Starship Configuration ✨
+# Dynamic Material You colors from matugen
+# Generated automatically when wallpaper changes
+
+# Get editor completions based on the config schema
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Add some breathing room between prompts
+add_newline = true
+
+# Main prompt configuration with dynamic colors
+format = """
+[](fg:#e5b6f2)\
+$os\
+$username\
+[](bg:#5d386b fg:#e5b6f2)\
+$directory\
+[](fg:#5d386b bg:#d4c0d7)\
+$git_branch\
+$git_status\
+[](fg:#d4c0d7 bg:#f5b7b4)\
+$nodejs\
+$rust\
+$golang\
+$python\
+[](fg:#f5b7b4 bg:#231e23)\
+$docker_context\
+$conda\
+[](fg:#231e23)\
+$line_break\
+$character"""
+
+# Disable the package module
+[package]
+disabled = true
+
+# OS Symbol
+[os]
+style = "bg:#e5b6f2 fg:#452253"
+disabled = false
+
+[os.symbols]
+Arch = "󰣇"
+Linux = "󰌽"
+
+# Username
+[username]
+show_always = true
+style_user = "bg:#e5b6f2 fg:#452253"
+style_root = "bg:#ffb4ab fg:#690005"
+format = '[ $user ]($style)'
+
+# Directory
+[directory]
+style = "fg:#f8d8ff bg:#5d386b"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+# Directory substitutions
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"dotfiles" = "🌌 "
+".config" = " "
+
+# Git Branch
+[git_branch]
+symbol = ""
+style = "bg:#d4c0d7 fg:#392c3d"
+format = '[ $symbol $branch ]($style)'
+
+# Git Status
+[git_status]
+style = "bg:#d4c0d7 fg:#392c3d"
+format = '[$all_status$ahead_behind ]($style)'
+conflicted = "🏳"
+up_to_date = ""
+untracked = "🤷"
+ahead = "⇡${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+behind = "⇣${count}"
+stashed = "📦"
+modified = "📝"
+staged = '[++\($count\)](bg:#d4c0d7 fg:#392c3d)'
+renamed = "襁"
+deleted = "🗑"
+
+# Programming Languages
+[nodejs]
+symbol = ""
+style = "bg:#f5b7b4 fg:#4c2524"
+format = '[ $symbol( $version) ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#f5b7b4 fg:#4c2524"
+format = '[ $symbol( $version) ]($style)'
+
+[golang]
+symbol = ""
+style = "bg:#f5b7b4 fg:#4c2524"
+format = '[ $symbol( $version) ]($style)'
+
+[python]
+symbol = ""
+style = "bg:#f5b7b4 fg:#4c2524"
+format = '[ $symbol( $version) ]($style)'
+
+# Docker Context
+[docker_context]
+symbol = ""
+style = "bg:#231e23 fg:#e9e0e7"
+format = '[ $symbol( $context) ]($style)'
+
+# Conda
+[conda]
+style = "bg:#231e23 fg:#e9e0e7"
+format = '[ $symbol( $environment) ]($style)'
+
+# Character (prompt symbol)
+[character]
+success_symbol = '[❯](bold #e5b6f2)'
+error_symbol = '[❯](bold #ffb4ab)'
+vimcmd_symbol = '[❮](bold #f5b7b4)'
+
+# Command Duration
+[cmd_duration]
+min_time = 2_000
+style = "#d4c0d7"
+format = '⏱ [$duration]($style) '
+
+# Time
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#383339 fg:#e9e0e7"
+format = '[ 🌌 $time ]($style)'
+
+# Line break
+[line_break]
+disabled = false
+
+# Memory Usage
+[memory_usage]
+disabled = false
+threshold = 70
+symbol = "🧠"
+style = "#ffb4ab"
+format = "$symbol [${ram_pct}]($style) "
+
+# Battery
+[battery]
+full_symbol = "🔋"
+charging_symbol = "⚡️"
+discharging_symbol = "💀"
+
+[[battery.display]]
+threshold = 10
+style = "#ffb4ab"
+
+[[battery.display]]
+threshold = 30
+style = "#d4c0d7"
+
+# Status
+[status]
+style = "#ffb4ab"
+symbol = "🔴"
+success_symbol = ""
+not_executable_symbol = "🚫"
+not_found_symbol = "🔍"
+sigint_symbol = "🧱"
+signal_symbol = "⚡"
+format = '[$symbol$common_meaning$signal_name$maybe_int]($style) '
+map_symbol = true
+disabled = false
+
+# Custom Evil Space module
+[custom.evil_space]
+command = "echo '🌌'"
+when = "true"
+style = "#e5b6f2"
+format = "[$output]($style) " 

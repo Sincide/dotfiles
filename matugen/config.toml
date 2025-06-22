@@ -55,3 +55,13 @@ output_path = "~/dotfiles/waybar/style-bottom.css"
 input_path = "~/dotfiles/matugen/templates/quickshell.template"
 output_path = "~/.local/state/quickshell/user/generated/colors.json"
 
+# Fish shell theming
+[templates.fish-colors]
+input_path = "~/dotfiles/matugen/templates/fish-colors.template"
+output_path = "~/dotfiles/fish/theme-dynamic.fish"
+
+# Starship prompt theming
+[templates.starship-dynamic]
+input_path = "~/dotfiles/matugen/templates/starship.template"
+output_path = "~/dotfiles/starship/starship-dynamic.toml"
+

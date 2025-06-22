@@ -1,0 +1,144 @@
+# ✨ Evil Space Starship Configuration ✨
+# Clean, modern design with dynamic Material You colors
+# No powerline fonts required
+
+"$schema" = 'https://starship.rs/config-schema.json'
+
+add_newline = true
+
+# Simple, clean format without powerline characters
+format = """
+$os\
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$nodejs\
+$python\
+$rust\
+$golang\
+$docker_context\
+$cmd_duration\
+$line_break\
+$character"""
+
+# OS Symbol
+[os]
+style = "bold {{colors.primary.default.hex}}"
+disabled = false
+format = "[$symbol ]($style)"
+
+[os.symbols]
+Arch = "󰣇"
+Linux = "󰌽"
+
+# Username
+[username]
+show_always = false
+style_user = "bold {{colors.secondary.default.hex}}"
+style_root = "bold {{colors.error.default.hex}}"
+format = "[$user]($style)[@]({{colors.outline.default.hex}})"
+
+# Hostname
+[hostname]
+ssh_only = true
+style = "bold {{colors.tertiary.default.hex}}"
+format = "[$hostname]($style) "
+
+# Directory
+[directory]
+style = "bold {{colors.primary.default.hex}}"
+format = "[$path]($style) "
+truncation_length = 3
+truncation_symbol = "…/"
+read_only = "🔒"
+
+[directory.substitutions]
+"Documents" = "󰈙"
+"Downloads" = ""
+"Music" = "󰝚"
+"Pictures" = ""
+"dotfiles" = "🌌"
+".config" = ""
+
+# Git Branch
+[git_branch]
+symbol = ""
+style = "bold {{colors.secondary.default.hex}}"
+format = "[$symbol $branch]($style)"
+
+# Git Status  
+[git_status]
+style = "{{colors.tertiary.default.hex}}"
+format = "[ $all_status$ahead_behind]($style) "
+conflicted = "⚔️"
+up_to_date = ""
+untracked = "🤷"
+ahead = "⇡${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+behind = "⇣${count}"
+stashed = "📦"
+modified = "📝"
+staged = "✓${count}"
+renamed = "🏷️"
+deleted = "🗑️"
+
+# Programming Languages (minimal)
+[nodejs]
+symbol = ""
+style = "{{colors.primary.default.hex}}"
+format = "[$symbol $version]($style) "
+
+[python]
+symbol = ""
+style = "{{colors.primary.default.hex}}"
+format = "[$symbol $version]($style) "
+
+[rust]
+symbol = ""
+style = "{{colors.primary.default.hex}}"
+format = "[$symbol $version]($style) "
+
+[golang]
+symbol = ""
+style = "{{colors.primary.default.hex}}"
+format = "[$symbol $version]($style) "
+
+# Docker
+[docker_context]
+symbol = ""
+style = "{{colors.tertiary.default.hex}}"
+format = "[$symbol $context]($style) "
+
+# Command Duration
+[cmd_duration]
+min_time = 2_000
+style = "{{colors.secondary.default.hex}}"
+format = "[⏱ $duration]($style) "
+
+# Character (prompt symbol)
+[character]
+success_symbol = "[❯](bold {{colors.primary.default.hex}})"
+error_symbol = "[❯](bold {{colors.error.default.hex}})"
+vimcmd_symbol = "[❮](bold {{colors.tertiary.default.hex}})"
+
+# Line break
+[line_break]
+disabled = false
+
+# Optional modules (clean)
+[memory_usage]
+disabled = true
+
+[time]
+disabled = true
+
+[battery]
+disabled = true
+
+[package]
+disabled = true
+
+[status]
+disabled = true 

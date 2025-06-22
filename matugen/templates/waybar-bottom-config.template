@@ -20,7 +20,6 @@
         "memory",
         "disk",
         "custom/updates",
-        "custom/control-center"
     ],
     
     "modules-right": [

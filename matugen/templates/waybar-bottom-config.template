@@ -19,7 +19,8 @@
         "cpu",
         "memory",
         "disk",
-        "custom/updates"
+        "custom/updates",
+        "custom/control-center"
     ],
     
     "modules-right": [
@@ -107,6 +108,12 @@
         "tooltip": true,
         "tooltip-format": "📦 System Updates\n⚡ {} packages available\n💀 Keep the void updated",
         "on-click": "kitty -e sudo pacman -Syu"
+    },
+
+    "custom/control-center": {
+        "format": "🎛️",
+        "tooltip": false,
+        "on-click": "/home/martin/dotfiles/waybar/scripts/control-center.fish"
     },
 
     // ╭─────────────────────────────────────────────────────────╮

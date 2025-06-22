@@ -232,6 +232,19 @@ get_essential_packages() {
         "acpi"
         "upower"
         
+        # Audio and media control
+        "pamixer"
+        "playerctl"
+        
+        # Brightness control
+        "brightnessctl"
+        
+        # Clipboard management
+        "cliphist"
+        
+        # Notifications
+        "libnotify"
+        
         # Archive support
         "p7zip"
         "unrar"
@@ -276,6 +289,7 @@ get_development_packages() {
         "eza"
         "bat"
         "zoxide"
+        "jq"
         
         # AI and Machine Learning
         "ollama"
@@ -355,6 +369,7 @@ get_theming_packages() {
         # Theme tools
         "qt5ct"
         "qt6ct"
+        "nwg-look"
         
         # Additional theming utilities
         "pokemon-colorscripts-git"
@@ -418,6 +433,13 @@ get_gaming_packages() {
         
         # Performance monitoring
         "radeontop"
+        
+        # Graphics diagnostics
+        "mesa-utils"      # Provides glxinfo
+        "vulkan-tools"    # Provides vulkaninfo
+        
+        # Monitor control
+        "ddcutil"         # For external monitor brightness control
         
         # Uncomment packages you want:
         # "lutris"

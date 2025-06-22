@@ -128,6 +128,8 @@ window#waybar.hidden {
     color: @onPrimary;
 }
 
+
+
 #window {
     background: @surfaceVariant;
     color: @onSurfaceVariant;

@@ -1,0 +1,248 @@
+@import url("colors.css");
+
+/* ╭─────────────────────────────────────────────────────────╮ */
+/* │               SPACE THEME WAYBAR (GTK)                  │ */
+/* │           🌌 Cosmic Status Bar Interface 🌌             │ */
+/* ╰─────────────────────────────────────────────────────────╯ */
+
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 11px;
+    font-weight: 400;
+    min-height: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*            CLEAN COSMIC WAYBAR WITH MATUGEN COLORS         */
+/* ═══════════════════════════════════════════════════════════ */
+
+window#waybar {
+    background: #{{colors.surface.default.hex_stripped}};
+    border: 1px solid #{{colors.outline.default.hex_stripped}};
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #{{colors.shadow.default.hex_stripped}};
+    color: #{{colors.on_surface.default.hex_stripped}};
+    transition: all 200ms ease;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                      WORKSPACE STYLING                     */
+/* ═══════════════════════════════════════════════════════════ */
+
+#workspaces {
+    margin: 0 4px;
+    padding: 2px 6px;
+    background: #{{colors.surface_variant.default.hex_stripped}};
+    border-radius: 8px;
+    border: 1px solid #{{colors.outline.default.hex_stripped}};
+}
+
+#workspaces button {
+    padding: 2px 8px;
+    margin: 1px;
+    color: #{{colors.on_surface_variant.default.hex_stripped}};
+    background: #{{colors.surface.default.hex_stripped}};
+    border-radius: 6px;
+    border: 1px solid #{{colors.outline.default.hex_stripped}};
+    transition: all 150ms ease;
+}
+
+#workspaces button:hover {
+    background: #{{colors.secondary_container.default.hex_stripped}};
+    color: #{{colors.on_secondary_container.default.hex_stripped}};
+    border: 1px solid #{{colors.secondary.default.hex_stripped}};
+}
+
+#workspaces button.active {
+    background: #{{colors.primary_container.default.hex_stripped}};
+    color: #{{colors.on_primary_container.default.hex_stripped}};
+    border: 1px solid #{{colors.primary.default.hex_stripped}};
+    box-shadow: 0 1px 3px #{{colors.shadow.default.hex_stripped}};
+}
+
+#workspaces button.urgent {
+    background: #{{colors.error_container.default.hex_stripped}};
+    color: #{{colors.on_error_container.default.hex_stripped}};
+    border: 1px solid #{{colors.error.default.hex_stripped}};
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                       MODULE STYLING                       */
+/* ═══════════════════════════════════════════════════════════ */
+
+#custom-launcher,
+#custom-quicksettings,
+#window,
+#custom-weather,
+#clock,
+#custom-system-stats,
+#network,
+#pulseaudio,
+#tray,
+#custom-power {
+    background: #{{colors.surface.default.hex_stripped}};
+    border: 1px solid #{{colors.outline.default.hex_stripped}};
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin: 2px 1px;
+    color: #{{colors.on_surface.default.hex_stripped}};
+    box-shadow: 0 2px 8px #{{colors.shadow.default.hex_stripped}};
+    transition: all 150ms ease;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                      HOVER EFFECTS                         */
+/* ═══════════════════════════════════════════════════════════ */
+
+#custom-launcher:hover,
+#custom-quicksettings:hover,
+#custom-weather:hover,
+#clock:hover,
+#custom-system-stats:hover,
+#network:hover,
+#pulseaudio:hover,
+#custom-power:hover {
+    background: #{{colors.surface_variant.default.hex_stripped}};
+    border: 1px solid #{{colors.primary.default.hex_stripped}};
+    color: #{{colors.on_surface_variant.default.hex_stripped}};
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                    SPECIFIC MODULES                        */
+/* ═══════════════════════════════════════════════════════════ */
+
+#custom-launcher {
+    background: #{{colors.primary_container.default.hex_stripped}};
+    color: #{{colors.on_primary_container.default.hex_stripped}};
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #{{colors.primary.default.hex_stripped}};
+}
+
+#custom-launcher:hover {
+    background: #{{colors.primary.default.hex_stripped}};
+    color: #{{colors.on_primary.default.hex_stripped}};
+}
+
+#custom-quicksettings {
+    background: #{{colors.secondary_container.default.hex_stripped}};
+    color: #{{colors.on_secondary_container.default.hex_stripped}};
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #{{colors.secondary.default.hex_stripped}};
+}
+
+#custom-quicksettings:hover {
+    background: #{{colors.secondary.default.hex_stripped}};
+    color: #{{colors.on_secondary.default.hex_stripped}};
+    box-shadow: 0 2px 12px #{{colors.shadow.default.hex_stripped}};
+    border: 1px solid #{{colors.primary.default.hex_stripped}};
+}
+
+#window {
+    background: #{{colors.surface_variant.default.hex_stripped}};
+    color: #{{colors.on_surface_variant.default.hex_stripped}};
+    font-style: italic;
+}
+
+#custom-weather {
+    background: #{{colors.secondary_container.default.hex_stripped}};
+    color: #{{colors.on_secondary_container.default.hex_stripped}};
+    border: 1px solid #{{colors.secondary.default.hex_stripped}};
+}
+
+#clock {
+    background: #{{colors.primary_container.default.hex_stripped}};
+    color: #{{colors.on_primary_container.default.hex_stripped}};
+    border: 1px solid #{{colors.primary.default.hex_stripped}};
+    font-weight: 500;
+}
+
+#custom-system-stats {
+    background: #{{colors.tertiary_container.default.hex_stripped}};
+    color: #{{colors.on_tertiary_container.default.hex_stripped}};
+    border: 1px solid #{{colors.tertiary.default.hex_stripped}};
+}
+
+#network {
+    background: #{{colors.secondary_container.default.hex_stripped}};
+    color: #{{colors.on_secondary_container.default.hex_stripped}};
+    border: 1px solid #{{colors.secondary.default.hex_stripped}};
+}
+
+#network.disconnected {
+    background: #{{colors.error_container.default.hex_stripped}};
+    color: #{{colors.on_error_container.default.hex_stripped}};
+    border: 1px solid #{{colors.error.default.hex_stripped}};
+}
+
+#pulseaudio {
+    background: #{{colors.tertiary_container.default.hex_stripped}};
+    color: #{{colors.on_tertiary_container.default.hex_stripped}};
+    border: 1px solid #{{colors.tertiary.default.hex_stripped}};
+}
+
+#pulseaudio.muted {
+    background: #{{colors.surface_variant.default.hex_stripped}};
+    color: #{{colors.on_surface_variant.default.hex_stripped}};
+    border: 1px solid #{{colors.outline.default.hex_stripped}};
+}
+
+#tray {
+    background: #{{colors.surface.default.hex_stripped}};
+    border: 1px solid #{{colors.outline.default.hex_stripped}};
+}
+
+#tray > .passive {
+    opacity: 0.6;
+}
+
+#tray > .needs-attention {
+    background: #{{colors.error_container.default.hex_stripped}};
+    color: #{{colors.on_error_container.default.hex_stripped}};
+    border-radius: 6px;
+    border: 1px solid #{{colors.error.default.hex_stripped}};
+}
+
+#custom-power {
+    background: #{{colors.error_container.default.hex_stripped}};
+    color: #{{colors.on_error_container.default.hex_stripped}};
+    border: 1px solid #{{colors.error.default.hex_stripped}};
+    font-weight: 500;
+}
+
+#custom-power:hover {
+    background: #{{colors.error.default.hex_stripped}};
+    color: #{{colors.on_error.default.hex_stripped}};
+    border: 1px solid #{{colors.primary.default.hex_stripped}};
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                      COSMIC ANIMATIONS                     */
+/* ═══════════════════════════════════════════════════════════ */
+
+@keyframes cosmic-glow {
+    0%, 100% { box-shadow: 0 2px 8px #{{colors.shadow.default.hex_stripped}}; }
+    50% { box-shadow: 0 4px 16px #{{colors.primary.default.hex_stripped}}50; }
+}
+
+window#waybar:hover {
+    animation: cosmic-glow 2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/*                        TOOLTIPS                            */
+/* ═══════════════════════════════════════════════════════════ */
+
+tooltip {
+    background: #{{colors.surface_variant.default.hex_stripped}};
+    border: 1px solid #{{colors.outline.default.hex_stripped}};
+    border-radius: 8px;
+    color: #{{colors.on_surface_variant.default.hex_stripped}};
+} 

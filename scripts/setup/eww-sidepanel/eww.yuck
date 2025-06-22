@@ -1,0 +1,175 @@
+;; Variables
+(defvar sidebar_visible false)
+(defvar weather_city "Stockholm") ; Change to your city
+
+;; Polls for system data (using fish scripts) - safer intervals
+(defpoll cpu_usage :interval "5s" :initial "0" "fish ~/.config/eww/scripts/system.fish cpu")
+(defpoll ram_usage :interval "5s" :initial "0" "fish ~/.config/eww/scripts/system.fish ram")
+(defpoll disk_usage :interval "10s" :initial "0" "fish ~/.config/eww/scripts/system.fish disk")
+(defpoll temperature :interval "10s" :initial "0" "fish ~/.config/eww/scripts/system.fish temp")
+(defpoll battery :interval "10s" :initial "0" "fish ~/.config/eww/scripts/system.fish battery")
+
+(defpoll volume :interval "2s" :initial "50" "pamixer --get-volume")
+;; Removed dangerous ddcutil polling - use static value instead
+(defvar brightness 50)
+
+(defpoll music_title :interval "3s" :initial "No Title" "fish ~/.config/eww/scripts/music.fish title")
+(defpoll music_artist :interval "3s" :initial "No Artist" "fish ~/.config/eww/scripts/music.fish artist")
+(defpoll music_status :interval "3s" :initial "Paused" "fish ~/.config/eww/scripts/music.fish status")
+
+(defpoll weather_temp :interval "300s" :initial "0°" "fish ~/.config/eww/scripts/weather.fish temp")
+(defpoll weather_desc :interval "300s" :initial "Clear" "fish ~/.config/eww/scripts/weather.fish desc")
+(defpoll weather_icon :interval "300s" :initial "☀" "fish ~/.config/eww/scripts/weather.fish icon")
+
+(defpoll network_status :interval "5s" :initial "Disconnected" "fish ~/.config/eww/scripts/network.fish status")
+(defpoll network_name :interval "5s" :initial "Unknown" "fish ~/.config/eww/scripts/network.fish name")
+
+;; Calendar
+(defpoll current_date :interval "60s" :initial "Mon 01" "date '+%a %d'")
+(defpoll current_month :interval "60s" :initial "January" "date '+%B'")
+(defpoll current_time :interval "1s" :initial "00:00" "date '+%H:%M'")
+
+;; System Monitoring Widget
+(defwidget system_monitor []
+  (box :class "system-monitor" :orientation "v" :space-evenly false :spacing 10
+    (label :class "widget-title" :text "System")
+    
+    ;; CPU
+    (box :class "metric-row" :space-evenly false
+      (label :class "metric-label" :text "CPU")
+      (box :class "metric-right"
+        (progress :class "metric-progress" :value cpu_usage :orientation "h")
+        (label :class "metric-value" :text "${cpu_usage}%")))
+    
+    ;; RAM
+    (box :class "metric-row" :space-evenly false
+      (label :class "metric-label" :text "RAM")
+      (box :class "metric-right"
+        (progress :class "metric-progress" :value ram_usage :orientation "h")
+        (label :class "metric-value" :text "${ram_usage}%")))
+    
+    ;; Disk
+    (box :class "metric-row" :space-evenly false
+      (label :class "metric-label" :text "Disk")
+      (box :class "metric-right"
+        (progress :class "metric-progress" :value disk_usage :orientation "h")
+        (label :class "metric-value" :text "${disk_usage}%")))
+    
+    ;; Temperature
+    (box :class "metric-row" :space-evenly false
+      (label :class "metric-label" :text "Temp")
+      (label :class "metric-value" :text "${temperature}°C"))
+    
+    ;; Battery
+    (box :class "metric-row" :space-evenly false
+      (label :class "metric-label" :text "Battery")
+      (box :class "metric-right"
+        (progress :class "metric-progress battery" :value battery :orientation "h")
+        (label :class "metric-value" :text "${battery}%")))))
+
+;; Music Player Widget
+(defwidget music_player []
+  (box :class "music-player" :orientation "v" :space-evenly false :spacing 10
+    (label :class "widget-title" :text "Music")
+    
+    (box :class "music-info" :orientation "v" :space-evenly false :spacing 5
+      (label :class "music-title" :text music_title :limit-width 25)
+      (label :class "music-artist" :text music_artist :limit-width 25))
+    
+    (box :class "music-controls" :space-evenly true :spacing 10
+      (button :class "music-btn" 
+              :onclick "playerctl previous" 
+              "⏮")
+      (button :class "music-btn play-pause" 
+              :onclick "playerctl play-pause" 
+              :text {music_status == "Playing" ? "⏸" : "▶"})
+      (button :class "music-btn" 
+              :onclick "playerctl next" 
+              "⏭"))))
+
+;; Weather Widget
+(defwidget weather []
+  (box :class "weather" :orientation "v" :space-evenly false :spacing 10
+    (label :class "widget-title" :text "Weather")
+    
+    (box :class "weather-main" :space-evenly false :spacing 15
+      (label :class "weather-icon" :text weather_icon)
+      (box :orientation "v" :space-evenly false
+        (label :class "weather-temp" :text weather_temp)
+        (label :class "weather-desc" :text weather_desc)))))
+
+;; Calendar Widget
+(defwidget date_display []
+  (box :class "calendar" :orientation "v" :space-evenly false :spacing 10
+    (label :class "widget-title" :text "Calendar")
+    
+    (box :class "date-info" :orientation "v" :space-evenly false :spacing 5
+      (label :class "current-time" :text current_time)
+      (label :class "current-date" :text "${current_date}, ${current_month}"))))
+
+;; Quick Settings Widget
+(defwidget quick_settings []
+  (box :class "quick-settings" :orientation "v" :space-evenly false :spacing 10
+    (label :class "widget-title" :text "Quick Settings")
+    
+    ;; Volume
+    (box :class "setting-row" :space-evenly false
+      (label :class "setting-label" :text "Volume")
+      (box :class "setting-control"
+        (scale :class "setting-scale" 
+               :value volume 
+               :orientation "h" 
+               :min 0 
+               :max 100
+               :width 200
+               :onchange "pamixer --set-volume {}")))
+    
+    ;; Brightness - Safe increment buttons for all displays
+    (box :class "setting-row" :space-evenly false
+      (label :class "setting-label" :text "Brightness")
+      (box :class "brightness-buttons" :space-evenly true :spacing 5
+        (button :onclick "fish ~/.config/eww/scripts/brightness.fish 25 &"
+                :width 45
+                :height 30
+                "25%")
+        (button :onclick "fish ~/.config/eww/scripts/brightness.fish 50 &"
+                :width 45
+                :height 30
+                "50%")
+        (button :onclick "fish ~/.config/eww/scripts/brightness.fish 75 &"
+                :width 45
+                :height 30
+                "75%")
+        (button :onclick "fish ~/.config/eww/scripts/brightness.fish 100 &"
+                :width 45
+                :height 30
+                "100%")))
+    
+    ;; Network
+    (box :class "setting-row network" :space-evenly false
+      (label :class "setting-label" :text "Network")
+      (box :orientation "v" :space-evenly false
+        (label :class "network-status" :text network_status)
+        (label :class "network-name" :text network_name)))))
+
+;; Main Sidebar
+(defwidget sidebar []
+  (box :class "sidebar" :orientation "v" :space-evenly false :spacing 20
+    (system_monitor)
+    (music_player)
+    (weather)
+    (date_display)
+    (quick_settings)))
+
+;; Sidebar Window
+(defwindow sidebar_window
+  :monitor 0
+  :geometry (geometry :x "0" 
+                     :y "0" 
+                     :width "400px" 
+                     :height "100%" 
+                     :anchor "top left")
+  :stacking "overlay"
+  :exclusive false
+  :focusable false
+  (sidebar))

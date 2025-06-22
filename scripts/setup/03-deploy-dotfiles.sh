@@ -267,7 +267,6 @@ deploy_special_configs() {
 # Get list of configuration directories to deploy
 get_config_directories() {
     local configs=(
-        "ags"
         "hypr"
         "waybar"
         "kitty"

@@ -133,6 +133,34 @@ cd ~/dotfiles && fish dashboard/start_dashboard.fish
 - ✅ **COMPLETE**: All critical bugs resolved and statistics synchronized
 - 🚀 **READY**: Phase 4 - Advanced Features can now begin
 
+## 🛠️ **Additional Systems: Emby Setup Script Fixes (June 23, 2025)**
+
+### **Problem**: Emby setup script had critical bugs preventing proper operation
+- Port conflict errors ("address already in use" on port 8096)
+- Incorrect data directory path (`/var/lib/emby` vs `/var/lib/private/emby`)
+- Permission issues with systemd DynamicUser setup
+- Missing backup/restore functionality due to wrong paths
+
+### **Solutions Implemented**: ✅
+1. **Port Conflict Detection**: Added `check_port_conflicts()` function with automatic process killing
+2. **Service Status Checking**: Prevents duplicate service starts, offers restart option
+3. **Data Directory Auto-Detection**: `detect_emby_data_dir()` finds correct path dynamically  
+4. **Permission Handling**: Proper sudo usage for `/var/lib/private/emby` access
+5. **Emergency Cleanup**: New menu option to force-stop conflicting processes
+6. **Improved Error Handling**: Better web interface verification with retry logic
+
+### **Key Technical Fixes**:
+- **Data Directory**: `/var/lib/emby` → `/var/lib/private/emby` (systemd DynamicUser)
+- **Backup Directories**: `config data plugins root` → `config data logs plugins metadata cache`
+- **Dynamic Ownership**: Added `get_emby_ownership()` function for portable UID/GID detection
+- **Cross-System Compatibility**: Detects actual ownership instead of hardcoding 65534:65534
+- **Permissions**: Added sudo for all private directory operations
+- **Conflict Resolution**: Auto-kill processes on port 8096 before starting service
+- **Systemd Integration**: Uses StateDirectory detection for robust path finding
+
+### **Files Modified**:
+- `scripts/setup/emby.fish` - Complete bug fixes and improvements
+
 ---
 
 ## Phase 3: Enhanced Log Management System (June 21, 2025)

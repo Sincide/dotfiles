@@ -9,7 +9,7 @@
 set -g SCRIPT_NAME "Emby Server Setup"
 set -g SCRIPT_VERSION "1.0"
 set -g LOG_FILE "/tmp/emby_setup_"(date +%Y%m%d_%H%M%S)".log"
-set -g EMBY_DATA_DIR "/var/lib/emby"
+set -g EMBY_DATA_DIR "/var/lib/emby"  # Default, will be auto-detected
 set -g MEDIA_DIR "/mnt/Media"
 set -g BACKUP_DIR "/mnt/Stuff/backups"
 set -g DEBUG_MODE 0
@@ -59,6 +59,76 @@ function update_progress --argument step_name
     set -g CURRENT_STEP (math $CURRENT_STEP + 1)
     set -l percent (math "floor($CURRENT_STEP * 100 / $TOTAL_STEPS)")
     log_message INFO "Step $CURRENT_STEP/$TOTAL_STEPS ($percent%): $step_name"
+end
+
+# Get Emby service ownership
+function get_emby_ownership
+    if test -d "$EMBY_DATA_DIR"
+        set -l ownership (sudo stat -c "%u:%g" "$EMBY_DATA_DIR" 2>/dev/null)
+        if test -n "$ownership"
+            echo $ownership
+            return 0
+        end
+    end
+    
+    # Fallback: try to get from running process
+    set -l pid (pgrep -f "EmbyServer.dll" | head -1)
+    if test -n "$pid"
+        set -l ownership (ps -o uid:1,gid:1 -p $pid --no-headers 2>/dev/null | tr -s ' ' ':' | sed 's/^://')
+        if test -n "$ownership"
+            echo $ownership
+            return 0
+        end
+    end
+    
+    # Final fallback
+    echo "65534:65534"
+    return 1
+end
+
+# Detect Emby data directory
+function detect_emby_data_dir
+    log_message DEBUG "Auto-detecting Emby data directory..."
+    
+    # Common locations to check (prioritize symlink over private dir)
+    set -l possible_dirs "/var/lib/emby" "/var/lib/private/emby" "/home/emby/.config/emby-server" "/opt/emby-server/programdata"
+    
+    for dir in $possible_dirs
+        if sudo test -d "$dir" 2>/dev/null
+            log_message DEBUG "Found potential data directory: $dir"
+            # Check if it looks like an Emby data directory
+            if sudo test -d "$dir/config" 2>/dev/null; or sudo test -d "$dir/data" 2>/dev/null; or sudo test -d "$dir/logs" 2>/dev/null
+                set -g EMBY_DATA_DIR "$dir"
+                log_message SUCCESS "Auto-detected Emby data directory: $dir"
+                return 0
+            end
+        end
+    end
+    
+    # If not found, try to find from systemd service configuration
+    set -l state_dir (sudo systemctl show emby-server.service -p StateDirectory --value 2>/dev/null)
+    if test -n "$state_dir"
+        # Try both /var/lib/private and /var/lib locations
+        for base_path in "/var/lib/private" "/var/lib"
+            set -l potential_dir "$base_path/$state_dir"
+            if test -d "$potential_dir"
+                set -g EMBY_DATA_DIR "$potential_dir"
+                log_message SUCCESS "Detected Emby data directory from systemd config: $potential_dir"
+                return 0
+            end
+        end
+    end
+    
+    # If still not found, try to find from systemd logs
+    set -l log_dir (sudo journalctl -u emby-server.service --no-pager -n 100 2>/dev/null | grep "Loading live tv data from" | tail -1 | sed -n 's/.*Loading live tv data from \(.*\)\/data\/livetv.*/\1/p')
+    if test -n "$log_dir" -a -d "$log_dir"
+        set -g EMBY_DATA_DIR "$log_dir"
+        log_message SUCCESS "Detected Emby data directory from logs: $log_dir"
+        return 0
+    end
+    
+    log_message WARNING "Could not auto-detect Emby data directory, using default: $EMBY_DATA_DIR"
+    return 1
 end
 
 # User confirmation function
@@ -534,8 +604,16 @@ end
 function backup_emby_data
     log_message INFO "Starting Emby data backup..."
     
-    if not test -d $EMBY_DATA_DIR
+    # Auto-detect data directory
+    detect_emby_data_dir
+    
+    if not sudo test -d $EMBY_DATA_DIR 2>/dev/null
         log_message ERROR "Emby data directory not found: $EMBY_DATA_DIR"
+        log_message INFO "Searched locations:"
+        echo "  - /var/lib/emby (symlink)"
+        echo "  - /var/lib/private/emby (private namespace)"
+        echo "  - /home/emby/.config/emby-server"
+        echo "  - /opt/emby-server/programdata"
         return 1
     end
     
@@ -543,7 +621,8 @@ function backup_emby_data
     set -l timestamp (date +%Y%m%d_%H%M%S)
     set -l backup_path "$BACKUP_DIR/emby_backup_$timestamp"
     
-    if mkdir -p $backup_path
+    if sudo mkdir -p $backup_path
+        sudo chown $USER:$USER $backup_path
         log_message SUCCESS "Created backup directory: $backup_path"
     else
         log_message ERROR "Failed to create backup directory"
@@ -554,13 +633,16 @@ function backup_emby_data
     log_message INFO "Stopping Emby service for backup..."
     sudo systemctl stop emby-server.service
     
-    # Backup essential directories
-    set -l essential_dirs config data plugins root
+    # Backup essential directories (based on actual Emby structure)
+    set -l essential_dirs config data logs plugins metadata cache
     
     for dir in $essential_dirs
         if test -d "$EMBY_DATA_DIR/$dir"
             log_message INFO "Backing up $dir..."
-            if cp -r "$EMBY_DATA_DIR/$dir" "$backup_path/"
+            # Use sudo to copy from private directory
+            if sudo cp -r "$EMBY_DATA_DIR/$dir" "$backup_path/"
+                # Fix ownership of copied files
+                sudo chown -R $USER:$USER "$backup_path/$dir"
                 log_message SUCCESS "Backed up $dir"
             else
                 log_message ERROR "Failed to backup $dir"
@@ -600,6 +682,9 @@ end
 # Restore Emby data
 function restore_emby_data
     log_message INFO "Starting Emby data restore..."
+    
+    # Auto-detect data directory
+    detect_emby_data_dir
     
     # Check if backup directory exists
     if not test -d $BACKUP_DIR
@@ -672,7 +757,7 @@ function restore_emby_data
         # Extract compressed backup
         set -l temp_dir (mktemp -d)
         if tar -xzf $selected_backup -C $temp_dir
-            if cp -r "$temp_dir"/*/* $EMBY_DATA_DIR
+            if sudo cp -r "$temp_dir"/*/* $EMBY_DATA_DIR
                 log_message SUCCESS "Data restored from compressed backup"
                 rm -rf $temp_dir
             else
@@ -686,7 +771,7 @@ function restore_emby_data
         end
     else
         # Restore from uncompressed backup
-        if cp -r "$selected_backup"/* $EMBY_DATA_DIR
+        if sudo cp -r "$selected_backup"/* $EMBY_DATA_DIR
             log_message SUCCESS "Data restored from uncompressed backup"
         else
             log_message ERROR "Failed to restore data"
@@ -694,12 +779,21 @@ function restore_emby_data
         end
     end
     
-    # Fix permissions
+    # Fix permissions (detect dynamic user ownership)
     log_message INFO "Fixing permissions..."
-    if sudo chown -R emby:emby $EMBY_DATA_DIR
-        log_message SUCCESS "Permissions fixed"
+    
+    # Get the actual ownership
+    set -l actual_owner (get_emby_ownership)
+    log_message DEBUG "Detected ownership: $actual_owner"
+    
+    if sudo chown -R $actual_owner $EMBY_DATA_DIR
+        log_message SUCCESS "Permissions fixed using detected ownership ($actual_owner)"
     else
-        log_message WARNING "Failed to fix some permissions"
+        log_message WARNING "Failed to fix permissions with detected ownership, trying systemd-managed approach"
+        # Let systemd handle the permissions by restarting the service
+        sudo systemctl restart emby-server.service
+        sleep 3
+        log_message INFO "Systemd will handle dynamic user permissions automatically"
     end
     
     # Restart Emby service
@@ -718,6 +812,9 @@ end
 # Verify installation
 function verify_installation
     log_message INFO "Verifying Emby Server installation..."
+    
+    # Auto-detect data directory
+    detect_emby_data_dir
     
     # Check if service is running
     if sudo systemctl is-active emby-server.service >/dev/null

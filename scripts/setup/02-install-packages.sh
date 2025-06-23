@@ -392,6 +392,12 @@ get_multimedia_packages() {
         "webp-pixbuf-loader"
         "yt-dlp"
         
+        # Media organization and metadata
+        "filebot"
+        "libmediainfo"
+        "libzen"
+        "mediainfo"
+        
         # Additional media players
         "vlc"
         "celluloid"

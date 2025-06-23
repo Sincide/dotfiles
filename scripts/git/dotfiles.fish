@@ -97,6 +97,7 @@ end
 function generate_ai_commit
     set files_changed (git diff --cached --name-only)
     set diff_summary (git diff --cached --stat)
+    set diff_content (git diff --cached --unified=1)
     
     if test -z "$files_changed"
         generate_fallback_commit
@@ -112,32 +113,100 @@ function generate_ai_commit
     
     info "🤖 Generating commit with $model..." >&2
     
-    set prompt "You are a git commit message generator. Generate ONLY a single line commit message, no explanation or extra text.
+    # Analyze what actually changed
+    set file_types ""
+    set directories ""
+    set has_config false
+    set has_scripts false
+    set has_docs false
+    
+    for file in $files_changed
+        set dir (dirname $file | cut -d/ -f1)
+        set ext (string split -r -m1 . $file)[2]
+        
+        set directories $directories $dir
+        
+        # Categorize by file type and location
+        if string match -q "*.fish" $file; or string match -q "*.sh" $file; or string match -q "scripts/*" $file
+            set has_scripts true
+            set file_types $file_types "script"
+        else if string match -q "*.conf" $file; or string match -q "*.ini" $file; or string match -q "*.json" $file; or string match -q "*.toml" $file; or string match -q "*.yaml" $file; or string match -q "*.yml" $file
+            set has_config true
+            set file_types $file_types "config"
+        else if string match -q "*.md" $file; or string match -q "docs/*" $file; or string match -q "README*" $file
+            set has_docs true
+            set file_types $file_types "doc"
+        else if string match -q "*.css" $file; or string match -q "*.scss" $file
+            set file_types $file_types "style"
+        else if string match -q "*.lua" $file; or string match -q "*.vim" $file; or string match -q "init.lua" $file
+            set file_types $file_types "neovim"
+        else if string match -q "hypr/*" $file; or string match -q "waybar/*" $file; or string match -q "dunst/*" $file
+            set has_config true
+            set file_types $file_types "wm-config"
+        else if string match -q "gtk*/*" $file; or string match -q "themes/*" $file
+            set file_types $file_types "theme"
+        else
+            set file_types $file_types "other"
+        end
+    end
+    
+    set unique_dirs (printf '%s\n' $directories | sort -u | grep -v '^\.$' | head -3)
+    set unique_types (printf '%s\n' $file_types | sort -u | head -3)
+    
+    # Create a more specific prompt based on what changed
+    set context ""
+    if test $has_scripts = true
+        set context "$context - Scripts/automation files were modified"
+    end
+    if test $has_config = true
+        set context "$context - Configuration files were modified"
+    end
+    if test $has_docs = true
+        set context "$context - Documentation was updated"
+    end
+    
+    set prompt "You are a git commit message generator for a dotfiles repository. Generate ONLY a single line commit message.
+
+Context: This is a Linux dotfiles repo with Hyprland, Fish shell, Neovim, and various configs.$context
 
 Files changed: $files_changed
+Directories affected: $unique_dirs
+File types: $unique_types
 
-Use conventional commit format: type(scope): description
-- Types: feat, fix, chore, docs, style, refactor
-- Keep under 60 characters  
+Rules:
+- Use conventional commit format: type(scope): description
+- Types: feat, fix, chore, docs, style, refactor, perf, test
+- Scope: specific component (fish, hypr, nvim, waybar, etc.)
+- Keep under 60 characters
 - Use present tense
-- Be specific
+- Be specific about what changed
+- Focus on the most important change
 
-Example: fix(waybar): correct volume widget spacing
+Examples:
+- fix(waybar): correct volume widget spacing
+- feat(fish): add new alias for git operations
+- chore(hypr): update window rules for new apps
+- docs: update installation instructions
+- style(gtk): improve dark theme colors
 
 Commit message:"
 
-    # Run AI with timeout 
-    set ai_output (timeout 15s ollama run $model $prompt 2>/dev/null | head -1 | string trim | sed 's/[^a-zA-Z0-9:().,!? -]//g')
+    # Run AI with timeout and better error handling
+    set ai_output (timeout 20s ollama run $model $prompt 2>/dev/null | head -1 | string trim | sed 's/[^a-zA-Z0-9:().,!? -]//g')
     
     debug "AI generated: '$ai_output'" >&2
     
-    # Use AI output if it looks decent, otherwise fallback
-    if test -n "$ai_output" -a (string length "$ai_output") -gt 15 -a (string length "$ai_output") -lt 72
-        echo $ai_output
-    else
-        debug "AI failed or output too short/long, using fallback" >&2
-        generate_fallback_commit
+    # Validate AI output more strictly
+    if test -n "$ai_output" -a (string length "$ai_output") -gt 10 -a (string length "$ai_output") -lt 72
+        # Check if it follows conventional commit format
+        if string match -q "*(*):*" $ai_output; or string match -q "docs:*" $ai_output; or string match -q "chore:*" $ai_output; or string match -q "feat:*" $ai_output; or string match -q "fix:*" $ai_output; or string match -q "style:*" $ai_output; or string match -q "refactor:*" $ai_output; or string match -q "perf:*" $ai_output; or string match -q "test:*" $ai_output
+            echo $ai_output
+            return
+        end
     end
+    
+    debug "AI failed or output invalid, using fallback" >&2
+    generate_fallback_commit
 end
 
 # Generate fallback commit message
@@ -150,17 +219,34 @@ function generate_fallback_commit
         return
     end
     
-    # Categorize files by directory structure
-    set config_dirs ""
-    set script_dirs ""
+    # Analyze changes more intelligently
+    set config_files ""
+    set script_files ""
     set doc_files ""
+    set theme_files ""
+    set nvim_files ""
+    set wm_files ""
     set other_files ""
     
     for file in $files_changed
-        if string match -q "*/config*" $file; or string match -q ".*rc" $file
-            set config_dirs $config_dirs (dirname $file | cut -d/ -f1)
-        else if string match -q "scripts/*" $file; or string match -q "*.fish" $file; or string match -q "*.sh" $file
-            set script_dirs $script_dirs (dirname $file | cut -d/ -f1)
+        set dir (dirname $file | cut -d/ -f1)
+        set basename_file (basename $file)
+        
+        # Categorize files more specifically
+        if string match -q "*.fish" $file; or string match -q "*.sh" $file; or string match -q "scripts/*" $file
+            set script_files $script_files $file
+        else if string match -q "hypr/*" $file
+            set wm_files $wm_files $file
+        else if string match -q "waybar/*" $file
+            set wm_files $wm_files $file
+        else if string match -q "dunst/*" $file
+            set wm_files $wm_files $file
+        else if string match -q "nvim/*" $file; or string match -q "*.lua" $file; or string match -q "init.lua" $file
+            set nvim_files $nvim_files $file
+        else if string match -q "gtk*/*" $file; or string match -q "themes/*" $file; or string match -q "*.css" $file
+            set theme_files $theme_files $file
+        else if string match -q "*.conf" $file; or string match -q "*.ini" $file; or string match -q "*.json" $file; or string match -q "*.toml" $file; or string match -q "*.yaml" $file; or string match -q "*.yml" $file
+            set config_files $config_files $file
         else if string match -q "*.md" $file; or string match -q "docs/*" $file; or string match -q "README*" $file
             set doc_files $doc_files $file
         else
@@ -168,34 +254,71 @@ function generate_fallback_commit
         end
     end
     
-         # Generate smart commit based on what changed
-     if test (count $script_dirs) -gt 0
-         set unique_scripts (printf '%s\n' $script_dirs | sort -u | head -3)
-         if test (count $unique_scripts) -eq 1 -a "$unique_scripts[1]" != ""
-             echo "scripts($unique_scripts[1]): update automation tools"
-         else
-             echo "scripts: update automation and tools"
-         end
-     else if test (count $config_dirs) -gt 0
-         set unique_configs (printf '%s\n' $config_dirs | sort -u | head -3)
-         if test (count $unique_configs) -eq 1 -a "$unique_configs[1]" != ""
-             echo "config($unique_configs[1]): update settings"
-         else
-             echo "config: update configuration files"
-         end
-     else if test (count $doc_files) -gt 0
-         echo "docs: update documentation"
-     else if test $file_count -eq 1
-         set basename_file (basename $files_changed[1])
-         set dir_name (dirname $files_changed[1] | cut -d/ -f1)
-         if test "$dir_name" != "." -a "$dir_name" != ""
-             echo "chore($dir_name): update $basename_file"
-         else
-             echo "chore: update $basename_file"
-         end
-     else
-         echo "chore: update $file_count files"
-     end
+    # Generate specific commit messages based on what changed
+    if test (count $script_files) -gt 0
+        if test (count $script_files) -eq 1
+            set script_name (basename $script_files[1])
+            set script_dir (dirname $script_files[1] | cut -d/ -f1)
+            if test "$script_dir" != "." -a "$script_dir" != ""
+                echo "feat($script_dir): update $script_name"
+            else
+                echo "feat(scripts): update $script_name"
+            end
+        else
+            echo "feat(scripts): update automation tools"
+        end
+    else if test (count $wm_files) -gt 0
+        set wm_dirs (printf '%s\n' (for f in $wm_files; dirname $f | cut -d/ -f1; end) | sort -u)
+        if test (count $wm_dirs) -eq 1
+            echo "chore($wm_dirs[1]): update configuration"
+        else
+            echo "chore(wm): update window manager configs"
+        end
+    else if test (count $nvim_files) -gt 0
+        if test (count $nvim_files) -eq 1
+            set nvim_file (basename $nvim_files[1])
+            echo "feat(nvim): update $nvim_file"
+        else
+            echo "feat(nvim): update configuration"
+        end
+    else if test (count $theme_files) -gt 0
+        if test (count $theme_files) -eq 1
+            set theme_file (basename $theme_files[1])
+            echo "style(theme): update $theme_file"
+        else
+            echo "style(theme): update styling"
+        end
+    else if test (count $config_files) -gt 0
+        set config_dirs (printf '%s\n' (for f in $config_files; dirname $f | cut -d/ -f1; end) | sort -u)
+        if test (count $config_dirs) -eq 1
+            echo "chore($config_dirs[1]): update configuration"
+        else
+            echo "chore(config): update settings"
+        end
+    else if test (count $doc_files) -gt 0
+        if test (count $doc_files) -eq 1
+            set doc_file (basename $doc_files[1])
+            echo "docs: update $doc_file"
+        else
+            echo "docs: update documentation"
+        end
+    else if test $file_count -eq 1
+        set single_file (basename $files_changed[1])
+        set single_dir (dirname $files_changed[1] | cut -d/ -f1)
+        if test "$single_dir" != "." -a "$single_dir" != ""
+            echo "chore($single_dir): update $single_file"
+        else
+            echo "chore: update $single_file"
+        end
+    else
+        # Try to identify the most common directory
+        set all_dirs (printf '%s\n' (for f in $files_changed; dirname $f | cut -d/ -f1; end) | sort | uniq -c | sort -nr | head -1 | awk '{print $2}')
+        if test -n "$all_dirs" -a "$all_dirs" != "."
+            echo "chore($all_dirs): update $file_count files"
+        else
+            echo "chore: update $file_count files"
+        end
+    end
 end
 
 # Toggle git remote between SSH and HTTPS

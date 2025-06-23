@@ -37,6 +37,7 @@ window#waybar.hidden {
 #memory,
 #disk,
 #custom-updates,
+#custom-qbittorrent,
 #temperature,
 #custom-load,
 #custom-uptime,
@@ -61,6 +62,7 @@ window#waybar.hidden {
 #memory:hover,
 #disk:hover,
 #custom-updates:hover,
+#custom-qbittorrent:hover,
 #temperature:hover,
 #custom-load:hover,
 #custom-uptime:hover,
@@ -129,6 +131,20 @@ window#waybar.hidden {
     background: @surfaceVariant;
     color: @onSurfaceVariant;
     border: 1px solid @outline;
+}
+
+/* qBittorrent - secondary theme for torrent activity */
+#custom-qbittorrent {
+    background: @secondaryContainer;
+    color: @onSecondaryContainer;
+    border: 1px solid @secondary;
+    font-weight: 500;
+}
+
+#custom-qbittorrent:hover {
+    background: @secondary;
+    color: @onSecondary;
+    box-shadow: 0 4px 12px @shadow;
 }
 
 /* Temperature monitoring - error theme for heat */

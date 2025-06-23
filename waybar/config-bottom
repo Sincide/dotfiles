@@ -23,6 +23,7 @@
     ],
     
     "modules-right": [
+        "custom/qbittorrent",
         "temperature",
         "custom/load",
         "custom/uptime",
@@ -151,5 +152,19 @@
         "tooltip": true,
         "tooltip-format": "🖥️ System Information\n💀 Arch Linux + Hyprland\n🌌 Evil Space Theme\n⚡ Material You Theming\n🎨 Dynamic Wallpaper Colors",
         "on-click": "kitty -e neofetch"
+    },
+
+    // ╭─────────────────────────────────────────────────────────╮
+    // │                 QBITTORRENT MODULE                      │
+    // ╰─────────────────────────────────────────────────────────╯
+
+    "custom/qbittorrent": {
+        "format": "🌪️ {}",
+        "interval": 3,
+        "exec": "~/dotfiles/waybar/scripts/qbittorrent-status.fish",
+        "tooltip": true,
+        "tooltip-format": "🌪️ qBittorrent Status\n💀 Evil Torrent Control\n\n⬇️ Downloads: Active torrents\n🌱 Seeding: Upload activity\n⏸️ Paused: Inactive torrents\n💀 IDLE: No active transfers\n\n🖱️ Left Click: Open Web UI\n🖱️ Right Click: Service Control",
+        "on-click": "xdg-open http://127.0.0.1:9090",
+        "on-click-right": "kitty -e fish -c 'echo \"🌪️ qBittorrent Service Control\"; echo; systemctl --user status qbittorrent-nox.service; echo; echo \"Commands:\"; echo \"  Start:   systemctl --user start qbittorrent-nox\"; echo \"  Stop:    systemctl --user stop qbittorrent-nox\"; echo \"  Restart: systemctl --user restart qbittorrent-nox\"; echo \"  Logs:    journalctl --user -u qbittorrent-nox -f\"; echo; read -P \"Press Enter to continue...\"'"
     }
 } 

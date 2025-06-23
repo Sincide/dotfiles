@@ -495,7 +495,7 @@ get_optional_packages() {
         "gnome-disk-utility"
         
         # Torrents
-        "qbittorrent"
+        "qbittorrent-nox"
         
         # Uncomment packages you want:
         # "firefox"

@@ -1,0 +1,12 @@
+[Unit]
+Description=qBittorrent-nox
+After=network.target
+
+[Service]
+Type=forking
+UMask=007
+ExecStart=/usr/bin/qbittorrent-nox -d --webui-port=9090
+Restart=on-failure
+
+[Install]
+WantedBy=default.target 

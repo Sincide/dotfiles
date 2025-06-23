@@ -355,3 +355,10 @@ set -g fish_greeting ""
 set -gx PATH /opt/rocm/bin $PATH
 set -gx ROCM_PATH /opt/rocm
 set -gx HSA_OVERRIDE_GFX_VERSION 11.0.0
+# ROCm Environment Variables (Added by setup script)
+set -gx PATH /opt/rocm/bin $PATH
+set -gx ROCM_PATH /opt/rocm
+set -gx HSA_OVERRIDE_GFX_VERSION 11.0.0
+set -gx LD_LIBRARY_PATH /usr/lib/ollama/rocm:/opt/rocm/lib
+set -gx HSA_OVERRIDE_GFX_VERSION "11.0.0"
+set -gx HIP_VISIBLE_DEVICES 0

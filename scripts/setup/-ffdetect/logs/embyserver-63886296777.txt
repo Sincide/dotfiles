@@ -1,0 +1,168 @@
+2025-06-23 17:32:56.466 Info Main: Application path: /usr/lib/emby-server/EmbyServer.dll
+2025-06-23 17:32:56.516 Info NetworkManager: Adding event handler for NetworkChange.NetworkAddressChanged
+2025-06-23 17:32:56.624 Info App: Setting default culture to en-us
+2025-06-23 17:32:56.626 Info Main: Emby
+	Command line: /usr/lib/emby-server/EmbyServer.dll -programdata -ffdetect -ffmpeg -ffprobe -restartexitcode 3
+	Operating system: Linux version 6.15.3-arch1-1 (linux@archlinux) (gcc (GCC) 15.1.1 20250425, GNU ld (GNU Binutils) 2.44.0) #1 SMP PREEMPT_DYNAMIC Thu, 19 Jun 2025 14:41
+	Framework: .NET 6.0.36
+	OS/Process: x64/x64
+	Runtime: usr/share/dotnet/shared/Microsoft.NETCore.App/6.0.36/System.Private.CoreLib.dll
+	Processor count: 16
+	Data path: -ffdetect
+	Application path: /usr/lib/emby-server
+2025-06-23 17:32:56.626 Info Main: Logs path: -ffdetect/logs
+2025-06-23 17:32:56.626 Info Main: Cache path: -ffdetect/cache
+2025-06-23 17:32:56.627 Info Main: Internal metadata path: -ffdetect/metadata
+2025-06-23 17:32:56.628 Info App: Emby Server Version: 4.8.11.0
+2025-06-23 17:32:56.631 Info App: Loading assemblies
+2025-06-23 17:32:56.642 Info App: Copying plugin from /usr/lib/emby-server/plugins/AudioDb.dll to -ffdetect/plugins/AudioDb.dll
+2025-06-23 17:32:56.642 Info App: Copying plugin from /usr/lib/emby-server/plugins/BlurayMounter.dll to -ffdetect/plugins/BlurayMounter.dll
+2025-06-23 17:32:56.643 Info App: Copying plugin from /usr/lib/emby-server/plugins/DvdMounter.dll to -ffdetect/plugins/DvdMounter.dll
+2025-06-23 17:32:56.644 Info App: Copying plugin from /usr/lib/emby-server/plugins/Emby.Dlna.dll to -ffdetect/plugins/Emby.Dlna.dll
+2025-06-23 17:32:56.647 Info App: Copying plugin from /usr/lib/emby-server/plugins/Emby.M3UTuner.dll to -ffdetect/plugins/Emby.M3UTuner.dll
+2025-06-23 17:32:56.647 Info App: Copying plugin from /usr/lib/emby-server/plugins/Emby.PortMapper.dll to -ffdetect/plugins/Emby.PortMapper.dll
+2025-06-23 17:32:56.648 Info App: Copying plugin from /usr/lib/emby-server/plugins/Emby.Server.CinemaMode.dll to -ffdetect/plugins/Emby.Server.CinemaMode.dll
+2025-06-23 17:32:56.649 Info App: Copying plugin from /usr/lib/emby-server/plugins/Emby.Webhooks.dll to -ffdetect/plugins/Emby.Webhooks.dll
+2025-06-23 17:32:56.649 Info App: Copying plugin from /usr/lib/emby-server/plugins/Emby.XmlTV.dll to -ffdetect/plugins/Emby.XmlTV.dll
+2025-06-23 17:32:56.650 Info App: Copying plugin from /usr/lib/emby-server/plugins/EmbyGuideData.dll to -ffdetect/plugins/EmbyGuideData.dll
+2025-06-23 17:32:56.651 Info App: Copying plugin from /usr/lib/emby-server/plugins/Fanart.dll to -ffdetect/plugins/Fanart.dll
+2025-06-23 17:32:56.651 Info App: Copying plugin from /usr/lib/emby-server/plugins/MBBackup.dll to -ffdetect/plugins/MBBackup.dll
+2025-06-23 17:32:56.652 Info App: Copying plugin from /usr/lib/emby-server/plugins/MovieDb.dll to -ffdetect/plugins/MovieDb.dll
+2025-06-23 17:32:56.654 Info App: Copying plugin from /usr/lib/emby-server/plugins/MusicBrainz.dll to -ffdetect/plugins/MusicBrainz.dll
+2025-06-23 17:32:56.654 Info App: Copying plugin from /usr/lib/emby-server/plugins/NfoMetadata.dll to -ffdetect/plugins/NfoMetadata.dll
+2025-06-23 17:32:56.656 Info App: Copying plugin from /usr/lib/emby-server/plugins/OMDb.dll to -ffdetect/plugins/OMDb.dll
+2025-06-23 17:32:56.656 Info App: Copying plugin from /usr/lib/emby-server/plugins/OpenSubtitles.dll to -ffdetect/plugins/OpenSubtitles.dll
+2025-06-23 17:32:56.657 Info App: Copying plugin from /usr/lib/emby-server/plugins/StudioImages.dll to -ffdetect/plugins/StudioImages.dll
+2025-06-23 17:32:56.657 Info App: Copying plugin from /usr/lib/emby-server/plugins/Tvdb.dll to -ffdetect/plugins/Tvdb.dll
+2025-06-23 17:32:56.669 Info App: Loading AudioDb, Version=1.0.18.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/AudioDb.dll
+2025-06-23 17:32:56.669 Info App: Loading BlurayMounter, Version=1.0.2.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/BlurayMounter.dll
+2025-06-23 17:32:56.669 Info App: Loading DvdMounter, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/DvdMounter.dll
+2025-06-23 17:32:56.669 Info App: Loading Emby.Dlna, Version=1.4.7.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Emby.Dlna.dll
+2025-06-23 17:32:56.669 Info App: Loading Emby.M3UTuner, Version=1.0.39.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Emby.M3UTuner.dll
+2025-06-23 17:32:56.669 Info App: Loading Emby.PortMapper, Version=1.2.8.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Emby.PortMapper.dll
+2025-06-23 17:32:56.669 Info App: Loading Emby.Server.CinemaMode, Version=1.0.47.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Emby.Server.CinemaMode.dll
+2025-06-23 17:32:56.669 Info App: Loading Emby.Webhooks, Version=1.0.35.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Emby.Webhooks.dll
+2025-06-23 17:32:56.669 Info App: Loading Emby.XmlTV, Version=1.2.0.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Emby.XmlTV.dll
+2025-06-23 17:32:56.669 Info App: Loading EmbyGuideData, Version=1.0.18.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/EmbyGuideData.dll
+2025-06-23 17:32:56.669 Info App: Loading Fanart, Version=1.0.16.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Fanart.dll
+2025-06-23 17:32:56.669 Info App: Loading MBBackup, Version=1.7.2.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/MBBackup.dll
+2025-06-23 17:32:56.669 Info App: Loading MovieDb, Version=1.8.0.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/MovieDb.dll
+2025-06-23 17:32:56.669 Info App: Loading MusicBrainz, Version=1.0.24.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/MusicBrainz.dll
+2025-06-23 17:32:56.669 Info App: Loading NfoMetadata, Version=1.0.82.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/NfoMetadata.dll
+2025-06-23 17:32:56.669 Info App: Loading OMDb, Version=1.0.21.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/OMDb.dll
+2025-06-23 17:32:56.669 Info App: Loading OpenSubtitles, Version=1.0.63.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/OpenSubtitles.dll
+2025-06-23 17:32:56.669 Info App: Loading StudioImages, Version=1.0.3.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/StudioImages.dll
+2025-06-23 17:32:56.669 Info App: Loading Tvdb, Version=1.5.8.0, Culture=neutral, PublicKeyToken=null from -ffdetect/plugins/Tvdb.dll
+2025-06-23 17:32:56.669 Info App: Loading Emby.Api, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Web, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading MediaBrowser.Model, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading MediaBrowser.Common, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading MediaBrowser.Controller, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Providers, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Photos, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Server.Implementations, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.LiveTV, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.ActivityLog, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Server.MediaEncoding, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.LocalMetadata, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Notifications, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Web.GenericUI, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Codecs.Dxva, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Codecs, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Server.Connect, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading Emby.Server.Sync, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.669 Info App: Loading EmbyServer, Version=4.8.11.0, Culture=neutral, PublicKeyToken=null
+2025-06-23 17:32:56.814 Info SqliteUserRepository: Sqlite version: 3.50.1
+2025-06-23 17:32:56.815 Info SqliteUserRepository: Sqlite compiler options: ATOMIC_INTRINSICS=1,COMPILER=gcc-15.1.1 20250425,DEFAULT_AUTOVACUUM,DEFAULT_CACHE_SIZE=-2000,DEFAULT_FILE_FORMAT=4,DEFAULT_JOURNAL_SIZE_LIMIT=-1,DEFAULT_MMAP_SIZE=0,DEFAULT_PAGE_SIZE=4096,DEFAULT_PCACHE_INITSZ=20,DEFAULT_RECURSIVE_TRIGGERS,DEFAULT_SECTOR_SIZE=4096,DEFAULT_SYNCHRONOUS=2,DEFAULT_WAL_AUTOCHECKPOINT=1000,DEFAULT_WAL_SYNCHRONOUS=2,DEFAULT_WORKER_THREADS=0,DIRECT_OVERFLOW_READ,ENABLE_COLUMN_METADATA,ENABLE_DBSTAT_VTAB,ENABLE_FTS3,ENABLE_FTS3_PARENTHESIS,ENABLE_FTS3_TOKENIZER,ENABLE_FTS4,ENABLE_FTS5,ENABLE_MATH_FUNCTIONS,ENABLE_RTREE,ENABLE_STAT4,ENABLE_STMTVTAB,ENABLE_UNLOCK_NOTIFY,HAVE_ISNAN,MALLOC_SOFT_LIMIT=1024,MAX_ATTACHED=10,MAX_COLUMN=2000,MAX_COMPOUND_SELECT=500,MAX_DEFAULT_PAGE_SIZE=8192,MAX_EXPR_DEPTH=10000,MAX_FUNCTION_ARG=1000,MAX_LENGTH=1000000000,MAX_LIKE_PATTERN_LENGTH=50000,MAX_MMAP_SIZE=0x7fff0000,MAX_PAGE_COUNT=0xfffffffe,MAX_PAGE_SIZE=65536,MAX_SQL_LENGTH=1000000000,MAX_TRIGGER_DEPTH=1000,MAX_VARIABLE_NUMBER=250000,MAX_VDBE_OP=250000000,MAX_WORKER_THREADS=8,MUTEX_PTHREADS,SECURE_DELETE,SYSTEM_MALLOC,TEMP_STORE=1,THREADSAFE=1
+2025-06-23 17:32:56.815 Info SqliteUserRepository: Opening sqlite connection to -ffdetect/data/users.db
+2025-06-23 17:32:56.823 Info SqliteUserRepository: Default journal_mode for -ffdetect/data/users.db is delete
+2025-06-23 17:32:56.825 Info SqliteUserRepository: PRAGMA foreign_keys=1
+2025-06-23 17:32:56.825 Info SqliteUserRepository: Result of setting SQLITE_DBCONFIG_DQS_DDL to 0 is 0
+2025-06-23 17:32:56.825 Info SqliteUserRepository: Result of setting SQLITE_DBCONFIG_DQS_DML to 0 is 0
+2025-06-23 17:32:56.882 Info ActivityRepository: Opening sqlite connection to -ffdetect/data/activitylog.db
+2025-06-23 17:32:56.883 Info ActivityRepository: Default journal_mode for -ffdetect/data/activitylog.db is delete
+2025-06-23 17:32:56.883 Info ActivityRepository: PRAGMA foreign_keys=1
+2025-06-23 17:32:56.883 Info ActivityRepository: Result of setting SQLITE_DBCONFIG_DQS_DDL to 0 is 0
+2025-06-23 17:32:56.883 Info ActivityRepository: Result of setting SQLITE_DBCONFIG_DQS_DML to 0 is 0
+2025-06-23 17:32:56.903 Info NetworkManager: Detecting local network addresses
+2025-06-23 17:32:56.904 Info NetworkManager: networkInterface: Ethernet enp5s0, Speed: 1000000000, Description: enp5s0
+2025-06-23 17:32:56.904 Info NetworkManager: GatewayAddresses: 10.0.0.1
+2025-06-23 17:32:56.904 Info NetworkManager: UnicastAddresses: 10.0.0.100,fe80::7e62:51f7:6a3b:2a32%2
+2025-06-23 17:32:56.904 Info NetworkManager: networkInterface: Ethernet virbr0, Speed: 10000000000, Description: virbr0
+2025-06-23 17:32:56.905 Info NetworkManager: GatewayAddresses: 
+2025-06-23 17:32:56.905 Info NetworkManager: UnicastAddresses: 192.168.122.1
+2025-06-23 17:32:56.905 Info NetworkManager: networkInterface: Ethernet vnet1, Speed: 10000000000, Description: vnet1
+2025-06-23 17:32:56.905 Info NetworkManager: GatewayAddresses: 
+2025-06-23 17:32:56.905 Info NetworkManager: UnicastAddresses: fe80::fc54:ff:fea6:49ef%5
+2025-06-23 17:32:56.905 Info NetworkManager: networkInterface: Loopback lo, Speed: -1, Description: lo
+2025-06-23 17:32:56.905 Info NetworkManager: GatewayAddresses: 
+2025-06-23 17:32:56.905 Info NetworkManager: UnicastAddresses: 127.0.0.1,::1
+2025-06-23 17:32:56.941 Info NetworkManager: Detected local ip addresses: [{"IPAddress":"10.0.0.100","HasGateWayAddress":true,"PrefixLength":24,"IPv4Mask":"255.255.255.0"},{"IPAddress":"fe80::7e62:51f7:6a3b:2a32%2","HasGateWayAddress":true,"PrefixLength":64},{"IPAddress":"192.168.122.1","HasGateWayAddress":false,"PrefixLength":24,"IPv4Mask":"255.255.255.0"},{"IPAddress":"127.0.0.1","HasGateWayAddress":false,"PrefixLength":8,"IPv4Mask":"255.0.0.0"},{"IPAddress":"fe80::fc54:ff:fea6:49ef%5","HasGateWayAddress":false,"PrefixLength":64},{"IPAddress":"::1","HasGateWayAddress":false,"PrefixLength":128}]
+2025-06-23 17:32:56.944 Info SqliteDisplayPreferencesRepository: Opening sqlite connection to -ffdetect/data/displaypreferences.db
+2025-06-23 17:32:56.945 Info SqliteDisplayPreferencesRepository: Default journal_mode for -ffdetect/data/displaypreferences.db is delete
+2025-06-23 17:32:56.945 Info SqliteDisplayPreferencesRepository: PRAGMA foreign_keys=1
+2025-06-23 17:32:56.945 Info SqliteDisplayPreferencesRepository: Result of setting SQLITE_DBCONFIG_DQS_DDL to 0 is 0
+2025-06-23 17:32:56.945 Info SqliteDisplayPreferencesRepository: Result of setting SQLITE_DBCONFIG_DQS_DML to 0 is 0
+2025-06-23 17:32:56.955 Info App: Requesting administrative access to authorize http server
+2025-06-23 17:32:56.956 Info ServerConfigurationManager: Saving system configuration
+2025-06-23 17:32:56.960 Info App: Adding HttpListener prefix http://+:8096/
+2025-06-23 17:32:57.004 Error Main: Error in appHost.Init
+	*** Error Report ***
+	Version: 4.8.11.0
+	Command line: /usr/lib/emby-server/EmbyServer.dll -programdata -ffdetect -ffmpeg -ffprobe -restartexitcode 3
+	Operating system: Linux version 6.15.3-arch1-1 (linux@archlinux) (gcc (GCC) 15.1.1 20250425, GNU ld (GNU Binutils) 2.44.0) #1 SMP PREEMPT_DYNAMIC Thu, 19 Jun 2025 14:41
+	Framework: .NET 6.0.36
+	OS/Process: x64/x64
+	Runtime: usr/share/dotnet/shared/Microsoft.NETCore.App/6.0.36/System.Private.CoreLib.dll
+	Processor count: 16
+	Data path: -ffdetect
+	Application path: /usr/lib/emby-server
+	System.IO.IOException: System.IO.IOException: Failed to bind to address http://[::]:8096: address already in use.
+	 ---> Microsoft.AspNetCore.Connections.AddressInUseException: Address already in use
+	 ---> System.Net.Sockets.SocketException (98): Address already in use
+	   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, String callerName)
+	   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+	   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+	   at Emby.Server.Implementations.HttpServer.KestrelHost.KestrelListener.CreateBoundSocket(EndPoint endpoint)
+	   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+	   --- End of inner exception stack trace ---
+	   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+	   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass30_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+	--- End of stack trace from previous location ---
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+	   --- End of inner exception stack trace ---
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.AnyIPListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.EndpointsStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(IEnumerable`1 listenOptions, AddressBindContext context, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Hosting.WebHost.StartAsync(CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Hosting.WebHost.Start()
+	   at Emby.Server.Implementations.HttpServer.KestrelHost.KestrelListener.OnAddPrefixesComplete()
+	   at Emby.Server.Implementations.ApplicationHost.Init()
+	   at EmbyServer.HostedService.StartAsync(CancellationToken cancellationToken)
+	Source: Microsoft.AspNetCore.Server.Kestrel.Core
+	TargetSite: Void MoveNext()
+	InnerException: Microsoft.AspNetCore.Connections.AddressInUseException: Address already in use
+	Source: Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets
+	TargetSite: Void Bind()
+	   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+	   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass30_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+	--- End of stack trace from previous location ---
+	   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+	InnerException: System.Net.Sockets.SocketException: Address already in use
+	Source: System.Net.Sockets
+	TargetSite: Void UpdateStatusAfterSocketErrorAndThrowException(System.Net.Sockets.SocketError, System.String)
+	   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, String callerName)
+	   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+	   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+	   at Emby.Server.Implementations.HttpServer.KestrelHost.KestrelListener.CreateBoundSocket(EndPoint endpoint)
+	   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+	
+2025-06-23 17:32:57.006 Info Main: Shutdown complete

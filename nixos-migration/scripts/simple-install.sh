@@ -95,15 +95,34 @@ partition_disk() {
 format_disk() {
     log_info "Formatting filesystems..."
     
+    echo "DEBUG: Formatting boot partition: $BOOT_PART"
     mkfs.fat -F 32 -n boot "$BOOT_PART"
+    echo "DEBUG: Boot partition formatted"
+    
+    echo "DEBUG: Formatting root partition: $ROOT_PART"
     mkfs.ext4 -L nixos "$ROOT_PART"
+    echo "DEBUG: Root partition formatted"
+    
+    echo "DEBUG: Setting up swap: $SWAP_PART"
     mkswap -L swap "$SWAP_PART"
+    echo "DEBUG: Swap formatted"
     
     # Mount
+    echo "DEBUG: Mounting root partition"
     mount /dev/disk/by-label/nixos /mnt
+    echo "DEBUG: Root mounted"
+    
+    echo "DEBUG: Creating boot directory"
     mkdir -p /mnt/boot
+    echo "DEBUG: Boot directory created"
+    
+    echo "DEBUG: Mounting boot partition"
     mount /dev/disk/by-label/boot /mnt/boot
+    echo "DEBUG: Boot mounted"
+    
+    echo "DEBUG: Enabling swap"
     swapon /dev/disk/by-label/swap
+    echo "DEBUG: Swap enabled"
     
     log_success "Filesystems ready"
 }

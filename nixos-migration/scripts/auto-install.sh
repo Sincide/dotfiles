@@ -57,6 +57,7 @@ prompt_disk() {
 }
 
 prompt_settings() {
+    echo "DEBUG: Inside prompt_settings function"
     log_info "Current settings:"
     echo "  Disk: $TARGET_DISK"
     echo "  Hostname: $HOSTNAME"
@@ -64,14 +65,24 @@ prompt_settings() {
     echo "  Keyboard: $KEYBOARD_LAYOUT"
     echo
     
+    echo "DEBUG: About to prompt for hostname"
     read -p "Change hostname? (current: $HOSTNAME): " new_hostname
+    echo "DEBUG: Hostname input: '$new_hostname'"
     [[ -n "$new_hostname" ]] && HOSTNAME="$new_hostname"
+    echo "DEBUG: Hostname set to: $HOSTNAME"
     
+    echo "DEBUG: About to prompt for username"
     read -p "Change username? (current: $USERNAME): " new_username
+    echo "DEBUG: Username input: '$new_username'"
     [[ -n "$new_username" ]] && USERNAME="$new_username"
+    echo "DEBUG: Username set to: $USERNAME"
     
+    echo "DEBUG: About to prompt for keyboard layout"
     read -p "Change keyboard layout? (current: $KEYBOARD_LAYOUT): " new_keyboard
+    echo "DEBUG: Keyboard input: '$new_keyboard'"
     [[ -n "$new_keyboard" ]] && KEYBOARD_LAYOUT="$new_keyboard"
+    echo "DEBUG: Keyboard layout set to: $KEYBOARD_LAYOUT"
+    echo "DEBUG: Exiting prompt_settings"
 }
 
 setup_environment() {
@@ -301,12 +312,17 @@ show_help() {
 }
 
 # Parse arguments
+echo "DEBUG: Script started, parsing arguments"
+echo "DEBUG: Arguments: $@"
 case "${1:-}" in
     -h|--help)
+        echo "DEBUG: Showing help"
         show_help
         exit 0
         ;;
     *)
+        echo "DEBUG: About to call main function"
         main "$@"
+        echo "DEBUG: Main function completed"
         ;;
 esac

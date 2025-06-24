@@ -94,9 +94,20 @@ setup_environment() {
     
     # Enable flakes
     echo "DEBUG: Setting up Nix flakes"
-    mkdir -p /etc/nix
-    echo "experimental-features = nix-command flakes" > /etc/nix/nix.conf
-    echo "DEBUG: Flakes configuration written"
+    
+    # Check if /etc is writable, if not use temporary config
+    if touch /etc/test-write 2>/dev/null; then
+        rm -f /etc/test-write
+        mkdir -p /etc/nix
+        echo "experimental-features = nix-command flakes" > /etc/nix/nix.conf
+        echo "DEBUG: Flakes configuration written to /etc/nix/nix.conf"
+    else
+        log_warning "/etc is read-only, using temporary nix config"
+        mkdir -p ~/.config/nix
+        echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
+        export NIX_CONFIG="experimental-features = nix-command flakes"
+        echo "DEBUG: Flakes configuration set via environment variable"
+    fi
     
     # Test network
     if ! ping -c 3 8.8.8.8 >/dev/null 2>&1; then

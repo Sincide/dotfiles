@@ -231,6 +231,52 @@ function duh
     du -sh * | sort -hr
 end
 
+# Function to convert MKV files using VAAPI hardware acceleration
+function vaapi-convert
+    # Get target directory from argument or use current directory
+    if test (count $argv) -ge 1
+        set target_dir $argv[1]
+        if not test -d "$target_dir"
+            echo "❌ Error: Directory '$target_dir' does not exist"
+            return 1
+        end
+    else
+        set target_dir (pwd)
+    end
+
+    set suffix "[H264]"
+    set device "/dev/dri/renderD128"
+    set bitrate "3000k"
+
+    echo "🎬 Scanning for .mkv files in: $target_dir"
+
+    for file in (find "$target_dir" -type f -iname "*.mkv")
+        echo "🔍 Checking: $file"
+
+        if string match -q "*$suffix*" "$file"
+            echo "⏭️  Skipping already converted: $file"
+            continue
+        end
+
+        set dir (dirname "$file")
+        set base (basename "$file" .mkv)
+        set output "$dir/$base $suffix.mkv"
+
+        echo "🎞️  Converting: $file"
+        ffmpeg -y \
+          -hwaccel vaapi -vaapi_device $device \
+          -i "$file" \
+          -vf 'format=nv12,hwupload' \
+          -c:v h264_vaapi -b:v $bitrate \
+          -c:a copy \
+          "$output"
+
+        echo "✅ Finished: $output"
+    end
+
+    echo "🎉 All files in $target_dir processed!"
+end
+
 # ============================================================================
 # EVIL SPACE ABBREVIATIONS (with Fisher plugins)
 # ============================================================================

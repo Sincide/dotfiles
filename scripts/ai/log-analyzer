@@ -1,0 +1,103 @@
+#!/usr/bin/env fish
+
+# Evil Space Log Analyzer Launcher
+# Quick access to log analysis with your local LLM
+
+set script_dir (dirname (status -f))
+set analyzer "$script_dir/realtime_log_analyzer.py"
+
+# Colors for Fish
+set red (set_color red)
+set green (set_color green)
+set yellow (set_color yellow)
+set blue (set_color blue)
+set cyan (set_color cyan)
+set bold (set_color --bold)
+set normal (set_color normal)
+
+function show_usage
+    echo $cyan"🔍 Evil Space Log Analyzer"$normal
+    echo
+    echo $bold"USAGE:"$normal
+    echo "  log-analyzer live                    # Real-time monitoring"
+    echo "  log-analyzer investigate \"1 hour ago\" # Investigate timeframe"
+    echo "  log-analyzer sudo                    # Quick sudo issue analysis"
+    echo "  log-analyzer security               # Security events analysis"
+    echo "  log-analyzer today                  # Analyze today's events"
+    echo
+    echo $bold"OPTIONS:"$normal
+    echo "  --model MODEL     Ollama model (llama3.2:3b, codegemma:7b)"
+    echo "  --show-all        Show all events during live monitoring"
+    echo "  --no-ai           Disable AI explanations"
+    echo "  --verbose         Verbose output"
+    echo
+    echo $bold"EXAMPLES:"$normal
+    echo "  log-analyzer live --model llama3.2:3b"
+    echo "  log-analyzer investigate \"2 hours ago\" --pattern sudo"
+    echo "  log-analyzer sudo --no-ai"
+end
+
+# Check if Ollama is running
+if not command -q ollama
+    echo $red"⚠ Ollama not found. Install with: sudo pacman -S ollama"$normal
+    exit 1
+end
+
+# Check if models are available
+set available_models (ollama list 2>/dev/null | tail -n +2 | awk '{print $1}')
+if test (count $available_models) -eq 0
+    echo $red"⚠ No Ollama models found. Pull a model first:"$normal
+    echo "  ollama pull llama3.2:3b"
+    echo "  ollama pull codegemma:7b"
+    exit 1
+end
+
+# Parse arguments
+set mode ""
+set args
+
+# Handle special shortcuts first
+switch $argv[1]
+    case "live"
+        set mode "live"
+        set args $argv[2..]
+    case "sudo"
+        set mode "investigate"
+        set args --investigate "6 hours ago" --pattern sudo $argv[2..]
+    case "security"
+        set mode "investigate" 
+        set args --investigate "24 hours ago" --pattern security $argv[2..]
+    case "today"
+        set mode "investigate"
+        set args --investigate "today" $argv[2..]
+    case "investigate"
+        set mode "investigate"
+        set args $argv[2..]
+    case "--help" "-h" "help"
+        show_usage
+        exit 0
+    case ""
+        # Default: investigate last hour
+        set mode "default"
+        set args
+    case "*"
+        # Pass through to the Python script
+        set mode "passthrough"
+        set args $argv
+end
+
+# Execute based on mode
+switch $mode
+    case "live"
+        echo $green"🚀 Starting real-time log monitoring..."$normal
+        echo $yellow"Press Ctrl+C to stop"$normal
+        python3 $analyzer --live $args
+    case "investigate"
+        echo $cyan"🔍 Investigating logs..."$normal
+        python3 $analyzer $args
+    case "default"
+        echo $cyan"🔍 Investigating recent suspicious activity..."$normal
+        python3 $analyzer --investigate "1 hour ago"
+    case "passthrough"
+        python3 $analyzer $args
+end 

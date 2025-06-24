@@ -29,13 +29,20 @@ cd ~/dotfiles
 ./install.sh
 ```
 
-That's it! The installer will:
-- Install 397 packages across 6 categories
-- Set up Hyprland with beautiful animations
-- Configure dynamic theming system
-- Set up dual Waybar with GPU monitoring
-- Install and configure AI integration
-- Apply space-themed styling throughout
+The **interactive installer** will guide you through:
+- **Quick Start (Option 88)**: Essential setup in 15-30 minutes
+- **Full Install (Option 99)**: Complete environment in 45-90 minutes  
+- **Individual Scripts**: Pick and choose components
+- **Status Tracking**: Visual progress with colored indicators
+- **Safe Re-runs**: All scripts handle multiple executions safely
+
+What gets installed:
+- 397+ packages across 6 categories
+- Hyprland with beautiful animations  
+- Dynamic theming system with [matugen][[memory:4220407788134834593]]
+- Dual Waybar with GPU monitoring
+- AI integration with Ollama
+- Space-themed styling throughout
 
 ### After Installation
 1. **Reboot** your system
@@ -137,14 +144,20 @@ TEMP_CRITICAL=100   # Critical threshold (°C)
 The installer is **safe to rerun** and includes maintenance modes:
 
 ```bash
-./install.sh  # Shows different menu after installation
+./install.sh  # Interactive menu with status tracking
 ```
 
-**Maintenance Options:**
-- 🔄 **Reinstall Dependencies** - Safely update all packages
-- 🗄️ **Setup External Drives** - Mount drives to `/mnt` and add to fstab
-- 🎯 **Custom Phases** - Rerun specific installation phases
-- 🧪 **Dry-Run Testing** - Test changes without applying them
+**Interactive Menu Options:**
+- **1-16**: Individual script selection with descriptions
+- **88**: Quick Start - Essential scripts only
+- **99**: Full Install - Complete environment setup
+- **r**: Refresh status - Check what's already installed
+- **l**: View logs - See installation history and errors
+- **h**: Help - Detailed usage information
+- **q**: Quit installer
+
+**Status Indicators:**
+- **○** Not run (yellow) **●** Running (blue) **✓** Success (green) **✗** Failed (red) **-** Skipped (cyan)
 
 ### External Drive Management
 All external drives are automatically mounted to `/mnt/[drive-label]` and added to fstab for permanent mounting. No more `/run/media` issues!

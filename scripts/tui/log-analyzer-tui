@@ -1,0 +1,107 @@
+#!/usr/bin/env fish
+
+# Evil Space Log Analyzer TUI Launcher
+# Beautiful terminal interface for log analysis
+
+# Get the actual script directory, handling symlinks
+set script_dir (dirname (realpath (status -f)))
+set tui_app "$script_dir/log_analyzer_tui.py"
+
+# Colors for Fish
+set red (set_color red)
+set green (set_color green)
+set yellow (set_color yellow)
+set blue (set_color blue)
+set cyan (set_color cyan)
+set bold (set_color --bold)
+set normal (set_color normal)
+
+function show_help
+    echo $cyan"🔍 Evil Space Log Analyzer TUI"$normal
+    echo
+    echo $bold"DESCRIPTION:"$normal
+    echo "  Beautiful terminal interface for log analysis with local LLM integration"
+    echo "  Features real-time monitoring, AI analysis, and interactive investigation"
+    echo
+    echo $bold"REQUIREMENTS:"$normal
+    echo "  - Python 3.8+ with textual package"
+    echo "  - Ollama with available models"
+    echo "  - journalctl access"
+    echo
+    echo $bold"INSTALLATION:"$normal
+    echo "  pip install textual"
+    echo "  ollama pull codegemma:7b"
+    echo
+    echo $bold"USAGE:"$normal
+    echo "  log-analyzer-tui          # Launch the TUI"
+    echo "  log-analyzer-tui --help   # Show this help"
+    echo
+    echo $bold"FEATURES:"$normal
+    echo "  • Left panel: Action choices and configuration"
+    echo "  • Right panel: Real-time log output and statistics"
+    echo "  • AI-powered analysis using local LLM"
+    echo "  • Interactive investigation tools"
+    echo "  • Live monitoring with alerts"
+end
+
+# Check if help is requested
+if contains -- --help $argv || contains -- -h $argv
+    show_help
+    exit 0
+end
+
+# Check if Textual is installed
+if not python3 -c "import textual" 2>/dev/null
+    echo $red"❌ Textual not found. Install with:"$normal
+    echo "  sudo pacman -S python-textual"
+    echo
+    echo $yellow"💡 You can also install it now:"$normal
+    read -l -P "Install textual now? (y/N) " install_choice
+    if test "$install_choice" = "y" -o "$install_choice" = "Y"
+        echo $cyan"Installing textual..."$normal
+        sudo pacman -S python-textual
+        if test $status -ne 0
+            echo $red"❌ Installation failed"$normal
+            exit 1
+        end
+        echo $green"✅ Textual installed successfully"$normal
+    else
+        exit 1
+    end
+end
+
+# Check if Ollama is available
+if not command -q ollama
+    echo $red"❌ Ollama not found. Install with:"$normal
+    echo "  sudo pacman -S ollama"
+    exit 1
+end
+
+# Check if models are available
+set available_models (ollama list 2>/dev/null | tail -n +2 | awk '{print $1}')
+if test (count $available_models) -eq 0
+    echo $yellow"⚠ No Ollama models found. Pull a model first:"$normal
+    echo "  ollama pull codegemma:7b"
+    echo "  ollama pull llama3.2:3b"
+    echo
+    echo $cyan"💡 You can also pull a model now:"$normal
+    read -l -P "Pull codegemma:7b now? (y/N) " pull_choice
+    if test "$pull_choice" = "y" -o "$pull_choice" = "Y"
+        echo $cyan"Pulling codegemma:7b..."$normal
+        ollama pull codegemma:7b
+        if test $status -ne 0
+            echo $red"❌ Model pull failed"$normal
+            exit 1
+        end
+        echo $green"✅ Model pulled successfully"$normal
+    else
+        echo $yellow"⚠ TUI will work but AI analysis will be disabled"$normal
+    end
+end
+
+# Launch the TUI
+echo $green"🚀 Launching Evil Space Log Analyzer TUI..."$normal
+echo $cyan"Press Ctrl+C to exit"$normal
+echo
+
+python3 $tui_app $argv 

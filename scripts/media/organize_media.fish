@@ -243,14 +243,16 @@ if test (count $tv_files) -gt 0
         debug_log "  filebot -rename $current_batch --output $root_dir --action $action --db TheTVDB --format 'TV Shows/{n}/Season {s}/{n} - {s00e00} - {t}'"
         
         filebot -rename $current_batch \
-            --output "$root_dir" \
-            --action $action \
-            --conflict auto \
-            --db TheTVDB \
-            --format "TV Shows/{n}/Season {s}/{n} - {s00e00} - {t}" \
-            --log-file "$logfile" \
-            --mode interactive \
-            --apply prune
+    --output "$root_dir" \
+    --action $action \
+    --conflict auto \
+    --db TheMovieDB \
+    --format "Movies/{n} ({y})/{n} ({y})" \
+    --non-strict \
+    --log-file "$logfile" \
+    --mode interactive \
+    --apply prune
+
         
         set batch_status $status
         debug_log "FileBot TV batch $batch_number exit status: $batch_status"

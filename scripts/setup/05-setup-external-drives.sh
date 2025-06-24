@@ -307,8 +307,8 @@ setup_fstab() {
             continue
         fi
         
-        # Add fstab entry
-        local fstab_entry="UUID=$uuid $mount_point auto defaults,user,noauto,x-systemd.automount,x-systemd.device-timeout=10 0 2"
+        # Add fstab entry with permanent mounting to /mnt
+        local fstab_entry="UUID=$uuid $mount_point auto defaults,user,x-systemd.automount,x-systemd.device-timeout=10 0 2"
         echo "$fstab_entry" | sudo tee -a /etc/fstab > /dev/null
         log_success "Added /dev/$device to /etc/fstab"
         added_count=$((added_count + 1))

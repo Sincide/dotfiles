@@ -7,6 +7,9 @@
 
 set -e  # Exit on any error
 
+# Configuration
+DRY_RUN=false
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -29,6 +32,21 @@ log_warning() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+log_dry_run() {
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}[DRY-RUN]${NC} $1"
+    fi
+}
+
+# Wrapper function for executing commands with dry-run support
+execute_command() {
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_dry_run "Would execute: $*"
+    else
+        "$@"
+    fi
 }
 
 # Check if running on Arch Linux
@@ -158,8 +176,19 @@ setup_environment() {
         shell_rc="$HOME/.config/fish/config.fish"
         mkdir -p "$(dirname "$shell_rc")"
         
-        # Fish shell syntax
-        cat >> "$shell_rc" << EOF
+        # Check if ROCm environment variables already exist
+        if grep -q "# ROCm Environment Variables (Added by setup script)" "$shell_rc" 2>/dev/null; then
+            log_info "ROCm environment variables already configured in Fish shell"
+            
+            # Check if HSA_OVERRIDE_GFX_VERSION needs updating
+            local current_gfx=$(grep -o "HSA_OVERRIDE_GFX_VERSION [^ ]*" "$shell_rc" 2>/dev/null | cut -d' ' -f2)
+            if [[ "$current_gfx" != "$gfx_version" ]]; then
+                log_info "Updating HSA_OVERRIDE_GFX_VERSION from $current_gfx to $gfx_version"
+                sed -i "s/set -gx HSA_OVERRIDE_GFX_VERSION .*/set -gx HSA_OVERRIDE_GFX_VERSION $gfx_version/" "$shell_rc"
+            fi
+        else
+            # Fish shell syntax
+            cat >> "$shell_rc" << EOF
 
 # ROCm Environment Variables (Added by setup script)
 set -gx PATH /opt/rocm/bin \$PATH
@@ -167,11 +196,23 @@ set -gx ROCM_PATH /opt/rocm
 set -gx HSA_OVERRIDE_GFX_VERSION $gfx_version
 set -gx LD_LIBRARY_PATH /usr/lib/ollama/rocm:/opt/rocm/lib
 EOF
+        fi
     else
         # Bash/Zsh syntax
         shell_rc="$HOME/.bashrc"
         
-        cat >> "$shell_rc" << EOF
+        # Check if ROCm environment variables already exist
+        if grep -q "# ROCm Environment Variables (Added by setup script)" "$shell_rc" 2>/dev/null; then
+            log_info "ROCm environment variables already configured in Bash shell"
+            
+            # Check if HSA_OVERRIDE_GFX_VERSION needs updating
+            local current_gfx=$(grep -o "HSA_OVERRIDE_GFX_VERSION=[^ ]*" "$shell_rc" 2>/dev/null | cut -d'=' -f2)
+            if [[ "$current_gfx" != "$gfx_version" ]]; then
+                log_info "Updating HSA_OVERRIDE_GFX_VERSION from $current_gfx to $gfx_version"
+                sed -i "s/export HSA_OVERRIDE_GFX_VERSION=.*/export HSA_OVERRIDE_GFX_VERSION=$gfx_version/" "$shell_rc"
+            fi
+        else
+            cat >> "$shell_rc" << EOF
 
 # ROCm Environment Variables (Added by setup script)
 export PATH="/opt/rocm/bin:\$PATH"
@@ -179,6 +220,7 @@ export ROCM_PATH=/opt/rocm
 export HSA_OVERRIDE_GFX_VERSION=$gfx_version
 export LD_LIBRARY_PATH=/usr/lib/ollama/rocm:/opt/rocm/lib:\$LD_LIBRARY_PATH
 EOF
+        fi
     fi
     
     log_success "Environment variables configured in $shell_rc"
@@ -309,9 +351,56 @@ ${GREEN}Enjoy your GPU-accelerated AI setup!${NC}
 EOF
 }
 
+# Parse command line arguments
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -n|--dry-run)
+                DRY_RUN=true
+                log_info "Running in DRY-RUN mode - no changes will be made"
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Show help message
+show_help() {
+    cat << EOF
+Arch Linux ROCm + Ollama GPU Setup Script
+
+Usage: $0 [OPTIONS]
+
+Options:
+    -n, --dry-run    Run in dry-run mode (show what would be done)
+    -h, --help       Show this help message
+
+This script sets up ROCm and Ollama with GPU acceleration for AMD graphics cards.
+It will install required packages, configure environment variables, and set up services.
+
+The script is safe to run multiple times - it will detect existing configurations
+and only make necessary changes.
+EOF
+}
+
 # Main execution
 main() {
+    # Parse arguments first
+    parse_arguments "$@"
+    
     echo -e "${BLUE}=== Arch Linux ROCm + Ollama GPU Setup ===${NC}"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo -e "${YELLOW}=== DRY-RUN MODE - No changes will be made ===${NC}"
+    fi
     echo
     
     check_arch
@@ -319,24 +408,36 @@ main() {
     
     log_info "Starting installation process..."
     
-    install_aur_helper
-    update_system
-    install_rocm
-    install_ollama
-    setup_user_groups
-    setup_environment
-    create_ollama_service
-    start_ollama_service
-    
-    if verify_installation; then
-        print_verification_commands
+    if [[ "$DRY_RUN" == "false" ]]; then
+        install_aur_helper
+        update_system
+        install_rocm
+        install_ollama
+        setup_user_groups
+        setup_environment
+        create_ollama_service
+        start_ollama_service
         
-        echo
-        log_success "Setup completed successfully!"
-        log_warning "Please logout and login (or reboot) for group membership changes to take effect."
+        if verify_installation; then
+            print_verification_commands
+            
+            echo
+            log_success "Setup completed successfully!"
+            log_warning "Please logout and login (or reboot) for group membership changes to take effect."
+        else
+            log_error "Setup completed with errors. Check the logs above."
+            exit 1
+        fi
     else
-        log_error "Setup completed with errors. Check the logs above."
-        exit 1
+        log_dry_run "Would install AUR helper"
+        log_dry_run "Would update system packages"
+        log_dry_run "Would install ROCm packages"
+        log_dry_run "Would install Ollama"
+        log_dry_run "Would setup user groups"
+        log_dry_run "Would setup environment variables"
+        log_dry_run "Would create Ollama service"
+        log_dry_run "Would start Ollama service"
+        log_info "DRY-RUN completed - use without --dry-run to perform actual installation"
     fi
 }
 

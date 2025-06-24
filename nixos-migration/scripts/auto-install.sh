@@ -92,22 +92,10 @@ setup_environment() {
     echo "DEBUG: Skipping keyboard layout setup (can cause issues in VMs)"
     log_info "Note: You can set keyboard layout manually with: loadkeys $KEYBOARD_LAYOUT"
     
-    # Enable flakes
-    echo "DEBUG: Setting up Nix flakes"
-    
-    # Check if /etc is writable, if not use temporary config
-    if touch /etc/test-write 2>/dev/null; then
-        rm -f /etc/test-write
-        mkdir -p /etc/nix
-        echo "experimental-features = nix-command flakes" > /etc/nix/nix.conf
-        echo "DEBUG: Flakes configuration written to /etc/nix/nix.conf"
-    else
-        log_warning "/etc is read-only, using temporary nix config"
-        mkdir -p ~/.config/nix
-        echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
-        export NIX_CONFIG="experimental-features = nix-command flakes"
-        echo "DEBUG: Flakes configuration set via environment variable"
-    fi
+    # Enable flakes via environment variable (works in read-only installer)
+    echo "DEBUG: Setting up Nix flakes via environment"
+    export NIX_CONFIG="experimental-features = nix-command flakes"
+    echo "DEBUG: Flakes enabled via NIX_CONFIG environment variable"
     
     # Test network
     if ! ping -c 3 8.8.8.8 >/dev/null 2>&1; then

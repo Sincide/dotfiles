@@ -255,6 +255,15 @@ main() {
     echo "  3. Set up users and passwords"
     echo
     
+    echo "DEBUG: Checking if running as root"
+    # Check if running as root
+    if [[ $EUID -ne 0 ]]; then
+        log_error "This script must be run as root!"
+        log_info "Please run: sudo bash auto-install.sh"
+        exit 1
+    fi
+    echo "DEBUG: Root check passed"
+    
     echo "DEBUG: Checking if running on NixOS installer"
     # Check if running on NixOS installer
     if [[ ! -f /etc/NIXOS ]]; then

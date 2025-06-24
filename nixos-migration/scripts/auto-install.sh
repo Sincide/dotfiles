@@ -25,26 +25,35 @@ KEYBOARD_LAYOUT="sv-latin1"
 
 # Interactive prompts
 prompt_disk() {
+    echo "DEBUG: Inside prompt_disk function"
     log_info "Available disks:"
     lsblk -d -o NAME,SIZE,TYPE | grep disk
     echo
     
     while true; do
+        echo "DEBUG: Prompting for disk input"
         read -p "Enter target disk (e.g., sda, nvme0n1): " disk_input
+        echo "DEBUG: User entered: '$disk_input'"
         TARGET_DISK="/dev/$disk_input"
+        echo "DEBUG: Set TARGET_DISK to: $TARGET_DISK"
         
         if [[ -b "$TARGET_DISK" ]]; then
+            echo "DEBUG: Disk $TARGET_DISK exists"
             log_warning "This will COMPLETELY ERASE $TARGET_DISK!"
             log_warning "$(lsblk $TARGET_DISK)"
             read -p "Continue? (yes/no): " confirm
+            echo "DEBUG: User confirmation: '$confirm'"
             
             if [[ "$confirm" == "yes" ]]; then
+                echo "DEBUG: User confirmed, breaking from loop"
                 break
             fi
         else
+            echo "DEBUG: Disk $TARGET_DISK not found"
             log_error "Disk $TARGET_DISK not found!"
         fi
     done
+    echo "DEBUG: Exiting prompt_disk with TARGET_DISK=$TARGET_DISK"
 }
 
 prompt_settings() {
@@ -218,6 +227,7 @@ finalize_installation() {
 }
 
 main() {
+    echo "DEBUG: Starting main function"
     log_info "🚀 NixOS Automated Installation"
     echo
     log_warning "This script will:"
@@ -226,15 +236,22 @@ main() {
     echo "  3. Set up users and passwords"
     echo
     
+    echo "DEBUG: Checking if running on NixOS installer"
     # Check if running on NixOS installer
     if [[ ! -f /etc/NIXOS ]]; then
         log_error "This script must be run on NixOS installer!"
         exit 1
     fi
+    echo "DEBUG: NixOS installer check passed"
     
     # Interactive setup
+    echo "DEBUG: About to call prompt_disk"
     prompt_disk
+    echo "DEBUG: prompt_disk completed"
+    
+    echo "DEBUG: About to call prompt_settings"
     prompt_settings
+    echo "DEBUG: prompt_settings completed"
     
     echo
     log_warning "Final confirmation:"

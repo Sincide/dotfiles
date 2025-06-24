@@ -46,10 +46,14 @@ sudo usermod -a -G libvirt $USER
 # Create VM directory
 mkdir -p ~/VMs/nixos-test
 
-# Download NixOS unstable ISO (for latest packages)
+# Download NixOS graphical ISO (recommended for easier installation)
 cd ~/VMs/nixos-test
-curl -L -o nixos-unstable.iso \
-    "https://channels.nixos.org/nixos-unstable/latest-nixos-minimal-x86_64-linux.iso"
+curl -L -o nixos-graphical.iso \
+    "https://channels.nixos.org/nixos-unstable/latest-nixos-gnome-x86_64-linux.iso"
+
+# Alternative: Minimal ISO (if you prefer command-line installation)
+# curl -L -o nixos-minimal.iso \
+#     "https://channels.nixos.org/nixos-unstable/latest-nixos-minimal-x86_64-linux.iso"
 ```
 
 ### 1.3 Create VM with virt-manager
@@ -62,7 +66,7 @@ curl -L -o nixos-unstable.iso \
 2. **Create New VM**:
    - Click "Create a new virtual machine"
    - Choose "Local install media (ISO image or CDROM)"
-   - Browse to your downloaded `nixos-unstable.iso`
+   - Browse to your downloaded `nixos-graphical.iso`
    - OS type: Linux, Version: Generic Linux 2020
    - Memory: 4096 MB (4GB)
    - Storage: 30 GB (dynamically allocated)
@@ -112,85 +116,82 @@ sudo usermod -a -G vboxusers $USER
 
 ### 3.1 Boot NixOS ISO
 
-1. **Boot from ISO** and wait for the NixOS prompt
-2. **Set up network** (usually automatic with NAT)
-3. **Verify internet connection**:
+1. **Boot from ISO** and wait for GNOME desktop to load
+2. **Connect to network** (click network icon, usually automatic with NAT)
+3. **Verify internet connection** by opening a browser or terminal:
    ```bash
    ping -c 3 google.com
    ```
 
-### 3.2 Prepare Installation
+### 3.2 Graphical Installation
 
-```bash
-# Switch to root
-sudo su
+**Use the NixOS GUI installer for VM testing:**
 
-# Enable flakes early (for our configuration)
-mkdir -p /etc/nix
-echo "experimental-features = nix-command flakes" > /etc/nix/nix.conf
+1. **Open Terminal** (Activities → Terminal)
+2. **Launch installer**: Click "Install NixOS" icon on desktop or run:
+   ```bash
+   sudo nixos-install-gui
+   ```
 
-# Partition the disk (simple layout for testing)
-parted /dev/sda -- mklabel gpt
-parted /dev/sda -- mkpart primary 512MiB -8GiB
-parted /dev/sda -- mkpart primary linux-swap -8GiB 100%
-parted /dev/sda -- mkpart ESP fat32 1MiB 512MiB
-parted /dev/sda -- set 3 esp on
+**Installation Steps in GUI:**
+1. **Welcome** → Click "Try or Install NixOS"
+2. **Location** → Select your timezone
+3. **Keyboard** → Choose Swedish (sv) layout
+4. **Partitions** → Choose "Erase disk" (will show your VM disk)
+5. **Users** → Create user account (username: martin)
+6. **Summary** → Review settings
+7. **Install** → Wait for installation to complete
 
-# Format partitions
-mkfs.ext4 -L nixos /dev/sda1
-mkswap -L swap /dev/sda2
-mkfs.fat -F 32 -n boot /dev/sda3
+**Important Notes:**
+- ✅ **GUI installer creates basic system** - you'll customize with dotfiles after
+- ✅ **Much more reliable in VMs** than command-line installation
+- ✅ **Network and keyboard setup handled automatically**
 
-# Mount filesystems
-mount /dev/disk/by-label/nixos /mnt
-mkdir -p /mnt/boot
-mount /dev/disk/by-label/boot /mnt/boot
-swapon /dev/sda2
-```
+### 3.3 First Boot and Dotfiles Setup
 
-### 3.3 Install Git and Clone Dotfiles
+**After GUI installation completes:**
 
-```bash
-# Install git in the installer environment
-nix-shell -p git
+1. **Remove ISO** and reboot into installed system
+2. **Log in** as the user you created (martin)
+3. **Get your dotfiles**:
+   ```bash
+   # Install git and clone dotfiles
+   nix-shell -p git
+   cd ~
+   git clone https://github.com/yourusername/dotfiles.git
+   ```
 
-# Clone your dotfiles (replace with your repo URL)
-cd /mnt
-git clone https://github.com/yourusername/dotfiles.git
-# or copy from your Arch system:
-# scp -r martin@your-arch-ip:~/dotfiles /mnt/
-```
+4. **Replace system configuration**:
+   ```bash
+   # Backup original config
+   sudo cp /etc/nixos/configuration.nix /etc/nixos/configuration.nix.original
+   sudo cp /etc/nixos/hardware-configuration.nix /etc/nixos/hardware-configuration.nix.generated
 
-### 3.4 Use Your Configuration
+   # Copy your configuration
+   sudo cp -r ~/dotfiles/nixos-migration/system/* /etc/nixos/
+   sudo cp ~/dotfiles/nixos-migration/flake.nix /etc/nixos/
 
-```bash
-# Generate hardware configuration
-nixos-generate-config --root /mnt
+   # Restore hardware config (important!)
+   sudo cp /etc/nixos/hardware-configuration.nix.generated /etc/nixos/hardware-configuration.nix
 
-# Copy your configuration over the generated one
-cp -r /mnt/dotfiles/nixos-migration/system/* /mnt/etc/nixos/
-cp /mnt/dotfiles/nixos-migration/flake.nix /mnt/etc/nixos/
+   # Update hostname for VM
+   sudo sed -i 's/nixos-hyprland/nixos-vm-test/' /etc/nixos/configuration.nix
+   ```
 
-# Keep the generated hardware configuration
-mv /mnt/etc/nixos/hardware-configuration.nix.backup /mnt/etc/nixos/hardware-configuration.nix 2>/dev/null || true
+5. **Enable flakes and rebuild**:
+   ```bash
+   # Enable flakes
+   mkdir -p ~/.config/nix
+   echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 
-# Update hostname in configuration.nix
-sed -i 's/nixos-hyprland/nixos-vm-test/' /mnt/etc/nixos/configuration.nix
-```
+   # Rebuild with your configuration
+   sudo nixos-rebuild switch --flake /etc/nixos#nixos-vm-test
+   ```
 
-### 3.5 Install NixOS
-
-```bash
-# Install with your flake configuration
-nixos-install --flake /mnt/etc/nixos#nixos-vm-test
-
-# Set root password when prompted
-# Set user password for 'martin'
-passwd --root /mnt martin
-
-# Reboot
-reboot
-```
+6. **Reboot to apply changes**:
+   ```bash
+   sudo reboot
+   ```
 
 ## Post-Installation VM Testing
 

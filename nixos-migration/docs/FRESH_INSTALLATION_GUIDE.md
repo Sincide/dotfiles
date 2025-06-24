@@ -25,13 +25,13 @@ This guide provides step-by-step instructions for installing NixOS from scratch 
 
 #### Method 1: From Arch Linux (Current System)
 ```bash
-# Download NixOS ISO
+# Download NixOS ISO - use GRAPHICAL for easier installation
 cd ~/Downloads
-curl -L -o nixos-unstable.iso \
-    "https://channels.nixos.org/nixos-unstable/latest-nixos-minimal-x86_64-linux.iso"
+curl -L -o nixos-graphical.iso \
+    "https://channels.nixos.org/nixos-unstable/latest-nixos-gnome-x86_64-linux.iso"
 
 # Flash to USB drive (replace /dev/sdX with your USB device)
-sudo dd if=nixos-unstable.iso of=/dev/sdX bs=4M status=progress oflag=sync
+sudo dd if=nixos-graphical.iso of=/dev/sdX bs=4M status=progress oflag=sync
 
 # Or use a GUI tool
 sudo pacman -S balena-etcher-bin
@@ -40,8 +40,15 @@ sudo pacman -S balena-etcher-bin
 
 #### Method 2: Download and Prepare Elsewhere
 - Download from: https://nixos.org/download.html
+- **Recommended**: Choose **NixOS Graphical ISO** (GNOME or Plasma)
 - Use Rufus (Windows) or Balena Etcher (any OS)
 - Choose NixOS Unstable for latest packages
+
+**Why Graphical ISO?**
+- ✅ **Reliable GUI installer** - no script failures
+- ✅ **Better hardware detection** - especially for VMs
+- ✅ **Network setup included** - GUI WiFi/Ethernet tools
+- ✅ **Still installs minimal system** - you choose what desktop to install
 
 ## BIOS/UEFI Configuration
 
@@ -59,97 +66,59 @@ sudo pacman -S balena-etcher-bin
 
 ## Installation Process
 
-### Step 1: Initial Setup
+### Step 1: Graphical Installation
 
-```bash
-# You'll be logged in as 'nixos' user automatically
-# Set up network (if WiFi)
-sudo systemctl start wpa_supplicant
-sudo wpa_cli
+**Using the NixOS Graphical Installer:**
 
-# In wpa_cli (for WiFi setup):
-add_network
-set_network 0 ssid "YourWiFiName"
-set_network 0 psk "YourWiFiPassword"
-enable_network 0
-quit
+1. **Boot from USB** and wait for GNOME desktop to load
+2. **Connect to Network**:
+   - WiFi: Click network icon in top-right, select your network
+   - Ethernet: Should connect automatically
+3. **Open Terminal** (Activities → Terminal)
+4. **Launch Installer**: Click "Install NixOS" icon on desktop or run:
+   ```bash
+   sudo nixos-install-gui
+   ```
 
-# Test internet connection
-ping -c 3 google.com
+**Installation Steps in GUI:**
+1. **Welcome** → Click "Try or Install NixOS"
+2. **Location** → Select your timezone
+3. **Keyboard** → Choose Swedish (sv) layout
+4. **Partitions** → Choose "Erase disk" (will show your VM disk)
+5. **Users** → Create user account (username: martin)
+6. **Summary** → Review settings
+7. **Install** → Wait for installation to complete
 
-# Switch to root for installation
-sudo su
-```
+**Important Partition Settings:**
+- ✅ **Use entire disk** for VM testing
+- ✅ **Enable encryption** if desired (optional for VM)
+- ✅ **EFI/UEFI boot** (automatic)
+- ✅ **Swap partition** (automatic)
 
-### Step 2: Enable Flakes Early
+**Important Notes:**
+- ✅ **No desktop environment** - GUI installer doesn't install GNOME permanently
+- ✅ **System will boot to login prompt** - ready for your custom configuration
+- ✅ **Much more reliable** than command-line installation
 
-```bash
-# Enable flakes in installer environment
-mkdir -p /etc/nix
-echo "experimental-features = nix-command flakes" > /etc/nix/nix.conf
+### Step 2: First Boot into Installed System
 
-# Restart Nix daemon
-systemctl restart nix-daemon
-```
+After installation completes:
+1. **Remove USB drive** and reboot
+2. **Boot into NixOS** - you'll see a login prompt
+3. **Log in** as the user you created (martin)
+4. **You now have a minimal NixOS system** ready for your dotfiles configuration
 
-### Step 3: Disk Preparation
+### Step 3: Get Your Dotfiles
 
-**⚠️ WARNING: This will completely erase the target drive!**
-
-```bash
-# Identify your target drive (NOT your Arch drive!)
-lsblk
-fdisk -l
-
-# Example: /dev/nvme0n1 for NVMe SSD, /dev/sda for SATA
-# Make sure this is NOT your Arch Linux drive!
-DISK="/dev/nvme0n1"  # Update this for your target drive
-
-# Partition the disk (UEFI layout)
-parted $DISK -- mklabel gpt
-
-# Create partitions:
-# 1. EFI boot partition (512MB)
-parted $DISK -- mkpart ESP fat32 1MiB 512MiB
-parted $DISK -- set 1 esp on
-
-# 2. Root partition (rest of disk - 8GB for swap)
-parted $DISK -- mkpart primary 512MiB -8GiB
-
-# 3. Swap partition (8GB)
-parted $DISK -- mkpart primary linux-swap -8GiB 100%
-
-# Verify partitions
-parted $DISK -- print
-```
-
-### Step 4: Format Filesystems
-
-```bash
-# Format partitions
-mkfs.fat -F 32 -n boot ${DISK}p1      # EFI partition
-mkfs.ext4 -L nixos ${DISK}p2          # Root partition
-mkswap -L swap ${DISK}p3              # Swap partition
-
-# Mount filesystems
-mount /dev/disk/by-label/nixos /mnt
-mkdir -p /mnt/boot
-mount /dev/disk/by-label/boot /mnt/boot
-swapon /dev/disk/by-label/swap
-
-# Verify mounts
-df -h
-```
-
-### Step 5: Get Your Dotfiles
+**Now that you have a basic NixOS system, you need to get your dotfiles configuration:**
 
 #### Method 1: Clone from GitHub
 ```bash
-# Install git in installer environment
+# Install git (if not available)
 nix-shell -p git
 
-# Clone your dotfiles
-cd /mnt
+# Clone your dotfiles to home directory
+cd ~
 git clone https://github.com/yourusername/dotfiles.git
 
 # If repo is private, you may need to use a token
@@ -159,42 +128,42 @@ git clone https://github.com/yourusername/dotfiles.git
 #### Method 2: Copy from USB/Network
 ```bash
 # From USB drive
-mkdir -p /mnt/dotfiles
-cp -r /path/to/usb/dotfiles/* /mnt/dotfiles/
+cp -r /path/to/usb/dotfiles ~/dotfiles
 
 # From network (scp from your Arch system)
-scp -r martin@arch-ip:~/dotfiles /mnt/
+scp -r martin@arch-ip:~/dotfiles ~/
 ```
 
-### Step 6: Prepare Configuration
+### Step 4: Replace System Configuration
 
 ```bash
-# Generate hardware configuration
-nixos-generate-config --root /mnt
+# Backup the generated configuration
+sudo cp /etc/nixos/configuration.nix /etc/nixos/configuration.nix.original
+sudo cp /etc/nixos/hardware-configuration.nix /etc/nixos/hardware-configuration.nix.generated
 
-# Backup generated config
-cp /mnt/etc/nixos/hardware-configuration.nix /mnt/etc/nixos/hardware-configuration.nix.generated
+# Copy your NixOS configuration
+sudo cp -r ~/dotfiles/nixos-migration/system/* /etc/nixos/
+sudo cp ~/dotfiles/nixos-migration/flake.nix /etc/nixos/
 
-# Copy your configuration
-cp -r /mnt/dotfiles/nixos-migration/system/* /mnt/etc/nixos/
-cp /mnt/dotfiles/nixos-migration/flake.nix /mnt/etc/nixos/
+# Restore the generated hardware configuration (important!)
+sudo cp /etc/nixos/hardware-configuration.nix.generated /etc/nixos/hardware-configuration.nix
 
-# Restore hardware configuration
-cp /mnt/etc/nixos/hardware-configuration.nix.generated /mnt/etc/nixos/hardware-configuration.nix
+# Make sure the nix user can access the configuration
+sudo chown -R root:root /etc/nixos
 ```
 
-### Step 7: Customize Configuration
+### Step 5: Customize Configuration
 
 ```bash
 # Edit main configuration for your system
-nano /mnt/etc/nixos/configuration.nix
+sudo nano /etc/nixos/configuration.nix
 
 # Important changes to make:
 # 1. Line ~8: Update hostname
 networking.hostName = "your-hostname";  # Change from "nixos-hyprland"
 
-# 2. Line ~42: Set your timezone
-time.timeZone = "America/New_York";  # Update to your timezone
+# 2. Line ~42: Set your timezone  
+time.timeZone = "Europe/Stockholm";  # Update to your timezone
 
 # 3. Line ~106: Update user information
 users.users.martin = {
@@ -205,58 +174,50 @@ users.users.martin = {
 # Save and exit (Ctrl+X, Y, Enter in nano)
 ```
 
-### Step 8: Install NixOS
+### Step 6: Enable Flakes and Rebuild System
 
 ```bash
-# Install with your flake configuration
-nixos-install --flake /mnt/etc/nixos#your-hostname
-
-# This will take 20-30 minutes for first install
-# Download and compile packages, set up system
-
-# Set root password when prompted
-# Choose a strong password for root
-
-# Set user password
-passwd --root /mnt martin
-# Choose your user password
-```
-
-### Step 9: First Boot
-
-```bash
-# Remove installation media
-# Restart the system
-reboot
-
-# Boot into your new NixOS system
-# Log in as 'martin' with the password you set
-```
-
-## Post-Installation Setup
-
-### Step 1: Initial System Configuration
-
-```bash
-# Log in as your user (martin)
 # Enable flakes for your user
 mkdir -p ~/.config/nix
 echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 
-# Verify system is working
+# Rebuild the system with your configuration
+sudo nixos-rebuild switch --flake /etc/nixos#your-hostname
+
+# This will take 20-30 minutes for first rebuild
+# Downloads and compiles all your packages
+```
+
+### Step 7: First Reboot with Your Configuration
+
+```bash
+# Reboot to apply all changes
+sudo reboot
+
+# System will boot with your custom Hyprland configuration
+# Log in as 'martin' - you should see a basic desktop environment
+```
+
+## Post-Installation Setup
+
+### Step 1: Verify System is Working
+
+```bash
+# Check that your system booted correctly
 neofetch
-systemctl status
+systemctl --failed  # Should show no failed services
+
+# Verify Hyprland is available
+which Hyprland
+
+# Check that flakes are enabled
+nix flake --version
 ```
 
 ### Step 2: Home Manager Setup
 
 ```bash
-# Copy dotfiles if not already present
-if [[ ! -d ~/dotfiles ]]; then
-    git clone https://github.com/yourusername/dotfiles.git ~/dotfiles
-fi
-
-# Set up Home Manager configuration
+# Set up Home Manager configuration  
 mkdir -p ~/.config/home-manager
 cp -r ~/dotfiles/nixos-migration/home/* ~/.config/home-manager/
 
@@ -265,12 +226,14 @@ nano ~/.config/home-manager/home.nix
 
 # Important updates:
 # Line ~17: Verify home.username = "martin"
-# Line ~18: Verify home.homeDirectory = "/home/martin"
+# Line ~18: Verify home.homeDirectory = "/home/martin"  
 # Line ~104: Update git user name
 # Line ~105: Update git email
 
 # Apply Home Manager configuration
 home-manager switch --flake ~/.config/home-manager#martin
+
+# This will take some time as it downloads and configures all your user applications
 ```
 
 ### Step 3: Desktop Environment Setup

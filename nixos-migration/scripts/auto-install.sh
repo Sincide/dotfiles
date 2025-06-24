@@ -88,12 +88,20 @@ prompt_settings() {
 setup_environment() {
     log_info "Setting up installation environment..."
     
-    # Set keyboard layout
-    loadkeys "$KEYBOARD_LAYOUT"
+    # Set keyboard layout (ignore errors if in VM or container)
+    echo "DEBUG: Attempting to set keyboard layout to $KEYBOARD_LAYOUT"
+    if ! loadkeys "$KEYBOARD_LAYOUT" 2>/dev/null; then
+        log_warning "Could not set keyboard layout (this is normal in VMs)"
+        log_info "Keyboard layout will be set properly during system installation"
+    else
+        log_success "Keyboard layout set to $KEYBOARD_LAYOUT"
+    fi
     
     # Enable flakes
+    echo "DEBUG: Setting up Nix flakes"
     mkdir -p /etc/nix
     echo "experimental-features = nix-command flakes" > /etc/nix/nix.conf
+    echo "DEBUG: Flakes configuration written"
     
     # Test network
     if ! ping -c 3 8.8.8.8 >/dev/null 2>&1; then

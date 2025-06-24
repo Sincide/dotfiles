@@ -47,11 +47,21 @@ select_disk() {
 
 # Simple settings
 get_settings() {
-    read -p "Hostname (default: $HOSTNAME): " new_hostname
-    [[ -n "$new_hostname" ]] && HOSTNAME="$new_hostname"
+    echo "DEBUG: Starting get_settings"
     
+    echo "DEBUG: Prompting for hostname"
+    read -p "Hostname (default: $HOSTNAME): " new_hostname
+    echo "DEBUG: Hostname input: '$new_hostname'"
+    [[ -n "$new_hostname" ]] && HOSTNAME="$new_hostname"
+    echo "DEBUG: Hostname set to: $HOSTNAME"
+    
+    echo "DEBUG: Prompting for username"
     read -p "Username (default: $USERNAME): " new_username
+    echo "DEBUG: Username input: '$new_username'"
     [[ -n "$new_username" ]] && USERNAME="$new_username"
+    echo "DEBUG: Username set to: $USERNAME"
+    
+    echo "DEBUG: Exiting get_settings"
 }
 
 # Partition disk
@@ -205,33 +215,45 @@ set_passwords() {
 
 # Main installation
 main() {
+    echo "DEBUG: Starting main function"
     log_info "🚀 Simple NixOS Installation"
     echo
     log_warning "This will install a basic NixOS system."
     log_info "Advanced configuration will be done after reboot."
     echo
     
+    echo "DEBUG: Checking if root"
     # Check if root
     if [[ $EUID -ne 0 ]]; then
         log_error "Run as root: sudo bash simple-install.sh"
         exit 1
     fi
+    echo "DEBUG: Root check passed"
     
+    echo "DEBUG: Checking NixOS installer"
     # Check NixOS installer
     if [[ ! -f /etc/NIXOS ]]; then
         log_error "Must be run on NixOS installer!"
         exit 1
     fi
+    echo "DEBUG: NixOS installer check passed"
     
+    echo "DEBUG: Testing network"
     # Test network
     if ! ping -c 2 8.8.8.8 >/dev/null 2>&1; then
         log_error "No internet connection!"
         exit 1
     fi
+    echo "DEBUG: Network check passed"
     
     # Interactive setup
+    echo "DEBUG: About to call select_disk"
     select_disk
+    echo "DEBUG: select_disk completed"
+    
+    echo "DEBUG: About to call get_settings"
     get_settings
+    echo "DEBUG: get_settings completed"
     
     echo
     log_warning "Final confirmation:"

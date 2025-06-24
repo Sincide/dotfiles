@@ -17,10 +17,7 @@
     hyprland.url = "github:hyprwm/Hyprland";
 
     # Matugen (CRITICAL for theming system)
-    matugen = {
-      url = "github:InioX/Matugen";
-      ref = "refs/tags/matugen-v0.10.0";
-    };
+    matugen.url = "github:InioX/matugen";
 
     # Additional inputs for custom packages
     # Add more as needed for other AUR packages

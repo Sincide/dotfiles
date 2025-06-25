@@ -116,68 +116,63 @@ function generate_ai_commit
         return
     end
     
-    info "🤖 Generating commit with $model..." >&2
+    info "🤖 Analyzing changes with $model..." >&2
     
-    # Get simple file list and basic stats
-    set file_count (count $files_changed)
-    set main_dirs (printf '%s\n' (for f in $files_changed; dirname $f | cut -d/ -f1; end) | sort | uniq -c | sort -nr | head -3 | awk '{print $2}' | grep -v '^\.$')
+    # Get comprehensive change information
+    set diff_stat (git diff --cached --stat)
+    set diff_content (git diff --cached --unified=3)
     
-    # Ultra-direct prompt to avoid AI explanations
-    set prompt "Files changed: $files_changed
+    # Create comprehensive prompt with actual changes
+    set prompt "Analyze these git changes and generate a proper commit message.
 
-Generate ONE commit message. DO NOT explain, DO NOT give examples, DO NOT say anything else. Just output the commit message:
+FILES CHANGED:
+$files_changed
 
-format: type(scope): description"
+CHANGE SUMMARY:
+$diff_stat
 
-    # Run AI with simpler processing
-    set ai_output (timeout 15s ollama run $model $prompt 2>/dev/null | head -1 | string trim)
+ACTUAL CHANGES:
+$diff_content
+
+Based on the actual code/content changes shown above, generate a commit message that:
+- Uses conventional format: type(scope): subject
+- Types: feat, fix, chore, docs, style, refactor, perf, test
+- Subject line under 72 characters
+- Can include a body if the changes are complex
+- Be specific about what actually changed
+
+Generate the commit message:"
+
+    # Run AI with longer timeout for complex analysis
+    set ai_output (timeout 30s ollama run $model $prompt 2>/dev/null | string trim)
     
     debug "Raw AI output: '$ai_output'" >&2
     
-    # Extract actual commit message from verbose AI output
-    set original_output "$ai_output"
+         # Simple extraction - look for any line that looks like a commit message
+     set ai_output (echo $ai_output | grep -E '(feat|fix|chore|docs|style|refactor|perf|test)(\([^)]+\))?:[^:]*' | head -1 | string trim)
+     
+     # If no match, try more flexible patterns
+     if test -z "$ai_output"
+         set ai_output (echo $ai_output | grep -E '(feat|fix|chore|docs|style|refactor|perf|test)[^:]*:' | head -1 | string trim)
+     end
+     
+     # Remove quotes if present
+     set ai_output (echo $ai_output | sed 's/^"//; s/"$//')
     
-    # Look for lines that look like actual commit messages (contain : and reasonable length)
-    set lines (echo $ai_output | tr '\n' '|')
-    set potential_commits ""
+    debug "Processed AI output: '$ai_output'" >&2
     
-    for line in (echo $lines | tr '|' '\n')
-        set clean_line (echo $line | string trim | sed 's/^[[:space:]"'\''`-]*//; s/[[:space:]"'\''`]*$//')
-        
-        # Skip obvious non-commit lines
-        if string match -qi "*example*" $clean_line; or string match -qi "*here*" $clean_line
-            continue
-        end
-        
-        # Look for lines that contain : and look like commits
-        if string match -q "*(*):*" $clean_line; or string match -q "*:*" $clean_line
-            if test (string length "$clean_line") -gt 15 -a (string length "$clean_line") -lt 70
-                set potential_commits $potential_commits $clean_line
-            end
-        end
-    end
-    
-    # Use first potential commit found
-    if test (count $potential_commits) -gt 0
-        set ai_output $potential_commits[1]
-    else
-        # Fallback: take first line and clean it
-        set ai_output (echo $original_output | head -1 | string trim | sed 's/^[[:space:]"'\''`]*//; s/[[:space:]"'\''`]*$//')
-    end
-    
-    # Final cleanup
-    set ai_output (echo $ai_output | sed 's/["'\''`]//g' | string trim)
-    
-    debug "Cleaned AI output: '$ai_output'" >&2
-    
-    # Simple validation - check if it looks like a commit message
-    if test -n "$ai_output" -a (string length "$ai_output") -gt 10 -a (string length "$ai_output") -lt 80
-        # Must contain a colon and not be explanatory text
-        if string match -q "*:*" $ai_output; and not string match -qi "*example*" $ai_output; and not string match -qi "*here*" $ai_output
-            echo $ai_output
-            return
-        end
-    end
+         # Validation for multi-line commit messages - be more flexible
+     if test -n "$ai_output"
+         # Check if it starts with a valid commit format (allow / or () for scope)
+         set first_line (echo $ai_output | head -1)
+         if string match -q "feat*:*" $first_line; or string match -q "fix*:*" $first_line; or string match -q "chore*:*" $first_line; or string match -q "docs*:*" $first_line; or string match -q "style*:*" $first_line; or string match -q "refactor*:*" $first_line; or string match -q "perf*:*" $first_line; or string match -q "test*:*" $first_line
+             # Accept reasonable length commits (be more lenient)
+             if test (string length "$first_line") -gt 10 -a (string length "$first_line") -lt 120
+                 echo $ai_output
+                 return
+             end
+         end
+     end
     
     debug "AI output failed validation: '$ai_output', using fallback" >&2
     generate_fallback_commit

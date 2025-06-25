@@ -72,8 +72,8 @@ function detect_ollama_model
         return 1
     end
     
-    # Priority models for commit messages - smaller, faster models work better
-    set priority_models llama3.2:3b llama3.2:1b mistral:7b phi3:mini qwen2.5:7b qwen2.5-coder:7b gemma2:2b mistral:7b-instruct
+    # Priority models for commit messages - focus on better models first
+    set priority_models llama3.2:3b mistral:7b qwen2.5:7b llama3.2:1b phi3:mini gemma2:2b qwen2.5-coder:7b mistral:7b-instruct
     
     set available_models (ollama list | tail -n +2 | awk '{print $1}' | grep -v '^$')
     
@@ -118,30 +118,20 @@ function generate_ai_commit
     
     info "🤖 Analyzing changes with $model..." >&2
     
-    # Get comprehensive change information
+    # Keep it simple - just file changes and basic diff summary
     set diff_stat (git diff --cached --stat)
-    set diff_content (git diff --cached --unified=3)
     
-    # Create comprehensive prompt with actual changes
-    set prompt "Analyze these git changes and generate a proper commit message.
+    # Simple, direct prompt
+    set prompt "Generate a git commit message:
 
-FILES CHANGED:
-$files_changed
+Files: $files_changed
+Summary: $diff_stat
 
-CHANGE SUMMARY:
-$diff_stat
+Use format: type: description
+Types: feat, fix, chore, docs, style
+Be concise and accurate.
 
-ACTUAL CHANGES:
-$diff_content
-
-Based on the actual code/content changes shown above, generate a commit message that:
-- Uses conventional format: type(scope): subject
-- Types: feat, fix, chore, docs, style, refactor, perf, test
-- Subject line under 72 characters
-- Can include a body if the changes are complex
-- Be specific about what actually changed
-
-Generate the commit message:"
+Commit message:"
 
     # Run AI with longer timeout for complex analysis
     set ai_output (timeout 30s ollama run $model $prompt 2>/dev/null | string trim)

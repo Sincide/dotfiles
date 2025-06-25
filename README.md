@@ -75,8 +75,7 @@ What gets installed:
 
 ### 🤖 AI Integration & Smart Git Automation
 - **Local AI models** with Ollama for complete privacy
-- **OpenCommit integration** for intelligent git commit messages
-- **Semantic diff analysis** - AI understands what code changes actually do
+- **Intelligent commit messages** - AI understands what code changes actually do
 - **Dotfiles-aware** - knows about Hyprland, theming, scripts, and configs
 - **Interactive model selection** during setup
 - **Smart theming assistance** for color harmony
@@ -84,7 +83,6 @@ What gets installed:
 **Git Workflow with AI:**
 ```bash
 dots           # Smart sync with AI-generated commit messages
-dots-old       # Fallback to original system if needed
 ```
 
 ### 🖥️ Desktop Environment
@@ -204,14 +202,13 @@ All external drives are automatically mounted to `/mnt/[drive-label]` and added 
 # AI-powered git workflow
 dots                    # Smart sync with AI commit messages
 dots sync               # Same as above
-dots-old sync           # Fallback to original system
 
 # Update AI models
 ollama pull llama3.2:3b
 ollama pull qwen2.5-coder:7b
 
-# Test OpenCommit integration
-scripts/git/opencommit-wrapper.fish test
+# Test AI commit generation
+scripts/git/dotfiles.fish ai-test
 
 # Restart theming system
 ~/dotfiles/scripts/theming/restart_theming.sh
@@ -275,18 +272,18 @@ Uses the latest theming technologies optimized for Hyprland and Wayland:
 - Professional documentation and support
 
 ### 🤖 **Intelligent Git Automation**
-- **OpenCommit integration** for semantic commit message generation
+- **AI-powered commit messages** using local Ollama models
 - **Context-aware AI** understands your dotfiles structure and changes
-- **Semantic diff analysis** - AI reads actual code changes, not just file names
+- **Semantic analysis** - AI reads actual code changes, not just file names
 - **Fallback system** with intelligent pattern matching when AI fails
 - **Multi-model support** - automatically tries different AI models for best results
 
 **Example AI-generated commits:**
 ```
-feat(git): implement opencommit integration for semantic commit generation
+feat(git): enhance commit message generation with improved AI prompts
 feat(theming): enhance Material Design 3 color extraction and application  
 chore(hypr): update window manager configuration for better workspace management
-docs: update installation guide with new OpenCommit workflow
+docs: update installation guide with AI workflow improvements
 ```
 
 ## 🤝 Contributing

@@ -29,14 +29,6 @@ dotfiles.log
 # Theme cache directory (large files, user-specific)
 themes/cached/*/
 
-# Python cache files
-__pycache__/
-*.py[cod]
-*.pyc
-*.pyo
-*.pyd
-.Python
-
 # Additional temp files
 *.tmp
 *.swp

@@ -147,9 +147,9 @@ function generate_smart_commit
         echo "===========================" >&2
     end
     
-    # Try AI with opencommit-style approach
-    set model (detect_ollama_model)
-    if test $status -eq 0
+    # Skip AI and go directly to pattern analysis - it's more reliable
+    if false  # Disabled AI for now since it keeps hallucinating
+        set model (detect_ollama_model)
         info "🤖 Using $model for semantic analysis..." >&2
         
         # Get the actual diff content (limited to reasonable size for AI)

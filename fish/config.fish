@@ -43,14 +43,14 @@ set -gx STARSHIP_CONFIG ~/dotfiles/starship/starship-dynamic.toml
 # DOTFILES & AI MANAGEMENT ALIASES
 # ============================================================================
 
-# Dotfiles Management (Enhanced)
-alias dot='$HOME/dotfiles/scripts/git/dotfiles.fish'              # Interactive menu
-alias dots='$HOME/dotfiles/scripts/git/dotfiles.fish sync'        # Quick sync with AI
-alias dotst='$HOME/dotfiles/scripts/git/dotfiles.fish status'     # Repository status
-alias dotd='$HOME/dotfiles/scripts/git/dotfiles.fish diff'        # Show changes
-alias dotai='$HOME/dotfiles/scripts/git/dotfiles.fish ai-test'    # Test AI commits
-alias dotfix='$HOME/dotfiles/scripts/git/dotfiles.fish ai-debug'  # Debug AI issues
-alias dotr='$HOME/dotfiles/scripts/git/dotfiles.fish toggle-remote' # Toggle SSH/HTTPS remote
+# Dotfiles Management (Enhanced with Claude Code)
+alias dot='$HOME/dotfiles/scripts/git/claude-dotfiles.fish'              # Interactive menu
+alias dots='$HOME/dotfiles/scripts/git/claude-dotfiles.fish sync'        # Quick sync with Claude
+alias dotst='$HOME/dotfiles/scripts/git/claude-dotfiles.fish status'     # Repository status
+alias dotd='$HOME/dotfiles/scripts/git/claude-dotfiles.fish diff'        # Show changes
+alias dotai='$HOME/dotfiles/scripts/git/claude-dotfiles.fish claude-test'    # Test Claude commits
+alias dotfix='$HOME/dotfiles/scripts/git/claude-dotfiles.fish claude-debug'  # Debug Claude issues
+alias dotr='$HOME/dotfiles/scripts/git/claude-dotfiles.fish toggle-remote' # Toggle SSH/HTTPS remote
 
 # AI Health & Diagnostics  
 alias ai='$HOME/dotfiles/scripts/ai/ai-health.fish'               # Interactive AI health menu
@@ -65,7 +65,7 @@ alias ai-tips='$HOME/dotfiles/scripts/ai/ai-health.fish recommendations' # Optim
 # Quick Dotfiles Functions (Super convenient!)
 function dotc
     # Quick commit with custom message: dotc "fix: update config"
-    $HOME/dotfiles/scripts/git/dotfiles.fish sync "$argv"
+    $HOME/dotfiles/scripts/git/claude-dotfiles.fish sync "$argv"
 end
 
 function dotf
@@ -339,14 +339,14 @@ abbr -a matugen-gen 'matugen color'
 # ============================================================================
 
 function dot-help
-    echo "🐟 Dotfiles Management Commands:"
+    echo "🐟 Dotfiles Management Commands (Claude-powered):"
     echo "  dot         - Interactive dotfiles menu"
-    echo "  dots        - Quick sync with AI commit"
+    echo "  dots        - Quick sync with Claude commit"
     echo "  dotc \"msg\"  - Sync with custom commit message"
     echo "  dotst       - Show repository status"
     echo "  dotd        - Show changes/diff"
-    echo "  dotai       - Test AI commit generation"
-    echo "  dotfix      - Debug AI issues"
+    echo "  dotai       - Test Claude commit generation"
+    echo "  dotfix      - Debug Claude issues"
     echo "  doted <app> - Edit config file (e.g., doted fish)"
     echo "  dotf <name> - Find files in dotfiles"
     echo "  cdot        - Go to dotfiles directory"

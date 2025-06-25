@@ -93,7 +93,7 @@ function detect_ollama_model
     return 1
 end
 
-# Generate smart commit message with proper diff analysis
+# Generate smart commit message using opencommit-inspired approach
 function generate_smart_commit
     set files_changed (git diff --cached --name-only)
     
@@ -102,268 +102,198 @@ function generate_smart_commit
         return
     end
     
-    # Get detailed diff analysis
-    set diff_stats (git diff --cached --stat)
-    set total_additions (git diff --cached --numstat | awk '{sum += $1} END {print sum+0}')
-    set total_deletions (git diff --cached --numstat | awk '{sum += $2} END {print sum+0}')
-    
-    # Extract meaningful changes from the diff
-    set function_changes (git diff --cached | grep -E "^[+-].*function|^[+-].*def " | head -3)
-    set config_changes (git diff --cached | grep -E "^[+-].*(=|:)" | head -3)
-    set import_changes (git diff --cached | grep -E "^[+-].*(import|require|source)" | head -2)
-    
-    # Analyze file patterns for better categorization
-    set main_file $files_changed[1]
-    set file_basename (basename $main_file)
-    set file_dir (dirname $main_file)
-    
-    info "🔍 Analyzing changes in $file_basename (+$total_additions -$total_deletions)" >&2
-    
-    # Try AI with very focused context
-    set model (detect_ollama_model)
-    if test $status -eq 0
-        info "🤖 Generating commit with $model..." >&2
-        
-        # Create a very direct prompt
-        set prompt "File: $main_file (+$total_additions -$total_deletions)
-
-Write ONLY a commit message in format: type(scope): description
-
-Examples:
-feat(git): improve commit generation
-fix(waybar): correct temperature display
-chore(hypr): update window rules
-
-Message:"
-        
-        set ai_output (timeout 8s ollama run $model $prompt 2>/dev/null | head -1 | string trim)
-        
-        # Clean up chatty AI responses
-        set ai_output (echo "$ai_output" | sed 's/^[^a-z]*//g' | sed 's/^Based on.*//' | sed 's/^I would suggest.*//' | sed 's/^Here is.*//' | string trim)
-        
-        # Validate - must be short, have colon, and not contain chatty phrases
-        if test -n "$ai_output"; and string match -q "*:*" $ai_output; and test (string length "$ai_output") -lt 80
-            # Reject if it contains chatty phrases
-            if not string match -q "*suggest*" $ai_output; and not string match -q "*would*" $ai_output; and not string match -q "*analysis*" $ai_output
-                debug "AI success: $ai_output" >&2
-                echo $ai_output
-                return
-            else
-                debug "AI was chatty: '$ai_output'" >&2
-            end
-        else
-            debug "AI failed: '$ai_output'" >&2
+    # Filter out unwanted files
+    set real_files ""
+    for file in $files_changed
+        if not string match -q "*__pycache__*" $file; and not string match -q "*.pyc" $file; and not string match -q "*.log" $file
+            set real_files $real_files $file
         end
     end
     
-    # Fallback to intelligent analysis
-    debug "Using intelligent commit generation" >&2
-    generate_intelligent_commit
-end
-
-# Generate intelligent commit message based on actual diff analysis
-function generate_intelligent_commit
-    set files_changed (git diff --cached --name-only)
-    set file_count (count $files_changed)
-    
-    if test $file_count -eq 0
-        echo "chore: update dotfiles"
+    if test (count $real_files) -eq 0
+        echo "chore: cleanup cache files"
         return
     end
     
-    # Analyze the diff content to understand what changed
-    set diff_added (git diff --cached | grep "^+" | grep -v "^+++" | wc -l)
-    set diff_removed (git diff --cached | grep "^-" | grep -v "^---" | wc -l)
-    set diff_content (git diff --cached)
+    # Get comprehensive diff analysis
+    set diff_content (git diff --cached -- $real_files)
+    set file_count (count $real_files)
     
-    # Look for key patterns in the changes
-    set has_function_changes (echo "$diff_content" | grep -c "^[+-].*function")
-    set has_prompt_changes (echo "$diff_content" | grep -c "^[+-].*prompt")
-    set has_model_changes (echo "$diff_content" | grep -c "^[+-].*model")
-    set has_validation_changes (echo "$diff_content" | grep -c "^[+-].*valid")
-    set has_timeout_changes (echo "$diff_content" | grep -c "^[+-].*timeout")
-    set has_ai_changes (echo "$diff_content" | grep -c "^[+-].*ai\|AI\|ollama")
-    set has_commit_changes (echo "$diff_content" | grep -c "^[+-].*commit")
-    set has_message_changes (echo "$diff_content" | grep -c "^[+-].*message")
+    # Extract meaningful context from diff
+    set added_functions (echo "$diff_content" | grep "^+.*function " | head -3 | sed 's/^+//' | string trim)
+    set removed_functions (echo "$diff_content" | grep "^-.*function " | head -3 | sed 's/^-//' | string trim)
+    set config_changes (echo "$diff_content" | grep "^[+-].*=" | grep -v "function" | head -5 | sed 's/^[+-]//' | string trim)
+    set import_changes (echo "$diff_content" | grep "^[+-].*(import\|require\|source)" | head -3 | sed 's/^[+-]//' | string trim)
     
-    # First, analyze what actually changed with specific patterns
-    debug "Analyzing $file_count files: $files_changed" >&2
-    debug "Diff patterns: functions=$has_function_changes, prompts=$has_prompt_changes, models=$has_model_changes" >&2
+    # Get summary stats
+    set total_additions (echo "$diff_content" | grep "^+" | wc -l)
+    set total_deletions (echo "$diff_content" | grep "^-" | wc -l)
     
-    # Special handling for git script improvements
-    if test $file_count -eq 1; and string match -q "*dotfiles.fish" $files_changed[1]
-        if test $has_prompt_changes -gt 3
-            echo "feat(git): rewrite AI commit prompts for better accuracy"
-            return
-        else if test $has_function_changes -gt 2
-            echo "refactor(git): restructure commit generation with intelligent analysis"
-            return  
-        else if test $has_model_changes -gt 0
-            echo "feat(git): improve AI model selection and priority"
-            return
-        else if test $has_validation_changes -gt 0
-            echo "feat(git): enhance commit message validation logic"
-            return
-        else if test $has_timeout_changes -gt 0
-            echo "perf(git): optimize AI response timeout and error handling"
-            return
-        else if test $diff_added -gt 50
-            echo "feat(git): enhance automated commit message generation system"
-            return
-        else
-            echo "feat(git): improve commit message generation"
-            return
+    info "🔍 Analyzing changes: $file_count files (+$total_additions -$total_deletions)" >&2
+    
+    # Try AI with opencommit-style approach
+    set model (detect_ollama_model)
+    if test $status -eq 0
+        info "🤖 Using $model for semantic analysis..." >&2
+        
+        # Create opencommit-inspired prompt with better context
+        set context_prompt "You are a commit message generator. Analyze the code changes and generate a conventional commit message.
+
+CHANGED FILES ($file_count):
+$(string join ', ' $real_files)
+
+SUMMARY: +$total_additions -$total_deletions lines
+
+CODE CONTEXT:"
+
+        # Add function context if available
+        if test -n "$added_functions"
+            set context_prompt "$context_prompt
+FUNCTIONS ADDED:
+$added_functions"
         end
+        
+        if test -n "$removed_functions"
+            set context_prompt "$context_prompt
+FUNCTIONS REMOVED:
+$removed_functions"
+        end
+        
+        if test -n "$config_changes"
+            set context_prompt "$context_prompt
+CONFIG CHANGES:
+$(echo $config_changes | head -3)"
+        end
+        
+        set context_prompt "$context_prompt
+
+Generate a conventional commit message that describes the PURPOSE and IMPACT of these changes.
+
+Format: type(scope): description
+Types: feat, fix, chore, docs, style, refactor, perf, test
+Scopes: git, scripts, hypr, waybar, theming, setup, config
+
+Focus on WHAT was accomplished, not HOW it was implemented.
+
+Examples:
+- feat(git): implement semantic commit message generation
+- refactor(scripts): restructure automation workflow logic  
+- chore(config): update development environment settings
+
+Commit message:"
+
+        # Try multiple models with fallback
+        for attempt_model in (detect_ollama_model) llama3.2:3b codegemma:7b
+            if ollama list | grep -q $attempt_model
+                debug "Trying model: $attempt_model" >&2
+                set ai_output (timeout 12s ollama run $attempt_model $context_prompt 2>/dev/null | head -1 | string trim)
+                
+                # Clean and validate response
+                set ai_output (echo "$ai_output" | sed 's/^[^a-z]*//' | sed 's/^\(Based on\|Here\|I would\).*//' | string trim)
+                
+                if test -n "$ai_output"; and string match -q "*:*" $ai_output; and test (string length "$ai_output") -lt 100; and not string match -q "*suggest*" $ai_output
+                    success "AI generated: $ai_output" >&2
+                    echo $ai_output
+                    return
+                else
+                    debug "Model $attempt_model failed: '$ai_output'" >&2
+                end
+            end
+        end
+        
+        warn "All AI models failed, using pattern analysis" >&2
     end
     
-    # Continue with original file-based analysis for other cases
-    set config_files ""
-    set script_files ""
-    set doc_files ""
-    set theme_files ""
-    set nvim_files ""
-    set wm_files ""
-    set other_files ""
+    # Fallback to intelligent pattern analysis (opencommit style)
+    generate_pattern_commit $real_files $diff_content $total_additions $total_deletions
+end
+
+# Pattern-based commit generation (inspired by opencommit's fallback logic)
+function generate_pattern_commit
+    set files $argv[1..-4]
+    set diff_content $argv[-3]
+    set additions $argv[-2]  
+    set deletions $argv[-1]
+    set file_count (count $files)
     
-    for file in $files_changed
-        set dir (dirname $file | cut -d/ -f1)
+    # Single file - detailed analysis
+    if test $file_count -eq 1
+        set file $files[1]
         set basename_file (basename $file)
         
-        # Categorize files more specifically
-        if string match -q "*.fish" $file; or string match -q "*.sh" $file; or string match -q "scripts/*" $file
-            set script_files $script_files $file
+        # Specific file type handling
+        if string match -q "*dotfiles.fish" $file
+            if echo "$diff_content" | grep -q "opencommit\|semantic\|context"
+                echo "feat(git): implement opencommit-inspired semantic commit generation"
+            else if echo "$diff_content" | grep -q "function.*generate.*commit"
+                echo "refactor(git): restructure commit message generation with AI fallback"
+            else if echo "$diff_content" | grep -q "prompt.*context"
+                echo "feat(git): enhance AI prompts with better code context analysis"
+            else if test $additions -gt 100
+                echo "feat(git): major overhaul of commit message generation system"
+            else if test $additions -gt 50
+                echo "feat(git): significantly improve automated commit generation"
+            else
+                echo "feat(git): enhance commit message generation logic"
+            end
+            return
+        else if string match -q "scripts/setup/*" $file
+            set script_name (basename $file .sh)
+            echo "feat(setup): enhance $script_name installation automation"
+            return
+        else if string match -q "scripts/theming/*" $file
+            echo "feat(theming): improve theme management functionality"
+            return
+        else if string match -q "scripts/*" $file
+            echo "feat(scripts): update automation tools"
+            return
         else if string match -q "hypr/*" $file
-            set wm_files $wm_files $file
+            echo "chore(hypr): update window manager configuration"
+            return
         else if string match -q "waybar/*" $file
-            set wm_files $wm_files $file
-        else if string match -q "dunst/*" $file
-            set wm_files $wm_files $file
-        else if string match -q "nvim/*" $file; or string match -q "*.lua" $file; or string match -q "init.lua" $file
-            set nvim_files $nvim_files $file
-        else if string match -q "gtk*/*" $file; or string match -q "themes/*" $file; or string match -q "*.css" $file
-            set theme_files $theme_files $file
-        else if string match -q "*.conf" $file; or string match -q "*.ini" $file; or string match -q "*.json" $file; or string match -q "*.toml" $file; or string match -q "*.yaml" $file; or string match -q "*.yml" $file
-            set config_files $config_files $file
-        else if string match -q "*.md" $file; or string match -q "docs/*" $file; or string match -q "README*" $file
-            set doc_files $doc_files $file
-        else
-            set other_files $other_files $file
+            echo "chore(waybar): update status bar configuration"
+            return
+        else if string match -q "*.gitignore" $file
+            echo "chore: update gitignore patterns"
+            return
+        else if string match -q "*.md" $file
+            echo "docs: update $(basename $file .md) documentation"
+            return
+        end
+        
+        echo "chore: update $basename_file"
+        return
+    end
+    
+    # Multiple files - categorize impact
+    set has_scripts 0
+    set has_configs 0 
+    set has_docs 0
+    
+    for file in $files
+        if string match -q "scripts/*" $file
+            set has_scripts (math $has_scripts + 1)
+        else if string match -q "*.conf" $file; or string match -q "hypr/*" $file; or string match -q "waybar/*" $file
+            set has_configs (math $has_configs + 1)
+        else if string match -q "*.md" $file
+            set has_docs (math $has_docs + 1)
         end
     end
     
-    # Generate specific commit messages based on what changed - improved quality
-    if test (count $script_files) -gt 0
-        if test (count $script_files) -eq 1
-            set script_name (basename $script_files[1] .fish | sed 's/\.sh$//')
-            set script_dir (dirname $script_files[1] | cut -d/ -f1)
-            
-            # Check for specific script types for better messages
-            if string match -q "*setup*" $script_name
-                echo "feat(setup): enhance $script_name installation script"
-            else if string match -q "*theming*" $script_name; or string match -q "*theme*" $script_name
-                echo "feat(theming): improve $script_name functionality"
-            else if string match -q "*git*" $script_name
-                echo "feat(git): update $script_name automation"
-            else if string match -q "*ai*" $script_name
-                echo "feat(ai): enhance $script_name capabilities"
-            else if test "$script_dir" != "." -a "$script_dir" != ""
-                echo "feat($script_dir): update $script_name script"
-            else
-                echo "feat(scripts): update $script_name automation"
-            end
-        else
-            # Multiple scripts - be more specific
-            set script_dirs (printf '%s\n' (for f in $script_files; dirname $f | cut -d/ -f1; end) | sort -u)
-            if test (count $script_dirs) -eq 1
-                echo "feat($script_dirs[1]): update automation scripts"
-            else
-                echo "feat(scripts): enhance automation tools and workflows"
-            end
-        end
-    else if test (count $wm_files) -gt 0
-        set wm_dirs (printf '%s\n' (for f in $wm_files; dirname $f | cut -d/ -f1; end) | sort -u)
-        if test (count $wm_dirs) -eq 1
-            if test "$wm_dirs[1]" = "hypr"
-                echo "chore(hypr): update window manager configuration"
-            else if test "$wm_dirs[1]" = "waybar"
-                echo "chore(waybar): update status bar configuration"
-            else
-                echo "chore($wm_dirs[1]): update configuration"
-            end
-        else
-            echo "chore(wm): update window manager and status bar configs"
-        end
-    else if test (count $nvim_files) -gt 0
-        if test (count $nvim_files) -eq 1
-            set nvim_file (basename $nvim_files[1] .lua)
-            echo "feat(nvim): update $nvim_file configuration"
-        else
-            echo "feat(nvim): update editor configuration and plugins"
-        end
-    else if test (count $theme_files) -gt 0
-        if test (count $theme_files) -eq 1
-            set theme_file (basename $theme_files[1])
-            if string match -q "*.css" $theme_file
-                echo "style(theme): update $theme_file styling"
-            else
-                echo "style(theme): update $theme_file theme"
-            end
-        else
-            echo "style(theme): update theming and visual styling"
-        end
-    else if test (count $config_files) -gt 0
-        set config_dirs (printf '%s\n' (for f in $config_files; dirname $f | cut -d/ -f1; end) | sort -u)
-        if test (count $config_dirs) -eq 1
-            echo "chore($config_dirs[1]): update application configuration"
-        else
-            echo "chore(config): update system configuration files"
-        end
-    else if test (count $doc_files) -gt 0
-        if test (count $doc_files) -eq 1
-            set doc_file (basename $doc_files[1] .md)
-            if string match -q "*README*" $doc_file; or string match -q "*readme*" $doc_file
-                echo "docs: update README documentation"
-            else if string match -q "*INSTALL*" $doc_file; or string match -q "*install*" $doc_file
-                echo "docs: update installation instructions"
-            else if string match -q "*GUIDE*" $doc_file; or string match -q "*guide*" $doc_file
-                echo "docs: update $doc_file guide"
-            else
-                echo "docs: update $doc_file documentation"
-            end
-        else
-            echo "docs: update project documentation"
-        end
-    else if test $file_count -eq 1
-        set single_file (basename $files_changed[1])
-        set single_dir (dirname $files_changed[1] | cut -d/ -f1)
-        set file_ext (string split -r -m1 . $single_file)[2]
-        
-        # Be more specific based on file type
-        if test "$file_ext" = "md"
-            echo "docs: update $single_file"
-        else if test "$file_ext" = "json"; or test "$file_ext" = "toml"; or test "$file_ext" = "yaml"
-            echo "chore(config): update $single_file settings"
-        else if test "$single_dir" != "." -a "$single_dir" != ""
-            echo "chore($single_dir): update $single_file"
-        else
-            echo "chore: update $single_file"
-        end
+    # Generate message based on dominant change type
+    if test $has_scripts -gt 0; and test $additions -gt 50
+        echo "feat(scripts): major improvements to automation workflows"
+    else if test $has_scripts -gt 0
+        echo "feat(scripts): update automation tools and utilities"
+    else if test $has_configs -gt 2
+        echo "chore(config): update multiple system configurations"
+    else if test $has_docs -gt 0
+        echo "docs: update project documentation"
     else
-        # Try to identify the most common directory and be more descriptive
-        set all_dirs (printf '%s\n' (for f in $files_changed; dirname $f | cut -d/ -f1; end) | sort | uniq -c | sort -nr | head -1 | awk '{print $2}')
-        if test -n "$all_dirs" -a "$all_dirs" != "."
-            if test "$all_dirs" = "scripts"
-                echo "feat(scripts): update multiple automation tools"
-            else if test "$all_dirs" = "docs"
-                echo "docs: update project documentation files"
-            else
-                echo "chore($all_dirs): update $file_count configuration files"
-            end
-        else
-            echo "chore: update $file_count dotfiles"
-        end
+        echo "chore: update $file_count configuration files"
     end
 end
+
 
 # Toggle git remote between SSH and HTTPS
 function toggle_remote
@@ -709,7 +639,21 @@ function sync_dotfiles
     if test -n "$changes"
         # Stage all changes except cache files and other unwanted files
         git add -A
-        git reset HEAD '*.pyc' '**/*.pyc' '**/__pycache__/**' 2>/dev/null || true
+        git reset HEAD -- '*.pyc' '**/*.pyc' '**/__pycache__/**' 2>/dev/null || true
+        
+        # Check if we have any real files staged after filtering
+        set staged_files (git diff --cached --name-only)
+        set real_staged_files ""
+        for file in $staged_files
+            if not string match -q "*__pycache__*" $file; and not string match -q "*.pyc" $file
+                set real_staged_files $real_staged_files $file
+            end
+        end
+        
+        if test (count $real_staged_files) -eq 0
+            info "Only cache files changed, nothing to commit"
+            return 0
+        end
         
         # Generate commit message
         if test -n "$custom_message"

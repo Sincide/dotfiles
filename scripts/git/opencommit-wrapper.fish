@@ -74,51 +74,42 @@ function setup_opencommit
     return 0
 end
 
-# Generate commit using OpenCommit with dotfiles context
+# Generate commit using OpenCommit 
 function generate_opencommit_message
-    set opencommit_cli (setup_opencommit)
-    if test $status -ne 0
+    if not command -v oco >/dev/null 2>&1
+        warn "OpenCommit not found, using fallback"
         return 1
     end
     
     # Check if there are staged changes
     set staged_files (git diff --cached --name-only)
     if test -z "$staged_files"
-        echo "No staged changes found"
+        warn "No staged changes found"
         return 1
     end
     
     info "🚀 Using OpenCommit for semantic analysis..."
     debug "Staged files: $staged_files"
     
-    # Add dotfiles-specific context to help OpenCommit understand the repo
-    set context "This is a sophisticated Arch Linux dotfiles repository with:
-- Hyprland window manager configuration in hypr/
-- Fish shell scripts and automation in scripts/
-- Dynamic Material Design 3 theming system
-- GPU monitoring and web dashboard
-- AI-powered automation tools
-- Waybar status bar configuration"
-    
-    # Run OpenCommit with context
-    set commit_output ($opencommit_cli -- "$context" 2>/dev/null)
+    # Run OpenCommit - it's already configured
+    set commit_output (oco 2>&1)
     set exit_code $status
     
     debug "OpenCommit exit code: $exit_code"
-    debug "OpenCommit output: '$commit_output'"
+    debug "OpenCommit raw output: '$commit_output'"
     
     if test $exit_code -eq 0; and test -n "$commit_output"
-        # Extract just the commit message (OpenCommit sometimes adds extra output)
-        set commit_msg (echo "$commit_output" | grep -E "^(feat|fix|chore|docs|style|refactor|perf|test)" | head -1 | string trim)
+        # OpenCommit should output just the commit message
+        set commit_msg (echo "$commit_output" | string trim)
         
-        if test -n "$commit_msg"
+        if test -n "$commit_msg"; and not string match -q "*error*" "$commit_msg"; and not string match -q "*Error*" "$commit_msg"
             success "OpenCommit generated: $commit_msg"
             echo "$commit_msg"
             return 0
         end
     end
     
-    warn "OpenCommit failed, using fallback"
+    warn "OpenCommit failed: $commit_output"
     return 1
 end
 

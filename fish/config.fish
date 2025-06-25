@@ -43,12 +43,11 @@ set -gx STARSHIP_CONFIG ~/dotfiles/starship/starship-dynamic.toml
 # DOTFILES & AI MANAGEMENT ALIASES
 # ============================================================================
 
-# Dotfiles Management (Enhanced with OpenCommit)
-alias dot='$HOME/dotfiles/scripts/git/opencommit-wrapper.fish'         # Interactive menu
-alias dots='$HOME/dotfiles/scripts/git/opencommit-wrapper.fish sync'   # Quick sync with OpenCommit
-alias dotst='$HOME/dotfiles/scripts/git/dotfiles.fish status'          # Repository status
-alias dotd='$HOME/dotfiles/scripts/git/dotfiles.fish diff'             # Show changes
-alias dots-old='$HOME/dotfiles/scripts/git/dotfiles.fish sync'         # Fallback to old system
+# Dotfiles Management (Enhanced)
+alias dot='$HOME/dotfiles/scripts/git/dotfiles.fish'              # Interactive menu
+alias dots='$HOME/dotfiles/scripts/git/dotfiles.fish sync'        # Quick sync with AI
+alias dotst='$HOME/dotfiles/scripts/git/dotfiles.fish status'     # Repository status
+alias dotd='$HOME/dotfiles/scripts/git/dotfiles.fish diff'        # Show changes
 alias dotai='$HOME/dotfiles/scripts/git/dotfiles.fish ai-test'    # Test AI commits
 alias dotfix='$HOME/dotfiles/scripts/git/dotfiles.fish ai-debug'  # Debug AI issues
 alias dotr='$HOME/dotfiles/scripts/git/dotfiles.fish toggle-remote' # Toggle SSH/HTTPS remote

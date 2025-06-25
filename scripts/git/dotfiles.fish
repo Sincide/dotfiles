@@ -242,7 +242,8 @@ Generate ONLY the commit message, no explanation:"
         warn "All AI models failed, using pattern analysis" >&2
     end
     
-    # Fallback to intelligent pattern analysis (opencommit style)
+    # Fallback to intelligent pattern analysis - now the primary method
+    debug "Using improved pattern-based commit generation"
     generate_pattern_commit $real_files $diff_content $total_additions $total_deletions
 end
 
@@ -293,6 +294,16 @@ function generate_pattern_commit
             return
         else if string match -q "*.gitignore" $file
             echo "chore: update gitignore patterns"
+            return
+        else if string match -q "*README.md" $file
+            # Check what was actually added to README
+            if echo "$diff_content" | grep -q "+.*OpenCommit\|+.*AI.*git\|+.*commit.*message"
+                echo "docs: add OpenCommit integration and AI-powered git workflow documentation"
+            else if echo "$diff_content" | grep -q "+.*installation\|+.*setup"
+                echo "docs: update installation and setup instructions"
+            else
+                echo "docs: update README documentation"
+            end
             return
         else if string match -q "*.md" $file
             echo "docs: update $(basename $file .md) documentation"

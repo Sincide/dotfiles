@@ -67,36 +67,7 @@ alias claude-usage='$HOME/dotfiles/scripts/ai/claude-usage.fish'         # Claud
 alias claude-live='$HOME/dotfiles/scripts/ai/claude-usage.fish live'     # Live usage monitor
 alias claude-install='$HOME/dotfiles/scripts/ai/claude-usage.fish install' # Install monitoring tools
 
-# Quick Dotfiles Functions (Super convenient!)
-function dotc
-    # Quick commit with custom message: dotc "fix: update config"
-    $HOME/dotfiles/scripts/git/claude-dotfiles.fish sync "$argv"
-end
-
-function dotf
-    # Quick find in dotfiles: dotf "fish"
-    find $HOME/dotfiles -name "*$argv*" -type f
-end
-
-function doted
-    # Quick edit config files: doted fish (opens config/fish/config.fish)
-    set target "$argv"
-    if test -z "$target"
-        echo "Usage: doted <config_name>"
-        echo "Examples: doted fish, doted kitty, doted waybar"
-        return 1
-    end
-    
-    # Look for the config file
-    set config_file (find $HOME/dotfiles/config -name "*$target*" -type f | head -1)
-    if test -n "$config_file"
-        $EDITOR "$config_file"
-    else
-        echo "Config file for '$target' not found"
-        echo "Available configs:"
-        ls $HOME/dotfiles/config/
-    end
-end
+# Removed unused dotfiles functions - using aliases only
 
 # Ollama Management Shortcuts
 alias ollama-start='ollama serve'                    # Start Ollama service
@@ -113,16 +84,6 @@ alias mistral='ollama run mistral:7b-instruct'      # Mistral chat
 # System Monitoring Aliases (AI-related)
 alias gpu-status='nvidia-smi'                        # GPU status (if NVIDIA)
 alias gpu-watch='watch -n 1 nvidia-smi'             # Watch GPU usage
-alias ram-free='free -h'                            # Memory usage
-alias disk-space='df -h'                            # Disk usage
-alias processes='ps aux | grep -E "(ollama|python|node)"' # AI-related processes
-
-# Enhanced navigation
-alias cdot='cd $HOME/dotfiles'                      # Go to dotfiles
-alias cdot-config='cd $HOME/dotfiles/config'        # Go to configs
-alias cdot-scripts='cd $HOME/dotfiles/scripts'      # Go to scripts
-alias cdot-git='cd $HOME/dotfiles/scripts/git'      # Go to git scripts
-alias cdot-ai='cd $HOME/dotfiles/scripts/ai'        # Go to AI scripts
 
 # ============================================================================
 # REGULAR ALIASES (Your existing ones)
@@ -132,36 +93,21 @@ alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
-alias vim='nano'
-alias vi='nano'
 alias cls='clear'
 alias ff='fastfetch'
 
 # Git aliases removed - using abbreviations only for consistency
 
 # Additional useful aliases
-alias tree='tree -C'
 alias df='df -h'
 alias du='du -h'
 alias free='free -h'
 alias ps='ps aux'
 alias top='htop'
-alias cp='cp -i'
-alias mv='mv -i'
-alias rm='rm -i'
 alias mkdir='mkdir -pv'
-alias which='type -a'
-
-# Development shortcuts
-alias serve='python -m http.server 8000'
-alias myip='curl -s ifconfig.me'
-alias localip='ip route get 1 | awk "{print \$NF; exit}"'
-alias ports='netstat -tuln'
 
 # ============================================================================
 # FUNCTIONS (Your existing ones)
@@ -298,31 +244,9 @@ abbr -a .... 'cd ../../..'
 abbr -a cls 'clear'
 abbr -a ff 'fastfetch'
 
-# Directory shortcuts (works with z plugin)
-abbr -a dotf 'cd ~/dotfiles'
-abbr -a conf 'cd ~/.config'
-abbr -a down 'cd ~/Downloads'
-abbr -a docs 'cd ~/Documents'
+# No additional abbreviations needed - using AI/GPU/dotfiles only
 
-# Evil development shortcuts
-abbr -a serve 'python -m http.server 8000'
-abbr -a ports 'netstat -tuln'
-abbr -a myip 'curl -s ifconfig.me'
-
-# Package management (Arch)
-abbr -a paci 'sudo pacman -S'
-abbr -a pacr 'sudo pacman -R'
-abbr -a pacu 'sudo pacman -Syu'
-abbr -a pacs 'pacman -Ss'
-abbr -a pacq 'pacman -Q'
-
-# Docker shortcuts
-abbr -a dps 'docker ps'
-abbr -a dpsa 'docker ps -a'
-abbr -a di 'docker images'
-abbr -a drun 'docker run -it --rm'
-
-# Evil Space specific
+# Theming shortcuts (keep these - part of the theming system)
 abbr -a theme '~/dotfiles/scripts/theming/dynamic_theme_switcher.sh'
 abbr -a wall 'swww img'
 abbr -a matugen-gen 'matugen color'

@@ -122,45 +122,64 @@ function generate_ai_commit
     set file_count (count $files_changed)
     set main_dirs (printf '%s\n' (for f in $files_changed; dirname $f | cut -d/ -f1; end) | sort | uniq -c | sort -nr | head -3 | awk '{print $2}' | grep -v '^\.$')
     
-    # Create ultra-simple prompt to avoid hallucination
-    set prompt "Git commit for: $files_changed
+    # Ultra-direct prompt to avoid AI explanations
+    set prompt "Files changed: $files_changed
 
-Format: type(scope): description
-One line only:"
+Generate ONE commit message. DO NOT explain, DO NOT give examples, DO NOT say anything else. Just output the commit message:
+
+format: type(scope): description"
 
     # Run AI with simpler processing
     set ai_output (timeout 15s ollama run $model $prompt 2>/dev/null | head -1 | string trim)
     
     debug "Raw AI output: '$ai_output'" >&2
     
-    # Clean the output more carefully
-    # Take the first line and clean it up
-    set ai_output (echo $ai_output | head -1 | string trim)
+    # Extract actual commit message from verbose AI output
+    set original_output "$ai_output"
     
-    # Remove common prefixes but preserve commit format
-    set ai_output (echo $ai_output | sed -E 's/^[[:space:]"'\''`]*//; s/[[:space:]"'\''`]*$//')
+    # Look for lines that look like actual commit messages (contain : and reasonable length)
+    set lines (echo $ai_output | tr '\n' '|')
+    set potential_commits ""
     
-    # Remove quotes and backticks but keep parentheses and colons
-    set ai_output (echo $ai_output | sed 's/["'\''`]//g' | string trim)
-    
-    # If it ends with a period and has trailing text, cut at the period
-    if string match -q "*. *" $ai_output
-        set ai_output (echo $ai_output | sed 's/\..*$//')
-    else if string match -q "*." $ai_output
-        # Remove trailing period if it's just at the end
-        set ai_output (echo $ai_output | sed 's/\.$$//')
+    for line in (echo $lines | tr '|' '\n')
+        set clean_line (echo $line | string trim | sed 's/^[[:space:]"'\''`-]*//; s/[[:space:]"'\''`]*$//')
+        
+        # Skip obvious non-commit lines
+        if string match -qi "*example*" $clean_line; or string match -qi "*here*" $clean_line
+            continue
+        end
+        
+        # Look for lines that contain : and look like commits
+        if string match -q "*(*):*" $clean_line; or string match -q "*:*" $clean_line
+            if test (string length "$clean_line") -gt 15 -a (string length "$clean_line") -lt 70
+                set potential_commits $potential_commits $clean_line
+            end
+        end
     end
+    
+    # Use first potential commit found
+    if test (count $potential_commits) -gt 0
+        set ai_output $potential_commits[1]
+    else
+        # Fallback: take first line and clean it
+        set ai_output (echo $original_output | head -1 | string trim | sed 's/^[[:space:]"'\''`]*//; s/[[:space:]"'\''`]*$//')
+    end
+    
+    # Final cleanup
+    set ai_output (echo $ai_output | sed 's/["'\''`]//g' | string trim)
     
     debug "Cleaned AI output: '$ai_output'" >&2
     
-    # Simple validation - very lenient
+    # Simple validation - check if it looks like a commit message
     if test -n "$ai_output" -a (string length "$ai_output") -gt 10 -a (string length "$ai_output") -lt 80
-        # Accept anything that looks like a reasonable commit message
-        echo $ai_output
-        return
+        # Must contain a colon and not be explanatory text
+        if string match -q "*:*" $ai_output; and not string match -qi "*example*" $ai_output; and not string match -qi "*here*" $ai_output
+            echo $ai_output
+            return
+        end
     end
     
-    debug "AI output failed validation, using fallback" >&2
+    debug "AI output failed validation: '$ai_output', using fallback" >&2
     generate_fallback_commit
 end
 

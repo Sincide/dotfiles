@@ -408,3 +408,4 @@ set -gx HSA_OVERRIDE_GFX_VERSION 11.0.0
 set -gx LD_LIBRARY_PATH /usr/lib/ollama/rocm:/opt/rocm/lib
 set -gx HSA_OVERRIDE_GFX_VERSION "11.0.0"
 set -gx HIP_VISIBLE_DEVICES 0
+set -gx PATH $HOME/.local/bin $PATH

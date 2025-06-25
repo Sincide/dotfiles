@@ -56,11 +56,8 @@ end
 
 # Configure OpenCommit for dotfiles
 function setup_opencommit
-    set opencommit_path "$HOME/dotfiles/temp-opencommit"
-    
-    if not test -f "$opencommit_path/out/cli.cjs"
-        error "OpenCommit not found or not built!"
-        error "Run: cd $opencommit_path && npm install && npm run build"
+    if not command -v oco >/dev/null 2>&1
+        error "OpenCommit not found! Install with: npm install -g opencommit"
         return 1
     end
     
@@ -73,7 +70,7 @@ function setup_opencommit
     set -x OCO_EMOJI false
     set -x OCO_ONE_LINE_COMMIT true
     
-    echo "$opencommit_path/out/cli.cjs"
+    echo "oco"
     return 0
 end
 
@@ -104,7 +101,7 @@ function generate_opencommit_message
 - Waybar status bar configuration"
     
     # Run OpenCommit with context
-    set commit_output (node $opencommit_cli -- "$context" 2>/dev/null)
+    set commit_output ($opencommit_cli -- "$context" 2>/dev/null)
     set exit_code $status
     
     debug "OpenCommit exit code: $exit_code"

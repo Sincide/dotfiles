@@ -18,12 +18,12 @@ lspci | grep -i amd | head -1
 echo ""
 
 # Check for hwmon interface
-if [ ! -d "/sys/class/drm/card0/device/hwmon" ]; then
-    echo "⚠️  hwmon interface not found at /sys/class/drm/card0/device/hwmon"
+if [ ! -d "/sys/class/drm/card1/device/hwmon" ]; then
+    echo "⚠️  hwmon interface not found at /sys/class/drm/card1/device/hwmon"
     echo "   GPU temperature/fan monitoring may not work"
 else
     echo "✅ hwmon interface found"
-    hwmon_path=$(find /sys/class/drm/card0/device/hwmon -name "hwmon*" | head -1)
+    hwmon_path=$(find /sys/class/drm/card1/device/hwmon -name "hwmon*" | head -1)
     if [ -n "$hwmon_path" ]; then
         echo "   📍 Location: $hwmon_path"
         
@@ -48,7 +48,7 @@ if command -v radeontop >/dev/null 2>&1; then
 else
     echo "⚠️  radeontop not found"
     echo "   Install with: sudo pacman -S radeontop"
-    echo "   Fallback: will try /sys/class/drm/card0/device/gpu_busy_percent"
+    echo "   Fallback: will try /sys/class/drm/card1/device/gpu_busy_percent"
 fi
 
 # Check for checkupdates (package updates)

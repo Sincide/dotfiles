@@ -47,6 +47,7 @@ SETUVAR fish_color_host_remote:\x1d
 SETUVAR fish_color_keyword:\x1d
 SETUVAR fish_color_normal:\x1d
 SETUVAR fish_color_operator:\x1d
+SETUVAR fish_color_option:\x1d
 SETUVAR fish_color_param:\x1d
 SETUVAR fish_color_quote:\x1d
 SETUVAR fish_color_redirection:\x1d

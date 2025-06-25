@@ -11,7 +11,7 @@ set -U fish_color_end #e2c0a4
 set -U fish_color_error #ffb4ab
 set -U fish_color_param #d5c3b6
 set -U fish_color_valid_path --underline
-set -u fish_color_option #51443a
+set -U fish_color_option #51443a
 set -U fish_color_comment #9e8e81
 set -U fish_color_selection --background=#261e18
 set -U fish_color_search_match --background=#6a3c01

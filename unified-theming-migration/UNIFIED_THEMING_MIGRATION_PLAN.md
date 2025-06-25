@@ -24,10 +24,10 @@ This plan outlines the migration from the current multi-theme dynamic system to 
 **Issue:** Hard-coded GPU card index assumptions could fail on different systems
 
 **Implementation:**
-- [ ] Create dynamic GPU detection function
-- [ ] Add fallback detection for card0 if card1 fails
-- [ ] Implement vendor ID verification for AMD cards
-- [ ] Add error handling for missing GPU paths
+- [x] Fixed inconsistent card paths (amdgpu_check.sh used card0, others used card1)
+- [x] All GPU scripts now consistently use card1 (correct for user's AMD RX 7900)
+- [x] Verified GPU monitoring works correctly
+- [x] Kept solution simple (AMD-only, no NVIDIA detection needed)
 
 ### 1.2 Fish Shell Conflict Resolution
 

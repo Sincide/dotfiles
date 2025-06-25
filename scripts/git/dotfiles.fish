@@ -148,12 +148,19 @@ Generate the commit message:"
     
     debug "Raw AI output: '$ai_output'" >&2
     
-         # Simple extraction - look for any line that looks like a commit message
-     set ai_output (echo $ai_output | grep -E '(feat|fix|chore|docs|style|refactor|perf|test)(\([^)]+\))?:[^:]*' | head -1 | string trim)
+         # Extract commit message from backticks first
+     set backtick_msg (echo $ai_output | grep -o '`[^`]*`' | head -1 | sed 's/`//g' | string trim)
      
-     # If no match, try more flexible patterns
-     if test -z "$ai_output"
-         set ai_output (echo $ai_output | grep -E '(feat|fix|chore|docs|style|refactor|perf|test)[^:]*:' | head -1 | string trim)
+     if test -n "$backtick_msg"; and string match -q "*:*" $backtick_msg
+         set ai_output $backtick_msg
+     else
+         # Fallback - look for any line that looks like a commit message
+         set ai_output (echo $ai_output | grep -E '(feat|fix|chore|docs|style|refactor|perf|test)(\([^)]+\))?:[^:]*' | head -1 | string trim)
+         
+         # If still no match, try more flexible patterns
+         if test -z "$ai_output"
+             set ai_output (echo $ai_output | grep -E '(feat|fix|chore|docs|style|refactor|perf|test)[^:]*:' | head -1 | string trim)
+         end
      end
      
      # Remove quotes if present
@@ -167,7 +174,7 @@ Generate the commit message:"
          set first_line (echo $ai_output | head -1)
          if string match -q "feat*:*" $first_line; or string match -q "fix*:*" $first_line; or string match -q "chore*:*" $first_line; or string match -q "docs*:*" $first_line; or string match -q "style*:*" $first_line; or string match -q "refactor*:*" $first_line; or string match -q "perf*:*" $first_line; or string match -q "test*:*" $first_line
              # Accept reasonable length commits (be more lenient)
-             if test (string length "$first_line") -gt 10 -a (string length "$first_line") -lt 120
+             if test (string length "$first_line") -gt 10; and test (string length "$first_line") -lt 120
                  echo $ai_output
                  return
              end

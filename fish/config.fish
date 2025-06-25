@@ -142,22 +142,7 @@ alias vi='nano'
 alias cls='clear'
 alias ff='fastfetch'
 
-# Git aliases
-alias gs='git status'
-alias ga='git add'
-alias gc='git commit'
-alias gp='git push'
-alias gl='git log --oneline'
-alias gd='git diff'
-alias gb='git branch'
-alias gco='git checkout'
-alias glog='git log --oneline --graph --decorate --all'
-alias gst='git status --short'
-alias gaa='git add --all'
-alias gcm='git commit -m'
-alias gps='git push'
-alias gpl='git pull'
-alias gco-='git checkout -'
+# Git aliases removed - using abbreviations only for consistency
 
 # Additional useful aliases
 alias tree='tree -C'
@@ -286,19 +271,22 @@ end
 # EVIL SPACE ABBREVIATIONS (with Fisher plugins)
 # ============================================================================
 
-# Git abbreviations (enhanced with fzf)
+# Git abbreviations (unified and enhanced)
 abbr -a gs 'git status'
+abbr -a gst 'git status --short'           # Short status (resolved conflict)
 abbr -a ga 'git add'
 abbr -a gaa 'git add --all'
 abbr -a gc 'git commit'
 abbr -a gcm 'git commit -m'
 abbr -a gp 'git push'
 abbr -a gpl 'git pull'
-abbr -a gl 'git log --oneline --graph --decorate'
+abbr -a gl 'git log --oneline --graph --decorate --all'  # Enhanced log with --all
+abbr -a glog 'git log --oneline --graph --decorate --all' # Alias for those used to glog
 abbr -a gd 'git diff'
 abbr -a gb 'git branch'
 abbr -a gco 'git checkout'
-abbr -a gst 'git stash'
+abbr -a gco- 'git checkout -'              # Go back to previous branch
+abbr -a gstash 'git stash'                 # Renamed to avoid gst conflict
 abbr -a gsp 'git stash pop'
 
 # System abbreviations

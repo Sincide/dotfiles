@@ -37,30 +37,7 @@ function ps
     command ps aux $argv
 end
 
-# Git aliases
-function g
-    git $argv
-end
-
-function gs
-    git status $argv
-end
-
-function ga
-    git add $argv
-end
-
-function gc
-    git commit $argv
-end
-
-function gp
-    git push $argv
-end
-
-function gl
-    git log --oneline $argv
-end
+# Git functions removed - using abbreviations only for consistency
 
 # System management
 function sysinfo

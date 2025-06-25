@@ -116,7 +116,12 @@ function generate_smart_commit
     end
     
     # Get comprehensive diff analysis
-    set diff_content (git diff --cached -- $real_files)
+    if test (count $real_files) -gt 0
+        set diff_content (git diff --cached -- $real_files)
+    else
+        set diff_content (git diff --cached)
+        set real_files $files_changed
+    end
     set file_count (count $real_files)
     
     # Extract meaningful context from diff
@@ -130,71 +135,95 @@ function generate_smart_commit
     set total_deletions (echo "$diff_content" | grep "^-" | wc -l)
     
     info "🔍 Analyzing changes: $file_count files (+$total_additions -$total_deletions)" >&2
+    debug "Real files: $real_files" >&2
+    debug "Diff content length: $(echo '$diff_content' | wc -l) lines" >&2
     
     # Try AI with opencommit-style approach
     set model (detect_ollama_model)
     if test $status -eq 0
         info "🤖 Using $model for semantic analysis..." >&2
         
-        # Create opencommit-inspired prompt with better context
-        set context_prompt "You are a commit message generator. Analyze the code changes and generate a conventional commit message.
+        # Get the actual diff content (limited to reasonable size for AI)
+        set diff_lines (echo "$diff_content" | wc -l)
+        set diff_for_ai ""
+        
+        if test $diff_lines -lt 200
+            # Small diff - send everything
+            set diff_for_ai "$diff_content"
+        else
+            # Large diff - send meaningful parts
+            set diff_for_ai (echo "$diff_content" | head -100)
+            set diff_for_ai "$diff_for_ai
 
-CHANGED FILES ($file_count):
-$(string join ', ' $real_files)
-
-SUMMARY: +$total_additions -$total_deletions lines
-
-CODE CONTEXT:"
-
-        # Add function context if available
-        if test -n "$added_functions"
-            set context_prompt "$context_prompt
-FUNCTIONS ADDED:
-$added_functions"
+... (diff truncated, $diff_lines total lines)"
         end
         
-        if test -n "$removed_functions"
-            set context_prompt "$context_prompt
-FUNCTIONS REMOVED:
-$removed_functions"
-        end
-        
-        if test -n "$config_changes"
-            set context_prompt "$context_prompt
-CONFIG CHANGES:
-$(echo $config_changes | head -3)"
-        end
-        
-        set context_prompt "$context_prompt
+        # Create opencommit-style prompt with actual diff
+        set context_prompt "You are an expert at analyzing code changes and generating conventional commit messages.
 
-Generate a conventional commit message that describes the PURPOSE and IMPACT of these changes.
+ANALYZE THIS GIT DIFF:
 
-Format: type(scope): description
-Types: feat, fix, chore, docs, style, refactor, perf, test
-Scopes: git, scripts, hypr, waybar, theming, setup, config
+\`\`\`diff
+$diff_for_ai
+\`\`\`
 
-Focus on WHAT was accomplished, not HOW it was implemented.
+INSTRUCTIONS:
+- Look at what code was actually added, removed, or modified
+- Identify the purpose and impact of these changes
+- Generate a conventional commit message that describes WHAT was accomplished
 
-Examples:
-- feat(git): implement semantic commit message generation
-- refactor(scripts): restructure automation workflow logic  
-- chore(config): update development environment settings
+FORMAT: type(scope): description
+TYPES: feat, fix, chore, docs, style, refactor, perf, test
+SCOPES: git, scripts, hypr, waybar, theming, setup, config
 
-Commit message:"
+EXAMPLES:
+- feat(git): implement opencommit-style diff analysis
+- refactor(scripts): restructure function organization  
+- fix(waybar): resolve temperature sensor display issue
+- chore(config): update gitignore patterns
+
+Generate ONLY the commit message, no explanation:"
 
         # Try multiple models with fallback
         for attempt_model in (detect_ollama_model) llama3.2:3b codegemma:7b
             if ollama list | grep -q $attempt_model
                 debug "Trying model: $attempt_model" >&2
-                set ai_output (timeout 12s ollama run $attempt_model $context_prompt 2>/dev/null | head -1 | string trim)
+                set ai_raw_output (timeout 15s ollama run $attempt_model $context_prompt 2>/dev/null)
                 
-                # Clean and validate response
-                set ai_output (echo "$ai_output" | sed 's/^[^a-z]*//' | sed 's/^\(Based on\|Here\|I would\).*//' | string trim)
+                # Extract just the commit message from potentially verbose output
+                set ai_output ""
+                for line in (echo "$ai_raw_output" | string split '\n')
+                    set line (echo "$line" | string trim)
+                    # Look for lines that match conventional commit format
+                    if string match -qr '^(feat|fix|chore|docs|style|refactor|perf|test)(\([^)]+\))?: .+' "$line"
+                        set ai_output "$line"
+                        break
+                    end
+                end
                 
-                if test -n "$ai_output"; and string match -q "*:*" $ai_output; and test (string length "$ai_output") -lt 100; and not string match -q "*suggest*" $ai_output
-                    success "AI generated: $ai_output" >&2
-                    echo $ai_output
-                    return
+                # If no conventional format found, try first line that has a colon
+                if test -z "$ai_output"
+                    for line in (echo "$ai_raw_output" | string split '\n')
+                        set line (echo "$line" | string trim)
+                        if string match -q "*:*" "$line"; and test (string length "$line") -lt 100; and not string match -q "*```*" "$line"
+                            set ai_output "$line"
+                            break
+                        end
+                    end
+                end
+                
+                # Final cleanup and validation
+                set ai_output (echo "$ai_output" | sed 's/^[^a-z]*//' | string trim)
+                
+                if test -n "$ai_output"; and string match -q "*:*" "$ai_output"; and test (string length "$ai_output") -lt 100
+                    # Reject chatty responses
+                    if not string match -q "*suggest*" "$ai_output"; and not string match -q "*would*" "$ai_output"; and not string match -q "*analysis*" "$ai_output"; and not string match -q "*here*" "$ai_output"
+                        success "✓ $attempt_model: $ai_output" >&2
+                        echo $ai_output
+                        return
+                    else
+                        debug "Model $attempt_model was chatty: '$ai_output'" >&2
+                    end
                 else
                     debug "Model $attempt_model failed: '$ai_output'" >&2
                 end

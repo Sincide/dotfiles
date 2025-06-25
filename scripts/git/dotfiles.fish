@@ -102,13 +102,17 @@ function generate_smart_commit
         return
     end
     
-    # Filter out unwanted files
+    # Filter out unwanted files (cache, logs, etc.)
     set real_files ""
     for file in $files_changed
-        if not string match -q "*__pycache__*" $file; and not string match -q "*.pyc" $file; and not string match -q "*.log" $file
+        # Only exclude specific unwanted patterns, include everything else
+        if not string match -q "*__pycache__*" $file; and not string match -q "*.pyc" $file; and not string match -q "*.log" $file; and not string match -q "*/.git/*" $file
             set real_files $real_files $file
         end
     end
+    
+    debug "Files changed: $files_changed" >&2
+    debug "Real files after filtering: $real_files" >&2
     
     if test (count $real_files) -eq 0
         echo "chore: cleanup cache files"
@@ -136,7 +140,12 @@ function generate_smart_commit
     
     info "🔍 Analyzing changes: $file_count files (+$total_additions -$total_deletions)" >&2
     debug "Real files: $real_files" >&2
-    debug "Diff content length: $(echo '$diff_content' | wc -l) lines" >&2
+    debug "Diff content length: $(echo "$diff_content" | wc -l) lines" >&2
+    if test -n "$DEBUG"
+        echo "=== DIFF CONTENT PREVIEW ===" >&2
+        echo "$diff_content" | head -10 >&2
+        echo "===========================" >&2
+    end
     
     # Try AI with opencommit-style approach
     set model (detect_ollama_model)

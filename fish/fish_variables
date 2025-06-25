@@ -8,6 +8,8 @@ SETUVAR --export NNN_PLUG:F1\x3ahelp
 SETUVAR --export OCO_AI_PROVIDER:ollama
 SETUVAR --export OCO_API_URL:http\x3a//localhost\x3a11434/api/generate
 SETUVAR --export OCO_MODEL:codegemma\x3a7b
+SETUVAR --export OLLAMA_API_BASE:http\x3a//127\x2e0\x2e0\x2e1\x3a11434
+SETUVAR --export OPENAI_API_KEY:sk\x2dproj\x2dR6nb3JS9oMSypr3hnXu3KZqDgvtwthTFK9jr9NDR\x2d_R1KOBNFZNS9Lc_cZJ_CRl2CulkgrTUF3T3BlbkFJCujkykD7zTMU0a\x2d9IXSQ57lDpIaez\x2decF7tZRop3XELiDFtwoXIXzgkNs00WRLD_1aJAcEFt4A
 SETUVAR ZO_CMD:zo
 SETUVAR Z_CMD:z
 SETUVAR Z_DATA:/home/martin/\x2elocal/share/z/data
@@ -48,8 +50,8 @@ SETUVAR fish_color_operator:\x1d
 SETUVAR fish_color_param:\x1d
 SETUVAR fish_color_quote:\x1d
 SETUVAR fish_color_redirection:\x1d
-SETUVAR fish_color_search_match:\x2d\x2dbackground\x3d\x232b4678
-SETUVAR fish_color_selection:\x2d\x2dbackground\x3d\x231e1f25
+SETUVAR fish_color_search_match:\x2d\x2dbackground\x3d\x236a3c01
+SETUVAR fish_color_selection:\x2d\x2dbackground\x3d\x23261e18
 SETUVAR fish_color_status:\x1d
 SETUVAR fish_color_user:\x1d
 SETUVAR fish_color_valid_path:\x2d\x2dunderline
@@ -63,7 +65,7 @@ SETUVAR fish_pager_color_secondary_background:\x1d
 SETUVAR fish_pager_color_secondary_completion:\x1d
 SETUVAR fish_pager_color_secondary_description:\x1d
 SETUVAR fish_pager_color_secondary_prefix:\x1d
-SETUVAR fish_pager_color_selected_background:\x2d\x2dbackground\x3d\x23282a2f
+SETUVAR fish_pager_color_selected_background:\x2d\x2dbackground\x3d\x23312822
 SETUVAR fish_pager_color_selected_completion:\x1d
 SETUVAR fish_pager_color_selected_description:\x1d
 SETUVAR fish_pager_color_selected_prefix:\x1d

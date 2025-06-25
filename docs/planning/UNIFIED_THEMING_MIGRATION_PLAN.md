@@ -10,7 +10,7 @@ This plan outlines the migration from the current multi-theme dynamic system to 
 **Key Goals:**
 - Unify theming under a single dynamic GTK theme
 - Preserve all per-category mappings (icons, cursors, wallpaper behaviors)
-- Address all identified bugs and security issues
+- Address identified bugs and performance issues
 - Enhance GTK4/libadwaita compatibility
 - Maintain backward compatibility and rollback capabilities
 
@@ -19,22 +19,6 @@ This plan outlines the migration from the current multi-theme dynamic system to 
 ## Phase 1: Security Fixes and Critical Bug Resolution
 
 ### 1.1 Immediate Security Issues
-
-#### Screen Lock Security Enhancement
-**Issue:** Current Super+L only turns off displays via DPMS, doesn't actually lock
-**Priority:** CRITICAL - Security vulnerability
-
-**Implementation:**
-```fish
-# Before: bind = $mainMod, L, exec, hyprctl dispatch dpms off
-# After: bind = $mainMod, L, exec, swaylock && hyprctl dispatch dpms off
-```
-
-**Action Items:**
-- [ ] Install swaylock if not present
-- [ ] Test lock screen integration with Hyprland
-- [ ] Update Hyprland keybinds configuration
-- [ ] Document the security enhancement
 
 #### GPU Monitoring Script Hardening
 **Issue:** Hard-coded GPU card index assumptions could fail on different systems
@@ -319,9 +303,8 @@ This plan outlines the migration from the current multi-theme dynamic system to 
 
 ## Implementation Timeline
 
-### Week 1-2: Foundation and Security
-- [ ] Complete all critical security fixes
-- [ ] Resolve Fish shell conflicts
+### Week 1-2: Foundation and Bug Fixes
+- [ ] Resolve Fish shell conflicts and GPU monitoring issues
 - [ ] Set up testing environment
 - [ ] Create comprehensive backups
 

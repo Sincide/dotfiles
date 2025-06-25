@@ -16,6 +16,7 @@
     ],
     
     "modules-center": [
+        "custom/claude",
         "cpu",
         "memory",
         "disk",
@@ -77,6 +78,16 @@
     // ╭─────────────────────────────────────────────────────────╮
     // │                 CENTER MONITORING                       │
     // ╰─────────────────────────────────────────────────────────╯
+
+    "custom/claude": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "~/dotfiles/waybar/scripts/claude-status.fish",
+        "tooltip": true,
+        "tooltip-format": "🤖 Claude Code Monitor\n⚡ Real-time token usage tracking\n💀 Dynamic burn rate analysis\n🌌 Evil Space AI Power\n\n🖱️ Left Click: Open full monitor\n🖱️ Right Click: Refresh status",
+        "on-click": "kitty -e python3 ~/dotfiles/scripts/ai/claude_monitor.py",
+        "on-click-right": "pkill -RTMIN+8 waybar"
+    },
 
     "cpu": {
         "format": "💀 CPU: {usage}%",

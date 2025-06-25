@@ -33,6 +33,7 @@ window#waybar.hidden {
 #custom-amdgpu-usage,
 #custom-amdgpu-vram,
 #custom-amdgpu-power,
+#custom-claude,
 #cpu,
 #memory,
 #disk,
@@ -58,6 +59,7 @@ window#waybar.hidden {
 #custom-amdgpu-usage:hover,
 #custom-amdgpu-vram:hover,
 #custom-amdgpu-power:hover,
+#custom-claude:hover,
 #cpu:hover,
 #memory:hover,
 #disk:hover,
@@ -102,6 +104,23 @@ window#waybar.hidden {
     color: @onSurfaceVariant;
     border: 1px solid @outline;
     font-weight: 500;
+}
+
+/* Claude AI monitoring - Evil Space AI theme */
+#custom-claude {
+    background: @primaryContainer;
+    color: @onPrimaryContainer;
+    border: 1px solid @primary;
+    font-weight: 600;
+    font-size: 12px;
+    box-shadow: 0 2px 8px @shadow;
+}
+
+#custom-claude:hover {
+    background: @inversePrimary;
+    color: @surface;
+    border: 1px solid @primary;
+    box-shadow: 0 4px 16px @shadow;
 }
 
 /* CPU monitoring - primary theme */

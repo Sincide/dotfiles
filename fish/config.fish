@@ -62,6 +62,11 @@ alias ai-sys='$HOME/dotfiles/scripts/ai/ai-health.fish system'    # System resou
 alias ai-ollama='$HOME/dotfiles/scripts/ai/ai-health.fish ollama' # Ollama service status
 alias ai-tips='$HOME/dotfiles/scripts/ai/ai-health.fish recommendations' # Optimization tips
 
+# Claude Usage Monitoring
+alias claude-usage='$HOME/dotfiles/scripts/ai/claude-usage.fish'         # Claude usage status
+alias claude-live='$HOME/dotfiles/scripts/ai/claude-usage.fish live'     # Live usage monitor
+alias claude-install='$HOME/dotfiles/scripts/ai/claude-usage.fish install' # Install monitoring tools
+
 # Quick Dotfiles Functions (Super convenient!)
 function dotc
     # Quick commit with custom message: dotc "fix: update config"
@@ -362,6 +367,11 @@ function ai-help
     echo "  ai-sys      - System resources"
     echo "  ai-ollama   - Ollama service status"
     echo "  ai-tips     - Optimization recommendations"
+    echo ""
+    echo "🤖 Claude Usage Monitoring:"
+    echo "  claude-usage      - Show Claude Pro/Max usage status"
+    echo "  claude-live       - Live usage monitoring"
+    echo "  claude-install    - Install external monitoring tools"
     echo ""
     echo "🦙 Model Shortcuts:"
     echo "  llama       - Chat with Llama model"

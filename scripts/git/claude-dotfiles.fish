@@ -120,6 +120,11 @@ Respond with ONLY the commit message, no explanation or additional text."
     # Run Claude Code with the prompt
     set ai_output (echo $prompt | claude -p 2>/dev/null | string trim)
     
+    # Track Claude usage (increment counter)
+    if test -n "$ai_output" -a "$ai_output" != ""
+        ../ai/claude-usage.fish increment >/dev/null 2>&1 || true
+    end
+    
     debug "Raw Claude output: '$ai_output'" >&2
     
     # Clean up the output - remove any quotes, backticks, or extra formatting

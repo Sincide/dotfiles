@@ -5,6 +5,9 @@ SETUVAR --export ABBR_TIPS_REGEXES:\x28\x5e\x28\x5cw\x2b\x5cs\x2b\x29\x2b\x28\x2
 SETUVAR --export NNN_FIFO:/tmp/nnn\x2efifo
 SETUVAR --export NNN_OPTS:H
 SETUVAR --export NNN_PLUG:F1\x3ahelp
+SETUVAR --export OCO_AI_PROVIDER:ollama
+SETUVAR --export OCO_API_URL:http\x3a//localhost\x3a11434/api/generate
+SETUVAR --export OCO_MODEL:codegemma\x3a7b
 SETUVAR ZO_CMD:zo
 SETUVAR Z_CMD:z
 SETUVAR Z_DATA:/home/martin/\x2elocal/share/z/data
@@ -64,4 +67,4 @@ SETUVAR fish_pager_color_selected_background:\x2d\x2dbackground\x3d\x23282a2f
 SETUVAR fish_pager_color_selected_completion:\x1d
 SETUVAR fish_pager_color_selected_description:\x1d
 SETUVAR fish_pager_color_selected_prefix:\x1d
-SETUVAR --export fish_user_paths:/home/martin/\x2enpm\x2dglobal/bin\x1e/home/martin/\x2elocal/bin
+SETUVAR --export fish_user_paths:Unknown\x20command\x1e\x20\x22bin\x22\x1e\x1eTo\x20see\x20a\x20list\x20of\x20supported\x20npm\x20commands\x2c\x20run\x1e\x20\x20npm\x20help\x1e/home/martin/\x2enpm\x2dglobal/bin\x1e/home/martin/\x2elocal/bin

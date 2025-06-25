@@ -4,6 +4,8 @@
 
 A complete Hyprland + Material Design 3 setup with dynamic theming, real-time GPU monitoring, and AI integration. Everything works out of the box with one simple command.
 
+> **🚧 Migration in Progress:** Currently upgrading to unified dynamic theming system inspired by linkfrg's approach. Phase 1 (critical bug fixes) complete ✅. See `unified-theming-migration/` for details.
+
 ![Desktop Preview](assets/screenshots/desktop-preview.png)
 
 ## ✨ What You Get

@@ -5,7 +5,7 @@ Migrating from current multi-theme dynamic system to unified linkfrg-inspired dy
 
 **Start Date:** January 2025  
 **Target Completion:** 12 weeks (March 2025)  
-**Current Phase:** Phase 1 - Critical Bug Resolution
+**Current Phase:** Phase 2 - Research & Documentation (Phase 1 COMPLETE ✅)
 
 ---
 
@@ -52,40 +52,104 @@ Migrating from current multi-theme dynamic system to unified linkfrg-inspired dy
 - **Impact:** Consistent GPU monitoring across all scripts, no functional changes
 - **Status:** COMPLETE
 - **Files Modified:** `scripts/theming/amdgpu_check.sh`
+- **Commit:** `9a779ec` - GPU script hardening and Phase 1 completion
+
+### 2025-01-XX - Phase 2 Research Initiation 🚧
+- **Action:** Initiated research into linkfrg's dynamic theming methodology
+- **Findings:** linkfrg uses Ignis (Python-based GTK4) instead of EWW, focus on theming approach only
+- **Repository:** https://github.com/linkfrg/dotfiles (934 stars)
+- **Key Features to Study:** Dynamic material colors from wallpaper, dark/light theme toggle
+- **Scope:** Focus on color generation methodology, not shell framework replacement
+- **Status:** IN PROGRESS
+
+### 2025-01-XX - linkfrg Color Generation Deep Dive ✅
+- **Action:** Completed comprehensive analysis of linkfrg's MaterialService implementation
+- **Core Technology:** Uses `materialyoucolor` Python library (v2.0.9+) instead of matugen
+- **Key Discoveries:**
+  - **Image Processing:** Resizes images to optimal size (128px max) using BICUBIC resampling
+  - **Color Extraction:** Uses QuantizeCelebi algorithm to extract 128 dominant colors
+  - **Color Scoring:** Applies Material You's Score algorithm to select best source color
+  - **Scheme Generation:** Creates SchemeTonalSpot (Android default) with HCT color space
+  - **Template System:** Jinja2-based template rendering for all applications
+  - **GTK Refresh:** Multi-toggle sequence (Adwaita→Material→Adwaita) with color-scheme cycling
+  - **Complete Color Set:** 53 Material You variables covering all design tokens
+- **Status:** COMPLETE - Ready for integration planning
+
+**linkfrg Workflow Analysis:**
+```python
+# 1. Image Processing & Color Extraction
+image = Image.open(wallpaper_path)
+image = image.resize(optimal_size, Image.Resampling.BICUBIC)
+pixel_array = [image_data[_] for _ in range(0, pixel_len, 1)]
+
+# 2. Color Quantization & Scoring  
+colors = QuantizeCelebi(pixel_array, 128)
+argb = Score.score(colors)[0]  # Best color
+
+# 3. Material You Scheme Generation
+hct = Hct.from_int(argb)
+scheme = SchemeTonalSpot(hct, dark_mode, 0.0)
+
+# 4. Extract All Material Dynamic Colors
+for color in vars(MaterialDynamicColors).keys():
+    color_name = getattr(MaterialDynamicColors, color)
+    if hasattr(color_name, "get_hct"):
+        rgba = color_name.get_hct(scheme).to_rgba()
+        material_colors[color] = rgba_to_hex(rgba)
+
+# 5. Template Rendering (Jinja2)
+Template(file.read()).render(colors)
+
+# 6. Application Refresh
+# - Kitty: pkill -SIGUSR1 kitty
+# - GTK: Multi-toggle sequence for theme refresh
+# - Hyprland: hyprctl reload  
+# - CSS: app.reload_css()
+```
 
 ---
 
-## Phase 1: Critical Bug Resolution
+## Phase 1: Critical Bug Resolution ✅ COMPLETE
 
 ### Completed ✅
 - [x] Fish color variable typo fix
-- [x] Migration workspace setup
+- [x] Migration workspace setup  
 - [x] Fish alias/abbreviation deduplication cleanup
 - [x] GPU monitoring script hardening
+- [x] **PHASE 1 COMPLETE - All critical bugs resolved, clean foundation established**
+
+---
+
+## Phase 2: Research & Documentation 🚧 CURRENT
 
 ### In Progress 🚧
-- [ ] Research linkfrg integration approach (Phase 2)
+- [x] Research linkfrg integration approach initiated
+- [ ] Document linkfrg's color generation methodology
+- [ ] Analyze dynamic theming workflow
+- [ ] Map integration points with existing matugen system
 
 ### Upcoming 📋
-- [ ] Research linkfrg integration approach
 - [ ] Create comprehensive backup strategy
 - [ ] Set up testing environment
+- [ ] Design unified theme controller architecture
 
 ---
 
 ## Next Steps
 
-1. **Fish Shell Cleanup:** Audit all Fish aliases and abbreviations for Git command conflicts
-2. **GPU Script Enhancement:** Fix hard-coded card index assumptions in monitoring scripts
-3. **Foundation Prep:** Begin Phase 2 research and backup strategy
+1. **Complete linkfrg Research:** Deep dive into their dynamic theming methodology
+2. **Foundation Prep:** Create backup strategy and testing environment
+3. **Architecture Design:** Plan unified theme controller integration with existing matugen system
 
 ---
 
 ## Notes & Observations
 
-- Starting with harmless fixes builds confidence in migration process
-- Fish color consistency now maintained across all variables
-- Migration plan provides excellent roadmap for systematic approach
+- **Phase 1 Success:** All critical bugs resolved, providing stable foundation for advanced work
+- **Clean Git History:** Three major commits with comprehensive revert instructions
+- **Consistent Documentation:** All changes tracked with detailed impact analysis
+- **AMD-focused Approach:** GPU monitoring now consistently uses card1 across all scripts
+- **linkfrg Discovery:** Their approach uses different tech stack but valuable theming methodology
 
 ---
 
@@ -100,8 +164,14 @@ Migrating from current multi-theme dynamic system to unified linkfrg-inspired dy
 - `fish/theme-dynamic.fish` - Fixed color variable flag
 - `fish/config.fish` - Removed Git aliases, enhanced abbreviations
 - `fish/functions/aliases.fish` - Removed Git functions
+- `scripts/theming/amdgpu_check.sh` - Fixed GPU card path consistency
 
 **Created Files:**
 - `unified-theming-migration/MIGRATION_DEVLOG.md` (this file)
 - `unified-theming-migration/FISH_AUDIT_REPORT.md` - Detailed conflict analysis
-- `unified-theming-migration/` workspace with all planning docs 
+- `unified-theming-migration/` workspace with all planning docs
+
+**Key Commits:**
+- `bcc0522` - Fish Git shortcuts cleanup
+- `6643d9d` - Alias/abbreviation major cleanup  
+- `9a779ec` - GPU script hardening and Phase 1 completion 

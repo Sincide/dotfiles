@@ -72,10 +72,10 @@ function detect_ollama_model
         return 1
     end
     
-    # Priority models for coding tasks
-    set priority_models qwen2.5-coder:14b qwen2.5-coder:7b codegemma:7b mistral:7b-instruct mistral:7b
+    # Priority models for commit messages - smaller, faster models work better
+    set priority_models llama3.2:3b llama3.2:1b mistral:7b phi3:mini qwen2.5:7b qwen2.5-coder:7b gemma2:2b mistral:7b-instruct
     
-    set available_models (ollama list | tail -n +2 | awk '{print $1}')
+    set available_models (ollama list | tail -n +2 | awk '{print $1}' | grep -v '^$')
     
     for model in $priority_models
         if contains $model $available_models
@@ -84,7 +84,14 @@ function detect_ollama_model
         end
     end
     
-    # Fallback to first available
+    # Fallback to smallest available model (better for simple tasks)
+    set smallest_model (printf '%s\n' $available_models | grep -E '(1b|2b|3b|mini)' | head -1)
+    if test -n "$smallest_model"
+        echo $smallest_model
+        return 0
+    end
+    
+    # Last resort - first available
     if test (count $available_models) -gt 0
         echo $available_models[1]
         return 0
@@ -96,8 +103,6 @@ end
 # Generate AI-powered commit message
 function generate_ai_commit
     set files_changed (git diff --cached --name-only)
-    set diff_summary (git diff --cached --stat)
-    set diff_content (git diff --cached --unified=1)
     
     if test -z "$files_changed"
         generate_fallback_commit
@@ -113,99 +118,49 @@ function generate_ai_commit
     
     info "🤖 Generating commit with $model..." >&2
     
-    # Analyze what actually changed
-    set file_types ""
-    set directories ""
-    set has_config false
-    set has_scripts false
-    set has_docs false
+    # Get simple file list and basic stats
+    set file_count (count $files_changed)
+    set main_dirs (printf '%s\n' (for f in $files_changed; dirname $f | cut -d/ -f1; end) | sort | uniq -c | sort -nr | head -3 | awk '{print $2}' | grep -v '^\.$')
     
-    for file in $files_changed
-        set dir (dirname $file | cut -d/ -f1)
-        set ext (string split -r -m1 . $file)[2]
-        
-        set directories $directories $dir
-        
-        # Categorize by file type and location
-        if string match -q "*.fish" $file; or string match -q "*.sh" $file; or string match -q "scripts/*" $file
-            set has_scripts true
-            set file_types $file_types "script"
-        else if string match -q "*.conf" $file; or string match -q "*.ini" $file; or string match -q "*.json" $file; or string match -q "*.toml" $file; or string match -q "*.yaml" $file; or string match -q "*.yml" $file
-            set has_config true
-            set file_types $file_types "config"
-        else if string match -q "*.md" $file; or string match -q "docs/*" $file; or string match -q "README*" $file
-            set has_docs true
-            set file_types $file_types "doc"
-        else if string match -q "*.css" $file; or string match -q "*.scss" $file
-            set file_types $file_types "style"
-        else if string match -q "*.lua" $file; or string match -q "*.vim" $file; or string match -q "init.lua" $file
-            set file_types $file_types "neovim"
-        else if string match -q "hypr/*" $file; or string match -q "waybar/*" $file; or string match -q "dunst/*" $file
-            set has_config true
-            set file_types $file_types "wm-config"
-        else if string match -q "gtk*/*" $file; or string match -q "themes/*" $file
-            set file_types $file_types "theme"
-        else
-            set file_types $file_types "other"
-        end
+    # Create ultra-simple prompt to avoid hallucination
+    set prompt "Git commit for: $files_changed
+
+Format: type(scope): description
+One line only:"
+
+    # Run AI with simpler processing
+    set ai_output (timeout 15s ollama run $model $prompt 2>/dev/null | head -1 | string trim)
+    
+    debug "Raw AI output: '$ai_output'" >&2
+    
+    # Clean the output more carefully
+    # Take the first line and clean it up
+    set ai_output (echo $ai_output | head -1 | string trim)
+    
+    # Remove common prefixes but preserve commit format
+    set ai_output (echo $ai_output | sed -E 's/^[[:space:]"'\''`]*//; s/[[:space:]"'\''`]*$//')
+    
+    # Remove quotes and backticks but keep parentheses and colons
+    set ai_output (echo $ai_output | sed 's/["'\''`]//g' | string trim)
+    
+    # If it ends with a period and has trailing text, cut at the period
+    if string match -q "*. *" $ai_output
+        set ai_output (echo $ai_output | sed 's/\..*$//')
+    else if string match -q "*." $ai_output
+        # Remove trailing period if it's just at the end
+        set ai_output (echo $ai_output | sed 's/\.$$//')
     end
     
-    set unique_dirs (printf '%s\n' $directories | sort -u | grep -v '^\.$' | head -3)
-    set unique_types (printf '%s\n' $file_types | sort -u | head -3)
+    debug "Cleaned AI output: '$ai_output'" >&2
     
-    # Create a more specific prompt based on what changed
-    set context ""
-    if test $has_scripts = true
-        set context "$context - Scripts/automation files were modified"
-    end
-    if test $has_config = true
-        set context "$context - Configuration files were modified"
-    end
-    if test $has_docs = true
-        set context "$context - Documentation was updated"
+    # Simple validation - very lenient
+    if test -n "$ai_output" -a (string length "$ai_output") -gt 10 -a (string length "$ai_output") -lt 80
+        # Accept anything that looks like a reasonable commit message
+        echo $ai_output
+        return
     end
     
-    set prompt "You are a git commit message generator for a dotfiles repository. Generate ONLY a single line commit message.
-
-Context: This is a Linux dotfiles repo with Hyprland, Fish shell, Neovim, and various configs.$context
-
-Files changed: $files_changed
-Directories affected: $unique_dirs
-File types: $unique_types
-
-Rules:
-- Use conventional commit format: type(scope): description
-- Types: feat, fix, chore, docs, style, refactor, perf, test
-- Scope: specific component (fish, hypr, nvim, waybar, etc.)
-- Keep under 60 characters
-- Use present tense
-- Be specific about what changed
-- Focus on the most important change
-
-Examples:
-- fix(waybar): correct volume widget spacing
-- feat(fish): add new alias for git operations
-- chore(hypr): update window rules for new apps
-- docs: update installation instructions
-- style(gtk): improve dark theme colors
-
-Commit message:"
-
-    # Run AI with timeout and better error handling
-    set ai_output (timeout 20s ollama run $model $prompt 2>/dev/null | head -1 | string trim | sed 's/[^a-zA-Z0-9:().,!? -]//g')
-    
-    debug "AI generated: '$ai_output'" >&2
-    
-    # Validate AI output more strictly
-    if test -n "$ai_output" -a (string length "$ai_output") -gt 10 -a (string length "$ai_output") -lt 72
-        # Check if it follows conventional commit format
-        if string match -q "*(*):*" $ai_output; or string match -q "docs:*" $ai_output; or string match -q "chore:*" $ai_output; or string match -q "feat:*" $ai_output; or string match -q "fix:*" $ai_output; or string match -q "style:*" $ai_output; or string match -q "refactor:*" $ai_output; or string match -q "perf:*" $ai_output; or string match -q "test:*" $ai_output
-            echo $ai_output
-            return
-        end
-    end
-    
-    debug "AI failed or output invalid, using fallback" >&2
+    debug "AI output failed validation, using fallback" >&2
     generate_fallback_commit
 end
 

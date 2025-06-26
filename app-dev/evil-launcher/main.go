@@ -228,20 +228,6 @@ func restartApplicationsWithDebug() {
 		logToFile("    ⚠️  No waybar processes found after start\n")
 	}
 	
-	// Monitor waybar for a few seconds after restart
-	logToFile("  • Monitoring waybar stability for 5 seconds...\n")
-	for i := 1; i <= 5; i++ {
-		time.Sleep(1 * time.Second)
-		cmd = exec.Command("pgrep", "-x", "waybar")
-		output, err = cmd.CombinedOutput()
-		if err == nil {
-			logToFile(fmt.Sprintf("    After %ds: waybar PIDs: %s", i, string(output)))
-		} else {
-			logToFile(fmt.Sprintf("    After %ds: ⚠️  No waybar processes found!\n", i))
-			break
-		}
-	}
-	
 	logToFile("🔄 Debug restart completed\n\n")
 }
 
@@ -457,7 +443,7 @@ func setTerminalMode(raw bool) {
 
 // runTUI is the main loop that draws the interface and handles input.
 func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string) *Item {
-	if len(items) == 0 && len(altItems) == 0 {
+	if len(items) == 0 {
 		fmt.Println("No items found.")
 		return nil
 	}
@@ -468,31 +454,17 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 
 	var query string
 	selectedIndex := 0
-	useAlt := false
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
 		var filteredItems []Item
-		if useAlt {
-			if query == "" {
-				filteredItems = altItems
-			} else {
-				lcQuery := strings.ToLower(query)
-				for _, item := range altItems {
-					if strings.Contains(strings.ToLower(item.Name), lcQuery) {
-						filteredItems = append(filteredItems, item)
-					}
-				}
-			}
+		if query == "" {
+			filteredItems = items
 		} else {
-			if query == "" {
-				filteredItems = items
-			} else {
-				lcQuery := strings.ToLower(query)
-				for _, item := range items {
-					if strings.Contains(strings.ToLower(item.Name), lcQuery) {
-						filteredItems = append(filteredItems, item)
-					}
+			lcQuery := strings.ToLower(query)
+			for _, item := range items {
+				if strings.Contains(strings.ToLower(item.Name), lcQuery) {
+					filteredItems = append(filteredItems, item)
 				}
 			}
 		}
@@ -506,7 +478,7 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 			selectedIndex = 0
 		}
 
-		// Drawing logic (unchanged)
+		// Drawing logic
 		sttyCmd := exec.Command("stty", "size")
 		sttyCmd.Stdin = os.Stdin
 		out, _ := sttyCmd.Output()
@@ -527,11 +499,7 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 			listWidth = termWidth / 2
 		}
 
-		if useAlt {
-			screenBuf.WriteString(fmt.Sprintf("%s> %s\n", altPrompt, query))
-		} else {
-			screenBuf.WriteString(fmt.Sprintf("%s> %s\n", prompt, query))
-		}
+		screenBuf.WriteString(fmt.Sprintf("%s> %s\n", prompt, query))
 		screenBuf.WriteString(strings.Repeat("-", listWidth-1) + "\n")
 
 		var listLines []string
@@ -627,9 +595,7 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 		case 3:
 			return nil
 		case '\t':
-			useAlt = !useAlt
-			selectedIndex = 0
-			query = ""
+			// Tab key no longer switches modes - just ignore
 		default:
 			if char >= ' ' && char <= '~' {
 				query += string(char)
@@ -652,10 +618,17 @@ func main() {
 	var altPrompt string
 
 	if mode == "launch" {
-		items = getDesktopApps()
+		// Combine desktop apps and PATH executables into unified list
+		desktopApps := getDesktopApps()
+		pathApps := getPathExecutables()
+		
+		// Merge lists with desktop apps first (they're usually more relevant)
+		items = append(items, desktopApps...)
+		items = append(items, pathApps...)
+		
 		prompt = "Launch"
-		altItems = getPathExecutables()
-		altPrompt = "Run"
+		altItems = nil  // No longer using alt items
+		altPrompt = ""
 	} else if mode == "wall" {
 		checkChafa()
 		items = getWallpapers()

@@ -428,9 +428,10 @@ bind = $mainMod, W, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/ap
 - **Window Classification**: `--class=evil-launcher` for proper Hyprland window rules
 
 ### Next Development Phase - UX Improvements
-- [ ] **Unified Interface**: Remove Tab switching - combine launch and run modes
-- [ ] **Compact Window**: Reduce default window size for better desktop integration
+- [x] **Unified Interface**: Remove Tab switching - combine launch and run modes
+- [x] **Compact Window**: Reduce default window size for better desktop integration (800x500)
 - [ ] **Smart Sorting**: Recently launched applications appear at top
 - [ ] **Usage Analytics**: Track launch frequency and last-used timestamps
+- [ ] **Application Icons**: Display desktop app icons when available for better visual identification
 
 **PHASE 1 COMPLETE! EXTENSIVELY TESTED AND PRODUCTION READY! 🚀** 

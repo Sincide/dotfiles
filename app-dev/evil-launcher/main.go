@@ -4,10 +4,10 @@
 // Inspired by fastlauncher and designed to have minimal external dependencies.
 //
 // Usage:
-//   1. Build the program: go build -o launcher .
-//   2. Run it:
-//      ./launcher launch     # To launch an application
-//      ./launcher wall       # To select and set a wallpaper
+//  1. Build the program: go build -o launcher .
+//  2. Run it:
+//     ./launcher launch     # To launch an application
+//     ./launcher wall       # To select and set a wallpaper
 //
 // Dependencies:
 //   - Go 1.16+ compiler
@@ -45,8 +45,8 @@ const (
 
 // --- Configuration ---
 var (
-	appDirs       = []string{"/usr/share/applications", "/.local/share/applications"}
-	wallpaperDir  = "/dotfiles/assets/wallpapers"
+	appDirs        = []string{"/usr/share/applications", "/.local/share/applications"}
+	wallpaperDir   = "/dotfiles/assets/wallpapers"
 	chafaAvailable = false
 )
 
@@ -241,7 +241,9 @@ func runTUI(items []Item, prompt, mode string) *Item {
 		var listLines []string
 		start := 0
 		maxItems := termHeight - 3
-		if maxItems < 0 { maxItems = 0 }
+		if maxItems < 0 {
+			maxItems = 0
+		}
 		if selectedIndex >= maxItems {
 			start = selectedIndex - maxItems + 1
 		}
@@ -297,7 +299,7 @@ func runTUI(items []Item, prompt, mode string) *Item {
 				screenBuf.WriteString(fmt.Sprintf("\033[%d;1H", screenRow)) // Move to start of line
 				screenBuf.WriteString(listLines[i])
 				// Clear rest of the line to prevent artifacts from longer text
-                screenBuf.WriteString("\033[K")
+				screenBuf.WriteString("\033[K")
 			}
 
 			// Boundary check for previewLines
@@ -414,4 +416,3 @@ func main() {
 		}
 	}
 }
-

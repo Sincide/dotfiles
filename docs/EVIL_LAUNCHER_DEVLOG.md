@@ -1,38 +1,32 @@
 # 👹 Evil Launcher Development Log
 
 ## Project Overview
-Custom TUI application launcher written in Go, designed specifically for my dynamic theming setup. Features application launching, wallpaper selection with ASCII previews, and integrated theme management.
+Minimalist, self-contained TUI application launcher and wallpaper selector for Hyprland, written in Go. Features application launching with Tab-switchable PATH executables and wallpaper selection with chafa previews.
 
-## ✅ Completed Features
+## ✅ Current Implementation
 
 ### Core Infrastructure
-- [x] Go project structure with proper modules
-- [x] Bubble Tea TUI framework integration  
-- [x] Lipgloss styling system
-- [x] Fish shell build script
-- [x] Comprehensive documentation
+- [x] **Pure Go implementation** - No external TUI frameworks (Bubble Tea removed)
+- [x] **Minimalist design** - Direct terminal manipulation with ANSI escape codes
+- [x] **Self-contained binary** - Single executable with minimal dependencies
+- [x] **Fast startup** - Raw terminal performance without framework overhead
 
-### Application Launcher
-- [x] System application discovery from .desktop files
-- [x] Fuzzy search functionality
-- [x] Custom JSON configuration support
-- [x] Terminal vs GUI application handling
-- [x] Nerd Font icon support
-- [x] Real-time filtering
+### Application Launcher (`./launcher launch`)
+- [x] **Desktop file discovery** - Scans `/usr/share/applications` and `~/.local/share/applications`
+- [x] **Real-time filtering** - Type to filter applications instantly
+- [x] **Tab switching** - Switch between desktop apps and PATH executables with Tab key
+- [x] **Process isolation** - Apps launched with proper process group separation
+- [x] **Clean execution** - Proper terminal cleanup on exit
 
-### Wallpaper Selector
-- [x] Automatic wallpaper discovery from assets/wallpapers/
-- [x] Category-based organization
-- [x] ASCII art preview generation
-- [x] Split-view interface (list + preview)
-- [x] swww integration for wallpaper setting
-- [x] Matugen theme generation trigger
-
-### Theme Selector
-- [x] Dynamic theme support (wallpaper-based categories)
-- [x] Static GTK theme integration
-- [x] Special actions (random, reload, reset)
-- [x] Integration with existing theming scripts
+### Wallpaper Selector (`./launcher wall`)
+- [x] **Chafa integration** - Live image previews using chafa when available and terminal width > 60
+- [x] **Category detection** - Automatic theme category detection (space, nature, gaming, etc.)
+- [x] **Random wallpaper** - Built-in random selection option
+- [x] **Split-view interface** - List + preview when terminal is wide enough
+- [x] **swww integration** - Direct wallpaper setting with swww
+- [x] **Dynamic theming** - Calls dynamic_theme_switcher.sh with category detection
+- [x] **Matugen integration** - Automatic Material You color generation
+- [x] **Application restart** - Intelligent waybar/dunst restart with process detachment
 
 ## 🎯 Technical Achievements
 
@@ -54,85 +48,77 @@ Custom TUI application launcher written in Go, designed specifically for my dyna
 ## 🔧 Technical Stack
 
 ```
-├── Go 1.21+
-├── github.com/charmbracelet/bubbletea    # TUI framework
-├── github.com/charmbracelet/lipgloss     # Styling
-├── github.com/charmbracelet/bubbles      # UI components  
-├── github.com/sahilm/fuzzy              # Fuzzy search
-└── github.com/nfnt/resize               # Image processing
+├── Go 1.16+ (pure standard library)
+├── ANSI escape codes for terminal control
+├── Raw terminal input/output handling
+├── External dependencies:
+│   ├── swww (wallpaper setting)
+│   ├── chafa (image previews)
+│   ├── stty (terminal mode control)
+│   ├── matugen (color generation)
+│   └── dynamic_theme_switcher.sh (theme management)
 ```
 
 ## 📋 Usage Examples
 
-```fish
-# Application launcher
-./evil-launcher
+```bash
+# Application launcher with Tab-switchable PATH executables
+./launcher launch
 
-# Wallpaper selector with preview
-./evil-launcher --mode wallpaper
+# Wallpaper selector with chafa previews
+./launcher wall
 
-# Theme manager
-./evil-launcher --mode theme
+# Build the launcher
+go build -o launcher .
+```
 
-# Custom app configuration
-./evil-launcher --config config.json
+### Keybind Integration
+```conf
+# Hyprland keybinds
+bind = $mainMod, D, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/app-dev/evil-launcher && EVIL_LAUNCHER_KEYBIND_MODE=true ./launcher launch"
+bind = $mainMod, W, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/app-dev/evil-launcher && EVIL_LAUNCHER_KEYBIND_MODE=true ./launcher wall"
 ```
 
 ## 🎨 Integration with Existing Setup
 
 ### Hyprland Configuration
 ```conf
-# Keybinds
-bind = $mainMod, D, exec, kitty --title="evil-launcher" -e ./evil-launcher
-bind = $mainMod SHIFT, W, exec, kitty --title="evil-wallpaper" -e ./evil-launcher --mode wallpaper
-bind = $mainMod SHIFT, T, exec, kitty --title="evil-theme" -e ./evil-launcher --mode theme
+# Window rules for floating launcher
+windowrule = float, initialClass:^(evil-launcher)$
+windowrulev2 = center, initialClass:^(evil-launcher)$
+windowrulev2 = size 50% 40%, initialClass:^(evil-launcher)$
 
-# Window rules
-windowrulev2 = float,title:(evil-launcher)
-windowrulev2 = size 1000 600,title:(evil-launcher)
-windowrulev2 = center(1),title:(evil-launcher)
+# Working keybinds
+bind = $mainMod, D, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/app-dev/evil-launcher && EVIL_LAUNCHER_KEYBIND_MODE=true ./launcher launch"
+bind = $mainMod, W, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/app-dev/evil-launcher && EVIL_LAUNCHER_KEYBIND_MODE=true ./launcher wall"
 ```
 
-### Theme Integration
-- Wallpaper selection → swww → matugen → theme update
-- Theme selection → Static themes or dynamic generation
-- Color inheritance from current theming system
-
-## 🚀 Future Enhancements
-
-### Phase 1 - Polish
-- [ ] Color theme adaptation (read from matugen output)
-- [ ] Better ASCII preview algorithm
-- [ ] Cached preview generation
-- [ ] Error handling improvements
-
-### Phase 2 - Extended Features  
-- [ ] Plugin system for custom modes
-- [ ] Bookmark/favorites system
-- [ ] Recent items tracking
-- [ ] Search history
-
-### Phase 3 - Advanced Integration
-- [ ] Waybar module integration
-- [ ] Notification system integration
-- [ ] Custom launcher configs per category
-- [ ] Live wallpaper support
+### Theme Integration Pipeline
+1. **Wallpaper Selection** → swww sets wallpaper
+2. **Category Detection** → Automatic detection (space, nature, gaming, etc.)
+3. **Dynamic Theme Switching** → Calls `dynamic_theme_switcher.sh apply <wallpaper>`
+4. **Color Generation** → Matugen generates Material You colors
+5. **Application Restart** → Detached waybar/dunst restart with debug logging
 
 ## 🎯 Project Goals Achieved
 
-✅ **Fast Alternative to Rofi/Wofi**: Significantly faster startup and operation
-✅ **Wallpaper Preview**: Unique ASCII art preview functionality
-✅ **Matugen Integration**: Perfect integration with dynamic theming
-✅ **Multi-modal**: Single binary handles apps, wallpapers, and themes
-✅ **Fish Compatible**: Native Fish shell integration
-✅ **Extensible**: JSON configuration and modular design
+✅ **Fast Alternative to Rofi/Wofi**: Raw terminal performance beats framework-based launchers  
+✅ **Wallpaper Preview**: Live chafa image previews in terminal  
+✅ **Matugen Integration**: Complete wallpaper → color → theme pipeline  
+✅ **Dual-Mode Operation**: Application launcher + wallpaper selector  
+✅ **Hyprland Integration**: Floating windows, keybinds, process isolation  
+✅ **Tab Switching**: Desktop apps ↔ PATH executables in launch mode  
+✅ **Process Management**: Proper detachment prevents waybar crashes  
+✅ **Debug Logging**: Comprehensive troubleshooting system
 
 ## 💡 Key Learnings
 
-1. **Bubble Tea Framework**: Excellent for TUI applications with clean separation of concerns
-2. **ASCII Preview**: Simple but effective image-to-text conversion for terminal previews
-3. **Integration Strategy**: Building tools that work with existing setup rather than replacing it
-4. **Go Performance**: Excellent for system tools requiring fast startup and low resource usage
+1. **Raw Terminal > Frameworks**: Direct ANSI escape codes offer better performance than TUI frameworks
+2. **Process Isolation Critical**: `nohup`, `disown`, and `Setpgid` essential for preventing crashes
+3. **Environment Differences**: Keybind vs terminal execution requires different handling
+4. **Chafa Integration**: Live image previews make wallpaper selection much more intuitive
+5. **Debug Logging Essential**: Troubleshooting complex integrations requires detailed logging
+6. **Go Standard Library**: Powerful enough for sophisticated TUI applications without external deps
 
 ## 🎉 Phase 1 Complete - Hyprland Integration Success
 

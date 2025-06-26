@@ -8,19 +8,16 @@
     "spacing": 4,
     
     "modules-left": [
+        "custom/claude",
+        "custom/updates"
+    ],
+    
+    "modules-center": [
         "custom/amdgpu-temp",
         "custom/amdgpu-fan", 
         "custom/amdgpu-usage",
         "custom/amdgpu-vram",
         "custom/amdgpu-power"
-    ],
-    
-    "modules-center": [
-        "custom/claude",
-        "cpu",
-        "memory",
-        "disk",
-        "custom/updates",
     ],
     
     "modules-right": [
@@ -32,7 +29,31 @@
     ],
 
     // ╭─────────────────────────────────────────────────────────╮
-    // │                 AMDGPU MONITORING                       │
+    // │                 LEFT MODULES (AI & UPDATES)             │
+    // ╰─────────────────────────────────────────────────────────╯
+
+    "custom/claude": {
+        "format": "{}",
+        "interval": 5,
+        "exec": "~/dotfiles/waybar/scripts/claude-status.fish",
+        "tooltip": true,
+        "tooltip-format": "🤖 Claude Code Monitor\n⚡ Real-time token usage tracking\n💀 Dynamic burn rate analysis\n🌌 Evil Space AI Power\n\n🖱️ Left Click: Open full monitor\n🖱️ Right Click: Refresh status",
+        "on-click": "kitty -e python3 ~/dotfiles/scripts/ai/claude_monitor.py",
+        "on-click-right": "pkill -RTMIN+8 waybar"
+    },
+
+    "custom/updates": {
+        "format": "📦 {}",
+        "interval": 3600,
+        "exec": "checkupdates 2>/dev/null | wc -l || echo '0'",
+        "exec-if": "exit 0",
+        "tooltip": true,
+        "tooltip-format": "📦 System Updates\n⚡ {} packages available\n💀 Keep the void updated",
+        "on-click": "kitty -e sudo pacman -Syu"
+    },
+
+    // ╭─────────────────────────────────────────────────────────╮
+    // │              CENTER AMDGPU MONITORING                   │
     // ╰─────────────────────────────────────────────────────────╯
 
     "custom/amdgpu-temp": {
@@ -73,58 +94,6 @@
         "exec": "~/dotfiles/scripts/theming/gpu_power_monitor.sh",
         "tooltip": true,
         "tooltip-format": "⚡ AMDGPU Power Draw\n🔥 Dynamic consumption\n💀 Energy Monitor"
-    },
-
-    // ╭─────────────────────────────────────────────────────────╮
-    // │                 CENTER MONITORING                       │
-    // ╰─────────────────────────────────────────────────────────╯
-
-    "custom/claude": {
-        "format": "{}",
-        "interval": 5,
-        "exec": "~/dotfiles/waybar/scripts/claude-status.fish",
-        "tooltip": true,
-        "tooltip-format": "🤖 Claude Code Monitor\n⚡ Real-time token usage tracking\n💀 Dynamic burn rate analysis\n🌌 Evil Space AI Power\n\n🖱️ Left Click: Open full monitor\n🖱️ Right Click: Refresh status",
-        "on-click": "kitty -e python3 ~/dotfiles/scripts/ai/claude_monitor.py",
-        "on-click-right": "pkill -RTMIN+8 waybar"
-    },
-
-    "cpu": {
-        "format": "💀 CPU: {usage}%",
-        "interval": 2,
-        "tooltip": true,
-        "tooltip-format": "🔥 CPU Status\n💀 Usage: {usage}%\n⚡ Cores: {load}\n🌡️ Evil Processing Power"
-    },
-
-    "memory": {
-        "format": "🧠 RAM: {percentage}%",
-        "interval": 2,
-        "tooltip": true,
-        "tooltip-format": "💾 Memory Status\n🧠 Used: {used} / {total}\n📊 Usage: {percentage}%\n💀 {avail} available"
-    },
-
-    "disk": {
-        "format": "💾 {percentage_used}%",
-        "interval": 30,
-        "path": "/",
-        "tooltip": true,
-        "tooltip-format": "🗂️ Storage Status\n💾 Used: {used} / {total}\n📊 Usage: {percentage_used}%\n🌌 {free} free space"
-    },
-
-    "custom/updates": {
-        "format": "📦 {}",
-        "interval": 3600,
-        "exec": "checkupdates 2>/dev/null | wc -l || echo '0'",
-        "exec-if": "exit 0",
-        "tooltip": true,
-        "tooltip-format": "📦 System Updates\n⚡ {} packages available\n💀 Keep the void updated",
-        "on-click": "kitty -e sudo pacman -Syu"
-    },
-
-    "custom/control-center": {
-        "format": "🎛️",
-        "tooltip": false,
-        "on-click": "/home/martin/dotfiles/waybar/scripts/control-center.fish"
     },
 
     // ╭─────────────────────────────────────────────────────────╮

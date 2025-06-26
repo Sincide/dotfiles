@@ -49,6 +49,7 @@ var (
 	appDirs        = []string{"/usr/share/applications", "/.local/share/applications"}
 	wallpaperDir   = "dotfiles/assets/wallpapers"
 	chafaAvailable = false
+	debugMode      = false // Control debug logging
 )
 
 // Item represents a generic selectable entry in the TUI.
@@ -67,6 +68,50 @@ type UsageData struct {
 	ExecPath   string    `json:"exec_path"`
 	LastUsed   time.Time `json:"last_used"`
 	UsageCount int       `json:"usage_count"`
+}
+
+// Initialize debug mode from environment variable
+func init() {
+	debugMode = os.Getenv("EVIL_LAUNCHER_DEBUG") == "true"
+}
+
+// debugLog only logs if debug mode is enabled
+func debugLog(filename, message string) {
+	if !debugMode {
+		return
+	}
+
+	homeDir := getHomeDir()
+	debugFile := filepath.Join(homeDir, "dotfiles/app-dev/evil-launcher", filename)
+
+	file, err := os.OpenFile(debugFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	timestamp := time.Now().Format("15:04:05")
+	file.WriteString(fmt.Sprintf("[%s] %s\n", timestamp, message))
+}
+
+// cleanupOldLogs removes logs older than 24 hours
+func cleanupOldLogs() {
+	if !debugMode {
+		return
+	}
+
+	homeDir := getHomeDir()
+	logDir := filepath.Join(homeDir, "dotfiles/app-dev/evil-launcher")
+
+	logFiles := []string{"icon_debug.log", "preview_debug.log"}
+	for _, logFile := range logFiles {
+		logPath := filepath.Join(logDir, logFile)
+		if info, err := os.Stat(logPath); err == nil {
+			if time.Since(info.ModTime()) > 24*time.Hour {
+				os.Remove(logPath)
+			}
+		}
+	}
 }
 
 // getHomeDir safely gets the user's home directory.
@@ -96,53 +141,53 @@ func getUsageDataPath() string {
 func loadUsageData() map[string]*UsageData {
 	usageData := make(map[string]*UsageData)
 	usageFile := getUsageDataPath()
-	
+
 	data, err := ioutil.ReadFile(usageFile)
 	if err != nil {
 		// File doesn't exist yet, return empty map
 		return usageData
 	}
-	
+
 	var usageList []UsageData
 	if err := json.Unmarshal(data, &usageList); err != nil {
 		// Invalid JSON, return empty map
 		return usageData
 	}
-	
+
 	// Convert list to map for fast lookup
 	for i := range usageList {
 		usageData[usageList[i].AppName] = &usageList[i]
 	}
-	
+
 	return usageData
 }
 
 // saveUsageData saves usage statistics to disk
 func saveUsageData(usageData map[string]*UsageData) {
 	usageFile := getUsageDataPath()
-	
+
 	// Ensure directory exists
 	dir := filepath.Dir(usageFile)
 	os.MkdirAll(dir, 0755)
-	
+
 	// Convert map to list for JSON serialization
 	var usageList []UsageData
 	for _, data := range usageData {
 		usageList = append(usageList, *data)
 	}
-	
+
 	data, err := json.MarshalIndent(usageList, "", "  ")
 	if err != nil {
 		return
 	}
-	
+
 	ioutil.WriteFile(usageFile, data, 0644)
 }
 
 // recordAppUsage records when an application is launched
 func recordAppUsage(appName, execPath string) {
 	usageData := loadUsageData()
-	
+
 	if data, exists := usageData[appName]; exists {
 		// Update existing entry
 		data.LastUsed = time.Now()
@@ -157,14 +202,14 @@ func recordAppUsage(appName, execPath string) {
 			UsageCount: 1,
 		}
 	}
-	
+
 	saveUsageData(usageData)
 }
 
 // applySmarSorting sorts items by frequency and recency (smart ranking)
 func applySmartSorting(items []Item) []Item {
 	usageData := loadUsageData()
-	
+
 	// Update items with usage data
 	for i := range items {
 		if data, exists := usageData[items[i].Name]; exists {
@@ -176,21 +221,21 @@ func applySmartSorting(items []Item) []Item {
 			items[i].UsageCount = 0
 		}
 	}
-	
+
 	// Sort by smart ranking: frequency + recency
 	sort.Slice(items, func(i, j int) bool {
 		// Calculate smart score: frequency weight + recency weight
 		scoreI := calculateSmartScore(items[i])
 		scoreJ := calculateSmartScore(items[j])
-		
+
 		if scoreI != scoreJ {
 			return scoreI > scoreJ // Higher score first
 		}
-		
+
 		// If scores are equal, sort alphabetically
 		return strings.ToLower(items[i].Name) < strings.ToLower(items[j].Name)
 	})
-	
+
 	return items
 }
 
@@ -199,15 +244,15 @@ func calculateSmartScore(item Item) float64 {
 	if item.UsageCount == 0 {
 		return 0 // Never used
 	}
-	
+
 	// Frequency component (40% weight)
 	frequencyScore := float64(item.UsageCount) * 0.4
-	
+
 	// Recency component (60% weight)
 	// Recent usage gets higher score, decays over time
 	hoursSinceUse := time.Since(item.LastUsed).Hours()
 	var recencyScore float64
-	
+
 	if hoursSinceUse < 1 {
 		recencyScore = 10.0 // Used within last hour - very high score
 	} else if hoursSinceUse < 24 {
@@ -219,9 +264,9 @@ func calculateSmartScore(item Item) float64 {
 	} else {
 		recencyScore = 0.1 // Used long ago - very low score
 	}
-	
+
 	recencyScore *= 0.6 // Apply recency weight
-	
+
 	return frequencyScore + recencyScore
 }
 
@@ -230,15 +275,10 @@ func findIconPath(iconName string) string {
 	if iconName == "" {
 		return ""
 	}
-	
-	// Debug: log the icon search
-	debugFile := filepath.Join(getHomeDir(), "dotfiles/app-dev/evil-launcher/icon_debug.log")
-	file, _ := os.OpenFile(debugFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if file != nil {
-		defer file.Close()
-		file.WriteString(fmt.Sprintf("Searching for icon: %s\n", iconName))
-	}
-	
+
+	// Debug: log the icon search only if debug mode is enabled
+	debugLog("icon_debug.log", fmt.Sprintf("Searching for icon: %s", iconName))
+
 	// If it's already a full path, check if it exists
 	if strings.HasPrefix(iconName, "/") {
 		if _, err := os.Stat(iconName); err == nil {
@@ -246,7 +286,7 @@ func findIconPath(iconName string) string {
 		}
 		return ""
 	}
-	
+
 	// Icon theme directories to search
 	home := getHomeDir()
 	iconDirs := []string{
@@ -255,12 +295,12 @@ func findIconPath(iconName string) string {
 		"/usr/share/icons",
 		"/usr/share/pixmaps",
 	}
-	
+
 	// Common icon sizes and formats to try
 	sizes := []string{"48x48", "32x32", "24x24", "16x16", "scalable"}
 	formats := []string{".png", ".svg", ".xpm"}
 	contexts := []string{"apps", "applications", ""}
-	
+
 	// Try to find icon in various locations
 	for _, dir := range iconDirs {
 		// First try direct pixmaps directory
@@ -270,7 +310,7 @@ func findIconPath(iconName string) string {
 				return path
 			}
 		}
-		
+
 		// Then try themed icon directories
 		themes := []string{"hicolor", "Papirus", "Adwaita", "breeze"}
 		for _, theme := range themes {
@@ -291,7 +331,7 @@ func findIconPath(iconName string) string {
 			}
 		}
 	}
-	
+
 	return "" // Icon not found
 }
 
@@ -300,13 +340,13 @@ func renderIconWithChafa(iconPath string, size int) string {
 	if iconPath == "" || !chafaAvailable {
 		return ""
 	}
-	
+
 	cmd := exec.Command("chafa", "--size", fmt.Sprintf("%dx%d", size, size), "--format", "symbols", iconPath)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return ""
 	}
-	
+
 	return strings.TrimSpace(string(output))
 }
 
@@ -362,14 +402,19 @@ func applyDynamicTheme(wallpaperPath, category string) {
 	}
 }
 
-// logToFile logs both to stdout and to debug file
+// logToFile logs both to stdout and to debug file (only when debug mode enabled)
 func logToFile(message string) {
 	fmt.Print(message)
-	
+
+	// Only log to file in debug mode or when explicitly in keybind mode with issues
+	if !debugMode && os.Getenv("EVIL_LAUNCHER_KEYBIND_MODE") != "true" {
+		return
+	}
+
 	// Also log to debug file
 	homeDir := getHomeDir()
 	logFile := filepath.Join(homeDir, "dotfiles/logs/waybar-debug.log")
-	
+
 	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err == nil {
 		defer file.Close()
@@ -381,11 +426,11 @@ func logToFile(message string) {
 // restartApplicationsWithDebug - same as restartApplications but with detailed logging
 func restartApplicationsWithDebug() {
 	logToFile("🔄 Starting restart with debug logging...\n")
-	
+
 	// Check environment
-	logToFile(fmt.Sprintf("Environment: WAYLAND_DISPLAY=%s, XDG_RUNTIME_DIR=%s\n", 
+	logToFile(fmt.Sprintf("Environment: WAYLAND_DISPLAY=%s, XDG_RUNTIME_DIR=%s\n",
 		os.Getenv("WAYLAND_DISPLAY"), os.Getenv("XDG_RUNTIME_DIR")))
-	
+
 	// Check if we're running under Wayland/Hyprland
 	cmd := exec.Command("sh", "-c", "[[ \"$WAYLAND_DISPLAY\" ]] && pgrep -x Hyprland > /dev/null")
 	if err := cmd.Run(); err != nil {
@@ -393,7 +438,7 @@ func restartApplicationsWithDebug() {
 		return
 	}
 	logToFile("  ✓ Hyprland is running\n")
-	
+
 	logToFile("  • Reloading Hyprland configuration...\n")
 	cmd = exec.Command("hyprctl", "reload")
 	if err := cmd.Run(); err != nil {
@@ -401,24 +446,24 @@ func restartApplicationsWithDebug() {
 	} else {
 		logToFile("    ✓ hyprctl reload successful\n")
 	}
-	
+
 	// Check waybar before restart
 	cmd = exec.Command("pgrep", "-x", "waybar")
 	output, err := cmd.CombinedOutput()
 	if err == nil {
 		logToFile(fmt.Sprintf("  • Waybar PIDs before kill: %s", string(output)))
 		logToFile("  • Killing waybar...\n")
-		
+
 		cmd = exec.Command("pkill", "waybar")
 		if err := cmd.Run(); err != nil {
 			logToFile(fmt.Sprintf("    ⚠️  pkill waybar failed: %v\n", err))
 		} else {
 			logToFile("    ✓ pkill waybar successful\n")
 		}
-		
+
 		logToFile("  • Waiting 500ms...\n")
 		time.Sleep(500 * time.Millisecond)
-		
+
 		// Check if waybar is actually dead
 		cmd = exec.Command("pgrep", "-x", "waybar")
 		output, err = cmd.CombinedOutput()
@@ -430,7 +475,7 @@ func restartApplicationsWithDebug() {
 	} else {
 		logToFile("  • No waybar processes found to kill\n")
 	}
-	
+
 	// Start waybar processes completely detached from this process
 	logToFile("  • Starting top Waybar (detached)...\n")
 	cmd = exec.Command("sh", "-c", "nohup waybar > /dev/null 2>&1 & disown")
@@ -440,10 +485,10 @@ func restartApplicationsWithDebug() {
 	} else {
 		logToFile("    ✓ Top waybar command executed (detached)\n")
 	}
-	
+
 	// Small delay
 	time.Sleep(100 * time.Millisecond)
-	
+
 	// Start bottom waybar
 	logToFile("  • Starting bottom Waybar (detached)...\n")
 	cmd = exec.Command("sh", "-c", "nohup waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css > /dev/null 2>&1 & disown")
@@ -453,7 +498,7 @@ func restartApplicationsWithDebug() {
 	} else {
 		logToFile("    ✓ Bottom waybar command executed (detached)\n")
 	}
-	
+
 	// Check if waybar started
 	time.Sleep(1 * time.Second)
 	cmd = exec.Command("pgrep", "-x", "waybar")
@@ -463,24 +508,24 @@ func restartApplicationsWithDebug() {
 	} else {
 		logToFile("    ⚠️  No waybar processes found after start\n")
 	}
-	
+
 	logToFile("🔄 Debug restart completed\n\n")
 }
 
 // restartApplications - EXACT copy from wallpaper_manager.sh
 func restartApplications() {
 	fmt.Printf("🔄 Reloading applications with new theme...\n")
-	
+
 	// Check if we're running under Wayland/Hyprland - EXACT same check
 	cmd := exec.Command("sh", "-c", "[[ \"$WAYLAND_DISPLAY\" ]] && pgrep -x Hyprland > /dev/null")
 	if cmd.Run() != nil {
 		fmt.Printf("  ⚠️  Not running under Hyprland - applications won't be restarted\n")
 		return
 	}
-	
+
 	fmt.Printf("  • Reloading Hyprland configuration...\n")
 	exec.Command("hyprctl", "reload").Run()
-	
+
 	// Restart Waybar (dual bars: top + bottom) - EXACT same logic
 	cmd = exec.Command("pgrep", "-x", "waybar")
 	if cmd.Run() == nil {
@@ -496,7 +541,7 @@ func restartApplications() {
 	cmd2 := exec.Command("sh", "-c", "nohup waybar -c ~/.config/waybar/config-bottom -s ~/.config/waybar/style-bottom.css > /dev/null 2>&1 & disown")
 	cmd2.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd2.Run()
-	
+
 	// Restart Dunst - EXACT same logic
 	cmd = exec.Command("pgrep", "-x", "dunst")
 	if cmd.Run() == nil {
@@ -506,7 +551,7 @@ func restartApplications() {
 	}
 	fmt.Printf("  • Starting Dunst...\n")
 	exec.Command("sh", "-c", "dunst > /dev/null 2>&1 &").Run()
-	
+
 	// Reload Kitty configurations - EXACT same
 	fmt.Printf("  • Reloading Kitty configurations...\n")
 	exec.Command("killall", "-USR1", "kitty").Run()
@@ -735,7 +780,7 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 
 		listWidth := termWidth
 		showPreview := chafaAvailable && (mode == "wall" || mode == "launch") && termWidth > 60
-		
+
 		if showPreview {
 			listWidth = termWidth / 2
 		}
@@ -760,10 +805,10 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 		for i := start; i < end; i++ {
 			item := filteredItems[i]
 			line := item.Name
-			
+
 			// Remove icon indicators since we'll show them in preview panel
 			// Icons will be displayed in the right preview area instead
-			
+
 			if len(line) >= listWidth {
 				line = line[:listWidth-1]
 			}
@@ -775,15 +820,10 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 		}
 
 		var previewLines []string
-		
-		// Debug: Check if we're entering preview logic
-		debugFile := filepath.Join(getHomeDir(), "dotfiles/app-dev/evil-launcher/preview_debug.log")
-		file, _ := os.OpenFile(debugFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if file != nil {
-			defer file.Close()
-			file.WriteString(fmt.Sprintf("showPreview: %v, filteredItems: %d\n", showPreview, len(filteredItems)))
-		}
-		
+
+		// Debug: Check if we're entering preview logic (only if debug mode enabled)
+		debugLog("preview_debug.log", fmt.Sprintf("showPreview: %v, filteredItems: %d", showPreview, len(filteredItems)))
+
 		if showPreview && len(filteredItems) > 0 {
 			selectedItem := filteredItems[selectedIndex]
 			previewWidth := termWidth - listWidth - 1
@@ -906,8 +946,12 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 }
 
 func main() {
+	// Clean up old debug logs on startup
+	cleanupOldLogs()
+
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: ./launcher [launch|wall]")
+		fmt.Println("Set EVIL_LAUNCHER_DEBUG=true for debug logging")
 		os.Exit(1)
 	}
 	mode := os.Args[1]
@@ -918,17 +962,17 @@ func main() {
 	var altPrompt string
 
 	if mode == "launch" {
-		checkChafa()  // Check for chafa availability for icon previews
+		checkChafa() // Check for chafa availability for icon previews
 		// Combine desktop apps and PATH executables into unified list
 		desktopApps := getDesktopApps()
 		pathApps := getPathExecutables()
-		
+
 		// Merge lists with desktop apps first (they're usually more relevant)
 		items = append(items, desktopApps...)
 		items = append(items, pathApps...)
-		
+
 		prompt = "Launch"
-		altItems = nil  // No longer using alt items
+		altItems = nil // No longer using alt items
 		altPrompt = ""
 	} else if mode == "wall" {
 		checkChafa()
@@ -952,7 +996,7 @@ func main() {
 		if mode == "launch" {
 			// Record usage before launching
 			recordAppUsage(selectedItem.Name, selectedItem.Exec)
-			
+
 			cmdParts := strings.Fields(selectedItem.Exec)
 			cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

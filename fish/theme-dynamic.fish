@@ -2,49 +2,49 @@
 # This file is automatically updated when wallpaper changes
 
 # Basic colors
-set -U fish_color_normal #e2e2e9
-set -U fish_color_command #adc6ff
-set -U fish_color_keyword #bfc6dc
-set -U fish_color_quote #debcdf
-set -U fish_color_redirection #2b4678
-set -U fish_color_end #bfc6dc
+set -U fish_color_normal #dde4e1
+set -U fish_color_command #82d5c7
+set -U fish_color_keyword #b1ccc6
+set -U fish_color_quote #adcae5
+set -U fish_color_redirection #005047
+set -U fish_color_end #b1ccc6
 set -U fish_color_error #ffb4ab
-set -U fish_color_param #c4c6d0
+set -U fish_color_param #bec9c5
 set -U fish_color_valid_path --underline
-set -u fish_color_option #44474f
-set -U fish_color_comment #8e9099
-set -U fish_color_selection --background=#1e1f25
-set -U fish_color_search_match --background=#2b4678
-set -U fish_color_operator #debcdf
-set -U fish_color_escape #583e5b
-set -U fish_color_autosuggestion #8e9099
+set -u fish_color_option #3f4946
+set -U fish_color_comment #899390
+set -U fish_color_selection --background=#1a211f
+set -U fish_color_search_match --background=#005047
+set -U fish_color_operator #adcae5
+set -U fish_color_escape #2d4a60
+set -U fish_color_autosuggestion #899390
 set -U fish_color_cancel #ffb4ab
-set -U fish_color_cwd #adc6ff
+set -U fish_color_cwd #82d5c7
 set -U fish_color_cwd_root #ffb4ab
-set -U fish_color_history_current #adc6ff
-set -U fish_color_host #bfc6dc
-set -U fish_color_host_remote #debcdf
+set -U fish_color_history_current #82d5c7
+set -U fish_color_host #b1ccc6
+set -U fish_color_host_remote #adcae5
 set -U fish_color_status #ffb4ab
-set -U fish_color_user #adc6ff
+set -U fish_color_user #82d5c7
 
 # Completion pager colors
-set -U fish_pager_color_progress #1e1f25
+set -U fish_pager_color_progress #1a211f
 set -U fish_pager_color_background
-set -U fish_pager_color_prefix #adc6ff
-set -U fish_pager_color_completion #e2e2e9
-set -U fish_pager_color_description #8e9099
-set -U fish_pager_color_selected_background --background=#282a2f
-set -U fish_pager_color_selected_prefix #adc6ff
-set -U fish_pager_color_selected_completion #e2e2e9
-set -U fish_pager_color_selected_description #8e9099
+set -U fish_pager_color_prefix #82d5c7
+set -U fish_pager_color_completion #dde4e1
+set -U fish_pager_color_description #899390
+set -U fish_pager_color_selected_background --background=#252b2a
+set -U fish_pager_color_selected_prefix #82d5c7
+set -U fish_pager_color_selected_completion #dde4e1
+set -U fish_pager_color_selected_description #899390
 set -U fish_pager_color_secondary_background
-set -U fish_pager_color_secondary_prefix #bfc6dc
-set -U fish_pager_color_secondary_completion #e2e2e9
-set -U fish_pager_color_secondary_description #8e9099
+set -U fish_pager_color_secondary_prefix #b1ccc6
+set -U fish_pager_color_secondary_completion #dde4e1
+set -U fish_pager_color_secondary_description #899390
 
 # FZF colors for dynamic theming
-set -gx FZF_DEFAULT_OPTS "--color=bg+:#1e1f25,bg:#111318 --color=fg:#e2e2e9,header:#adc6ff,info:#bfc6dc --color=pointer:#adc6ff,marker:#adc6ff,fg+:#e2e2e9 --color=prompt:#adc6ff,hl+:#adc6ff,hl:#adc6ff"
+set -gx FZF_DEFAULT_OPTS "--color=bg+:#1a211f,bg:#0e1513 --color=fg:#dde4e1,header:#82d5c7,info:#b1ccc6 --color=pointer:#82d5c7,marker:#82d5c7,fg+:#dde4e1 --color=prompt:#82d5c7,hl+:#82d5c7,hl:#82d5c7"
 
 # Abbreviation tips colors
 set -g abbr_tips_prompt "💡 "
-set -g abbr_tips_color #adc6ff 
+set -g abbr_tips_color #82d5c7 

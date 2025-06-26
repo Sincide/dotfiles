@@ -25,7 +25,7 @@ $character"""
 
 # OS Symbol
 [os]
-style = "bold #fdb876"
+style = "bold #82d5c7"
 disabled = false
 format = "[$symbol ]($style)"
 
@@ -36,19 +36,19 @@ Linux = "󰌽"
 # Username
 [username]
 show_always = false
-style_user = "bold #e2c0a4"
+style_user = "bold #b1ccc6"
 style_root = "bold #ffb4ab"
-format = "[$user]($style)[@](#9e8e81)"
+format = "[$user]($style)[@](#899390)"
 
 # Hostname
 [hostname]
 ssh_only = true
-style = "bold #c1cc99"
+style = "bold #adcae5"
 format = "[$hostname]($style) "
 
 # Directory
 [directory]
-style = "bold #fdb876"
+style = "bold #82d5c7"
 format = "[$path]($style) "
 truncation_length = 3
 truncation_symbol = "…/"
@@ -65,12 +65,12 @@ read_only = "🔒"
 # Git Branch
 [git_branch]
 symbol = ""
-style = "bold #e2c0a4"
+style = "bold #b1ccc6"
 format = "[$symbol $branch]($style)"
 
 # Git Status  
 [git_status]
-style = "#c1cc99"
+style = "#adcae5"
 format = "[ $all_status$ahead_behind]($style) "
 conflicted = "⚔️"
 up_to_date = ""
@@ -87,41 +87,41 @@ deleted = "🗑️"
 # Programming Languages (minimal)
 [nodejs]
 symbol = ""
-style = "#fdb876"
+style = "#82d5c7"
 format = "[$symbol $version]($style) "
 
 [python]
 symbol = ""
-style = "#fdb876"
+style = "#82d5c7"
 format = "[$symbol $version]($style) "
 
 [rust]
 symbol = ""
-style = "#fdb876"
+style = "#82d5c7"
 format = "[$symbol $version]($style) "
 
 [golang]
 symbol = ""
-style = "#fdb876"
+style = "#82d5c7"
 format = "[$symbol $version]($style) "
 
 # Docker
 [docker_context]
 symbol = ""
-style = "#c1cc99"
+style = "#adcae5"
 format = "[$symbol $context]($style) "
 
 # Command Duration
 [cmd_duration]
 min_time = 2_000
-style = "#e2c0a4"
+style = "#b1ccc6"
 format = "[⏱ $duration]($style) "
 
 # Character (prompt symbol)
 [character]
-success_symbol = "[❯](bold #fdb876)"
+success_symbol = "[❯](bold #82d5c7)"
 error_symbol = "[❯](bold #ffb4ab)"
-vimcmd_symbol = "[❮](bold #c1cc99)"
+vimcmd_symbol = "[❮](bold #adcae5)"
 
 # Line break
 [line_break]

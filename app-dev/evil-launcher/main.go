@@ -55,7 +55,8 @@ var (
 type Item struct {
 	Name       string
 	Exec       string
-	IsRandom   bool // Replaced IsVegas
+	Icon       string // Icon name or path from .desktop file
+	IsRandom   bool   // Replaced IsVegas
 	LastUsed   time.Time
 	UsageCount int
 }
@@ -222,6 +223,83 @@ func calculateSmartScore(item Item) float64 {
 	recencyScore *= 0.6 // Apply recency weight
 	
 	return frequencyScore + recencyScore
+}
+
+// findIconPath resolves an icon name to its actual file path
+func findIconPath(iconName string) string {
+	if iconName == "" {
+		return ""
+	}
+	
+	// If it's already a full path, check if it exists
+	if strings.HasPrefix(iconName, "/") {
+		if _, err := os.Stat(iconName); err == nil {
+			return iconName
+		}
+		return ""
+	}
+	
+	// Icon theme directories to search
+	home := getHomeDir()
+	iconDirs := []string{
+		home + "/.icons",
+		home + "/.local/share/icons",
+		"/usr/share/icons",
+		"/usr/share/pixmaps",
+	}
+	
+	// Common icon sizes and formats to try
+	sizes := []string{"48x48", "32x32", "24x24", "16x16", "scalable"}
+	formats := []string{".png", ".svg", ".xpm"}
+	contexts := []string{"apps", "applications", ""}
+	
+	// Try to find icon in various locations
+	for _, dir := range iconDirs {
+		// First try direct pixmaps directory
+		for _, format := range formats {
+			path := filepath.Join(dir, iconName+format)
+			if _, err := os.Stat(path); err == nil {
+				return path
+			}
+		}
+		
+		// Then try themed icon directories
+		themes := []string{"hicolor", "Papirus", "Adwaita", "breeze"}
+		for _, theme := range themes {
+			for _, size := range sizes {
+				for _, context := range contexts {
+					for _, format := range formats {
+						var path string
+						if context != "" {
+							path = filepath.Join(dir, theme, size, context, iconName+format)
+						} else {
+							path = filepath.Join(dir, theme, size, iconName+format)
+						}
+						if _, err := os.Stat(path); err == nil {
+							return path
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return "" // Icon not found
+}
+
+// renderIconWithChafa renders an icon using chafa for terminal display
+func renderIconWithChafa(iconPath string, size int) string {
+	if iconPath == "" || !chafaAvailable {
+		return ""
+	}
+	
+	cmd := exec.Command("chafa", "--size", fmt.Sprintf("%dx%d", size, size), "--format", "symbols", iconPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return ""
+	}
+	
+	return strings.TrimSpace(string(output))
 }
 
 // detectCategory detects wallpaper category from file path for theme switching
@@ -488,7 +566,7 @@ func getDesktopApps() []Item {
 					continue
 				}
 
-				var name, execCmd, entryType string
+				var name, execCmd, entryType, iconName string
 				noDisplay := false
 				inDesktopEntry := false
 				scanner := bufio.NewScanner(strings.NewReader(string(content)))
@@ -512,6 +590,9 @@ func getDesktopApps() []Item {
 						if strings.HasPrefix(line, "Type=") {
 							entryType = strings.SplitN(line, "=", 2)[1]
 						}
+						if strings.HasPrefix(line, "Icon=") {
+							iconName = strings.SplitN(line, "=", 2)[1]
+						}
 						if strings.HasPrefix(line, "NoDisplay=true") {
 							noDisplay = true
 							break
@@ -528,7 +609,7 @@ func getDesktopApps() []Item {
 						}
 					}
 					execCmd = strings.Join(cleanedParts, " ")
-					items = append(items, Item{Name: name, Exec: execCmd})
+					items = append(items, Item{Name: name, Exec: execCmd, Icon: iconName})
 					seen[name] = true
 				}
 			}
@@ -668,7 +749,21 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 		}
 
 		for i := start; i < end; i++ {
-			line := filteredItems[i].Name
+			item := filteredItems[i]
+			line := item.Name
+			
+			// Add icon indicator if available (simple version)
+			if item.Icon != "" && mode == "launch" {
+				iconPath := findIconPath(item.Icon)
+				if iconPath != "" {
+					// Use a simple icon indicator for now
+					line = "📱 " + line
+				} else {
+					// Show that icon name exists but file not found
+					line = "⚪ " + line
+				}
+			}
+			
 			if len(line) >= listWidth {
 				line = line[:listWidth-1]
 			}

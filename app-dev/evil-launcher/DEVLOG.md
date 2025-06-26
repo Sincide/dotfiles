@@ -432,7 +432,21 @@ bind = $mainMod, W, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/ap
 - [x] **Compact Window**: Reduce default window size for better desktop integration (800x500)
 - [x] **Smart Sorting**: Recently launched applications appear at top with frequency + recency algorithm
 - [x] **Usage Analytics**: Track launch frequency and last-used timestamps in JSON format
-- [ ] **Application Icons**: Display desktop app icons when available for better visual identification
+- [x] **Application Icons**: Display desktop app icons when available for better visual identification
+
+#### Application Icons Implementation ✅
+**Icon Detection & Resolution**:
+- Parse `Icon=` field from .desktop files during app scanning
+- Multi-directory icon search: `~/.icons`, `~/.local/share/icons`, `/usr/share/icons`, `/usr/share/pixmaps`
+- Support for multiple icon themes: hicolor, Papirus, Adwaita, breeze
+- Icon format support: PNG, SVG, XPM with size preference (48x48 → 32x32 → 24x24 → 16x16 → scalable)
+- Icon indicators: 📱 (icon found) | ⚪ (icon name exists but file not found)
+
+**Visual Enhancement**:
+- Real-time icon resolution during TUI rendering
+- Emoji-based indicators for immediate visual feedback
+- Only shows icons in launch mode (not wallpaper selection)
+- Graceful fallback when icons are missing or unresolvable
 
 #### Smart Sorting Implementation ✅
 **Algorithm**: 40% frequency weight + 60% recency weight

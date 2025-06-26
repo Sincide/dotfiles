@@ -281,6 +281,63 @@ setup_desktop_integration() {
     fi
 }
 
+# Create user script symlinks
+create_user_script_symlinks() {
+    log_section "Creating User Script Symlinks"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "DRY RUN - Would create user script symlinks"
+        return 0
+    fi
+    
+    # Create symlinks for commonly used scripts in ~/.local/bin
+    local script_symlinks=(
+        # Media management script - can be run from anywhere
+        "organize-media:$DOTFILES_DIR/scripts/media/organize_media.fish"
+        # VAAPI converter for GPU encoding
+        "vaapi-convert:$DOTFILES_DIR/scripts/media/vaapi_convert.fish"
+        # Dynamic theme switcher
+        "dynamic-theme:$DOTFILES_DIR/scripts/theming/dynamic_theme_switcher.sh"
+        # System monitoring script
+        "system-monitor:$DOTFILES_DIR/scripts/ai/ai-health.fish"
+    )
+    
+    local created_count=0
+    for link_info in "${script_symlinks[@]}"; do
+        local link_name="${link_info%%:*}"
+        local target_script="${link_info##*:}"
+        local link_path="$HOME/.local/bin/$link_name"
+        
+        # Check if target script exists
+        if [[ ! -f "$target_script" ]]; then
+            log_warning "Target script not found, skipping: $target_script"
+            continue
+        fi
+        
+        # Remove existing symlink or file if it exists
+        if [[ -L "$link_path" || -f "$link_path" ]]; then
+            rm -f "$link_path"
+            log_info "Removed existing: $link_path"
+        fi
+        
+        # Create symlink
+        if ln -s "$target_script" "$link_path"; then
+            chmod +x "$link_path" 2>/dev/null || true
+            log_success "Created symlink: $link_name → $(basename "$target_script")"
+            created_count=$((created_count + 1))
+        else
+            log_warning "Failed to create symlink: $link_name"
+        fi
+    done
+    
+    log_success "Created $created_count script symlinks in ~/.local/bin"
+    
+    # Remind user about PATH
+    if [[ $created_count -gt 0 ]]; then
+        log_info "These commands are now available globally (after shell restart)"
+    fi
+}
+
 # Create useful aliases and functions
 create_shell_utilities() {
     log_section "Creating Shell Utilities"
@@ -441,9 +498,12 @@ generate_system_summary() {
 - Dotfiles: $DOTFILES_DIR
 - Logs: $LOG_DIR
 
-## Quick Commands
+## Quick Commands (Global Scripts)
+- Media organization: organize-media
+- Video conversion: vaapi-convert  
+- Dynamic theming: dynamic-theme
+- System monitoring: system-monitor
 - Theme restart: restart-theme
-- System monitor: system-monitor
 - VM management: vm-manager
 - Ollama chat: ollama-chat
 - Brave backup: brave-backup
@@ -501,6 +561,7 @@ FEATURES:
     • User directory structure creation
     • Shell environment configuration (Fish/Bash)
     • File permissions optimization
+    • User script symlinks creation
     • Desktop integration setup
     • Useful aliases and functions
     • System summary generation
@@ -597,6 +658,7 @@ main() {
     setup_user_directories
     configure_shell_environment
     fix_file_permissions
+    create_user_script_symlinks
     setup_desktop_integration
     create_shell_utilities
     generate_system_summary

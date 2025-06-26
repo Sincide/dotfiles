@@ -21,6 +21,7 @@
     ],
     
     "modules-right": [
+        "custom/quick-reference",
         "custom/qbittorrent",
         "temperature",
         "custom/load",
@@ -99,6 +100,14 @@
     // ╭─────────────────────────────────────────────────────────╮
     // │                 RIGHT SYSTEM INFO                       │
     // ╰─────────────────────────────────────────────────────────╯
+
+    "custom/quick-reference": {
+        "format": "📋",
+        "tooltip": true,
+        "tooltip-format": "🗒️ Quick Reference Guide\n\n🔥 Key Commands:\n• organize-media     → FileBot auto-rename (your video files!)\n• vaapi-convert      → GPU video encoding\n• log-analyzer live  → AI system monitoring\n• dashboard          → Web monitoring interface\n• appwall            → Wallpaper + auto-theming\n• claude-commit      → AI commit messages\n\n🖱️ Left Click: Full reference popup\n🖱️ Right Click: Quick command list",
+        "on-click": "kitty --class=quick-reference --title='Evil Space Quick Reference' --override font_size=11 --override background_opacity=0.95 --override window_padding_width=20 -e ~/dotfiles/waybar/scripts/quick-reference.fish",
+        "on-click-right": "notify-send '📋 Quick Commands' 'organize-media → FileBot auto-rename\nvaapi-convert → GPU encoding\nlog-analyzer live → AI monitoring\ndashboard → Web interface\nappwall → Wallpaper theming\nSuper+W → Wallpaper selector\nSuper+D → App launcher' -t 5000"
+    },
 
     "temperature": {
         "thermal-zone": 0,

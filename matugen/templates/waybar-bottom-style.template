@@ -38,6 +38,7 @@ window#waybar.hidden {
 #memory,
 #disk,
 #custom-updates,
+#custom-quick-reference,
 #custom-qbittorrent,
 #temperature,
 #custom-load,
@@ -64,6 +65,7 @@ window#waybar.hidden {
 #memory:hover,
 #disk:hover,
 #custom-updates:hover,
+#custom-quick-reference:hover,
 #custom-qbittorrent:hover,
 #temperature:hover,
 #custom-load:hover,
@@ -150,6 +152,22 @@ window#waybar.hidden {
     background: @surfaceVariant;
     color: @onSurfaceVariant;
     border: 1px solid @outline;
+}
+
+/* Quick Reference - special accent for easy access */
+#custom-quick-reference {
+    background: @tertiaryContainer;
+    color: @onTertiaryContainer;
+    border: 1px solid @tertiary;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+#custom-quick-reference:hover {
+    background: @tertiary;
+    color: @onTertiary;
+    border: 1px solid @onTertiary;
+    box-shadow: 0 4px 12px @shadow;
 }
 
 /* qBittorrent - secondary theme for torrent activity */

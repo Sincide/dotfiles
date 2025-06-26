@@ -231,6 +231,14 @@ func findIconPath(iconName string) string {
 		return ""
 	}
 	
+	// Debug: log the icon search
+	debugFile := filepath.Join(getHomeDir(), "dotfiles/app-dev/evil-launcher/icon_debug.log")
+	file, _ := os.OpenFile(debugFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if file != nil {
+		defer file.Close()
+		file.WriteString(fmt.Sprintf("Searching for icon: %s\n", iconName))
+	}
+	
 	// If it's already a full path, check if it exists
 	if strings.HasPrefix(iconName, "/") {
 		if _, err := os.Stat(iconName); err == nil {
@@ -726,7 +734,8 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 		screenBuf.WriteString(hideCursor)
 
 		listWidth := termWidth
-		showPreview := chafaAvailable && mode == "wall" && termWidth > 60
+		showPreview := chafaAvailable && (mode == "wall" || mode == "launch") && termWidth > 60
+		
 		if showPreview {
 			listWidth = termWidth / 2
 		}
@@ -752,17 +761,8 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 			item := filteredItems[i]
 			line := item.Name
 			
-			// Add icon indicator if available (simple version)
-			if item.Icon != "" && mode == "launch" {
-				iconPath := findIconPath(item.Icon)
-				if iconPath != "" {
-					// Use a simple icon indicator for now
-					line = "📱 " + line
-				} else {
-					// Show that icon name exists but file not found
-					line = "⚪ " + line
-				}
-			}
+			// Remove icon indicators since we'll show them in preview panel
+			// Icons will be displayed in the right preview area instead
 			
 			if len(line) >= listWidth {
 				line = line[:listWidth-1]
@@ -775,26 +775,80 @@ func runTUI(items []Item, prompt, mode string, altItems []Item, altPrompt string
 		}
 
 		var previewLines []string
+		
+		// Debug: Check if we're entering preview logic
+		debugFile := filepath.Join(getHomeDir(), "dotfiles/app-dev/evil-launcher/preview_debug.log")
+		file, _ := os.OpenFile(debugFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if file != nil {
+			defer file.Close()
+			file.WriteString(fmt.Sprintf("showPreview: %v, filteredItems: %d\n", showPreview, len(filteredItems)))
+		}
+		
 		if showPreview && len(filteredItems) > 0 {
 			selectedItem := filteredItems[selectedIndex]
 			previewWidth := termWidth - listWidth - 1
 			previewHeight := termHeight - 1
 
-			if selectedItem.IsRandom {
-				placeholder := "   [ Random ]   "
-				padding := strings.Repeat(" ", (previewWidth-len(placeholder))/2)
-				for i := 0; i < previewHeight/2-1; i++ {
-					previewLines = append(previewLines, "")
-				}
-				previewLines = append(previewLines, padding+placeholder)
-			} else {
-				previewCmd := exec.Command("chafa", "--size", fmt.Sprintf("%dx%d", previewWidth, previewHeight), selectedItem.Exec)
-				previewOutput, err := previewCmd.CombinedOutput()
-				if err != nil {
-					errorMsg := fmt.Sprintf("Chafa Error: %v", err)
-					previewLines = strings.Split(errorMsg, "\n")
+			if mode == "wall" {
+				// Wallpaper preview mode
+				if selectedItem.IsRandom {
+					placeholder := "   [ Random ]   "
+					padding := strings.Repeat(" ", (previewWidth-len(placeholder))/2)
+					for i := 0; i < previewHeight/2-1; i++ {
+						previewLines = append(previewLines, "")
+					}
+					previewLines = append(previewLines, padding+placeholder)
 				} else {
-					previewLines = strings.Split(string(previewOutput), "\n")
+					previewCmd := exec.Command("chafa", "--size", fmt.Sprintf("%dx%d", previewWidth, previewHeight), selectedItem.Exec)
+					previewOutput, err := previewCmd.CombinedOutput()
+					if err != nil {
+						errorMsg := fmt.Sprintf("Chafa Error: %v", err)
+						previewLines = strings.Split(errorMsg, "\n")
+					} else {
+						previewLines = strings.Split(string(previewOutput), "\n")
+					}
+				}
+			} else if mode == "launch" {
+				// Application icon preview mode
+				if selectedItem.Icon != "" {
+					iconPath := findIconPath(selectedItem.Icon)
+					if iconPath != "" {
+						previewCmd := exec.Command("chafa", "--size", fmt.Sprintf("%dx%d", previewWidth, previewHeight), iconPath)
+						previewOutput, err := previewCmd.CombinedOutput()
+						if err != nil {
+							errorMsg := fmt.Sprintf("Icon Error: %v", err)
+							previewLines = strings.Split(errorMsg, "\n")
+						} else {
+							previewLines = strings.Split(string(previewOutput), "\n")
+						}
+					} else {
+						// Icon not found, show debug info
+						placeholder := fmt.Sprintf("  [ %s ]  ", selectedItem.Name)
+						if len(placeholder) > previewWidth {
+							placeholder = placeholder[:previewWidth]
+						}
+						padding := strings.Repeat(" ", (previewWidth-len(placeholder))/2)
+						for i := 0; i < previewHeight/2-2; i++ {
+							previewLines = append(previewLines, "")
+						}
+						previewLines = append(previewLines, padding+placeholder)
+						previewLines = append(previewLines, "")
+						previewLines = append(previewLines, fmt.Sprintf("Icon: %s", selectedItem.Icon))
+						previewLines = append(previewLines, "Path not found")
+					}
+				} else {
+					// No icon specified in .desktop file
+					placeholder := fmt.Sprintf("  [ %s ]  ", selectedItem.Name)
+					if len(placeholder) > previewWidth {
+						placeholder = placeholder[:previewWidth]
+					}
+					padding := strings.Repeat(" ", (previewWidth-len(placeholder))/2)
+					for i := 0; i < previewHeight/2-1; i++ {
+						previewLines = append(previewLines, "")
+					}
+					previewLines = append(previewLines, padding+placeholder)
+					previewLines = append(previewLines, "")
+					previewLines = append(previewLines, strings.Repeat(" ", previewWidth/2-4)+"No icon")
 				}
 			}
 		}
@@ -864,6 +918,7 @@ func main() {
 	var altPrompt string
 
 	if mode == "launch" {
+		checkChafa()  // Check for chafa availability for icon previews
 		// Combine desktop apps and PATH executables into unified list
 		desktopApps := getDesktopApps()
 		pathApps := getPathExecutables()

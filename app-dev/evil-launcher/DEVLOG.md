@@ -443,10 +443,11 @@ bind = $mainMod, W, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/ap
 - Icon indicators: 📱 (icon found) | ⚪ (icon name exists but file not found)
 
 **Visual Enhancement**:
-- Real-time icon resolution during TUI rendering
-- Emoji-based indicators for immediate visual feedback
-- Only shows icons in launch mode (not wallpaper selection)
-- Graceful fallback when icons are missing or unresolvable
+- **Split-panel preview**: Application icons displayed in right preview panel (like wallpaper previews)
+- **Full chafa rendering**: Icons rendered using chafa for high-quality terminal display
+- **Real-time preview**: Icons update as you navigate through applications
+- **Smart fallbacks**: Helpful placeholders for missing icons ("Icon not found", "No icon")
+- **Consistent UX**: Same preview system used for both wallpapers and application icons
 
 #### Smart Sorting Implementation ✅
 **Algorithm**: 40% frequency weight + 60% recency weight

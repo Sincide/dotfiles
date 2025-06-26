@@ -430,8 +430,16 @@ bind = $mainMod, W, exec, kitty --class=evil-launcher -e sh -c "cd ~/dotfiles/ap
 ### Next Development Phase - UX Improvements
 - [x] **Unified Interface**: Remove Tab switching - combine launch and run modes
 - [x] **Compact Window**: Reduce default window size for better desktop integration (800x500)
-- [ ] **Smart Sorting**: Recently launched applications appear at top
-- [ ] **Usage Analytics**: Track launch frequency and last-used timestamps
+- [x] **Smart Sorting**: Recently launched applications appear at top with frequency + recency algorithm
+- [x] **Usage Analytics**: Track launch frequency and last-used timestamps in JSON format
 - [ ] **Application Icons**: Display desktop app icons when available for better visual identification
+
+#### Smart Sorting Implementation ✅
+**Algorithm**: 40% frequency weight + 60% recency weight
+- **Usage Tracking**: JSON-based persistent storage in `usage_data.json`
+- **Recency Scoring**: 1hr (10.0) → 24hr (5.0) → 7d (2.0) → 30d (1.0) → old (0.1)
+- **Frequency Scoring**: Usage count × 0.4 weight factor
+- **Fallback**: Alphabetical sorting for apps with equal scores
+- **Integration**: Automatic recording on app launch, smart sorting in `getDesktopApps()`
 
 **PHASE 1 COMPLETE! EXTENSIVELY TESTED AND PRODUCTION READY! 🚀** 

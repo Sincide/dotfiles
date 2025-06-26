@@ -19,6 +19,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -52,9 +53,19 @@ var (
 
 // Item represents a generic selectable entry in the TUI.
 type Item struct {
-	Name     string
-	Exec     string
-	IsRandom bool // Replaced IsVegas
+	Name       string
+	Exec       string
+	IsRandom   bool // Replaced IsVegas
+	LastUsed   time.Time
+	UsageCount int
+}
+
+// UsageData tracks application usage statistics
+type UsageData struct {
+	AppName    string    `json:"app_name"`
+	ExecPath   string    `json:"exec_path"`
+	LastUsed   time.Time `json:"last_used"`
+	UsageCount int       `json:"usage_count"`
 }
 
 // getHomeDir safely gets the user's home directory.
@@ -72,6 +83,145 @@ func checkChafa() {
 	if err == nil {
 		chafaAvailable = true
 	}
+}
+
+// getUsageDataPath returns the path to the usage data file
+func getUsageDataPath() string {
+	home := getHomeDir()
+	return filepath.Join(home, "dotfiles/app-dev/evil-launcher/usage_data.json")
+}
+
+// loadUsageData loads usage statistics from disk
+func loadUsageData() map[string]*UsageData {
+	usageData := make(map[string]*UsageData)
+	usageFile := getUsageDataPath()
+	
+	data, err := ioutil.ReadFile(usageFile)
+	if err != nil {
+		// File doesn't exist yet, return empty map
+		return usageData
+	}
+	
+	var usageList []UsageData
+	if err := json.Unmarshal(data, &usageList); err != nil {
+		// Invalid JSON, return empty map
+		return usageData
+	}
+	
+	// Convert list to map for fast lookup
+	for i := range usageList {
+		usageData[usageList[i].AppName] = &usageList[i]
+	}
+	
+	return usageData
+}
+
+// saveUsageData saves usage statistics to disk
+func saveUsageData(usageData map[string]*UsageData) {
+	usageFile := getUsageDataPath()
+	
+	// Ensure directory exists
+	dir := filepath.Dir(usageFile)
+	os.MkdirAll(dir, 0755)
+	
+	// Convert map to list for JSON serialization
+	var usageList []UsageData
+	for _, data := range usageData {
+		usageList = append(usageList, *data)
+	}
+	
+	data, err := json.MarshalIndent(usageList, "", "  ")
+	if err != nil {
+		return
+	}
+	
+	ioutil.WriteFile(usageFile, data, 0644)
+}
+
+// recordAppUsage records when an application is launched
+func recordAppUsage(appName, execPath string) {
+	usageData := loadUsageData()
+	
+	if data, exists := usageData[appName]; exists {
+		// Update existing entry
+		data.LastUsed = time.Now()
+		data.UsageCount++
+		data.ExecPath = execPath // Update in case exec path changed
+	} else {
+		// Create new entry
+		usageData[appName] = &UsageData{
+			AppName:    appName,
+			ExecPath:   execPath,
+			LastUsed:   time.Now(),
+			UsageCount: 1,
+		}
+	}
+	
+	saveUsageData(usageData)
+}
+
+// applySmarSorting sorts items by frequency and recency (smart ranking)
+func applySmartSorting(items []Item) []Item {
+	usageData := loadUsageData()
+	
+	// Update items with usage data
+	for i := range items {
+		if data, exists := usageData[items[i].Name]; exists {
+			items[i].LastUsed = data.LastUsed
+			items[i].UsageCount = data.UsageCount
+		} else {
+			// Never used - set to zero values
+			items[i].LastUsed = time.Time{}
+			items[i].UsageCount = 0
+		}
+	}
+	
+	// Sort by smart ranking: frequency + recency
+	sort.Slice(items, func(i, j int) bool {
+		// Calculate smart score: frequency weight + recency weight
+		scoreI := calculateSmartScore(items[i])
+		scoreJ := calculateSmartScore(items[j])
+		
+		if scoreI != scoreJ {
+			return scoreI > scoreJ // Higher score first
+		}
+		
+		// If scores are equal, sort alphabetically
+		return strings.ToLower(items[i].Name) < strings.ToLower(items[j].Name)
+	})
+	
+	return items
+}
+
+// calculateSmartScore calculates a smart ranking score based on frequency and recency
+func calculateSmartScore(item Item) float64 {
+	if item.UsageCount == 0 {
+		return 0 // Never used
+	}
+	
+	// Frequency component (40% weight)
+	frequencyScore := float64(item.UsageCount) * 0.4
+	
+	// Recency component (60% weight)
+	// Recent usage gets higher score, decays over time
+	hoursSinceUse := time.Since(item.LastUsed).Hours()
+	var recencyScore float64
+	
+	if hoursSinceUse < 1 {
+		recencyScore = 10.0 // Used within last hour - very high score
+	} else if hoursSinceUse < 24 {
+		recencyScore = 5.0 // Used today - high score
+	} else if hoursSinceUse < 168 { // 7 days
+		recencyScore = 2.0 // Used this week - medium score
+	} else if hoursSinceUse < 720 { // 30 days
+		recencyScore = 1.0 // Used this month - low score
+	} else {
+		recencyScore = 0.1 // Used long ago - very low score
+	}
+	
+	recencyScore *= 0.6 // Apply recency weight
+	
+	return frequencyScore + recencyScore
 }
 
 // detectCategory detects wallpaper category from file path for theme switching
@@ -385,7 +535,8 @@ func getDesktopApps() []Item {
 		}
 	}
 
-	sort.Slice(items, func(i, j int) bool { return strings.ToLower(items[i].Name) < strings.ToLower(items[j].Name) })
+	// Apply smart sorting (frequency + recency)
+	items = applySmartSorting(items)
 	return items
 }
 
@@ -649,6 +800,9 @@ func main() {
 
 	if selectedItem != nil {
 		if mode == "launch" {
+			// Record usage before launching
+			recordAppUsage(selectedItem.Name, selectedItem.Exec)
+			
 			cmdParts := strings.Fields(selectedItem.Exec)
 			cmd := exec.Command(cmdParts[0], cmdParts[1:]...)
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

@@ -97,34 +97,16 @@ function generate_ai_commit
     set diff_summary (git diff --cached --name-status)
     
     # Create a comprehensive prompt for Claude
-    set prompt "You are helping to generate a git commit message. Please analyze the following changes and create a concise, conventional commit message.
-
-Files changed: $files_changed
-
-Diff summary:
-$diff_summary
-
-Diff statistics:
-$diff_stat
-
-Please follow these guidelines:
-- Use conventional commit format: type(scope): description
-- Common types: feat, fix, chore, docs, style, refactor, perf, test
-- Keep the description concise and under 80 characters
-- Focus on what changed and why, not how
-- If multiple types of changes, choose the most significant one
-
-Respond with ONLY the commit message, no explanation or additional text."
-
+    set prompt "You are helping to generate a git commit message. Please analyze the following changes and create a concise, conventional commit message.\n\nFiles changed: $files_changed\n\nDiff summary:\n$diff_summary\n\nDiff statistics:\n$diff_stat\n\nPlease follow these guidelines:\n- Use conventional commit format: type(scope): description\n- Common types: feat, fix, chore, docs, style, refactor, perf, test\n- Keep the description concise and under 80 characters\n- Focus on what changed and why, not how\n- If multiple types of changes, choose the most significant one\n\nRespond with ONLY the commit message, no explanation or additional text."
     # Run Claude Code with the prompt
-    set ai_output (echo $prompt | claude -p 2>/dev/null | string trim)
+    set ai_output (echo $prompt | claude -p 2>/dev/null)
     
     # Claude usage tracking removed
     
     debug "Raw Claude output: '$ai_output'" >&2
     
     # Clean up the output - remove any quotes, backticks, or extra formatting
-    set ai_output (echo $ai_output | sed 's/^["'"'"'`]*//; s/["'"'"'`]*$//' | string trim)
+    set ai_output (echo $ai_output | sed 's/^["'"'"'`]*//; s/["'"'"'`]*$//')
     
     debug "Processed Claude output: '$ai_output'" >&2
 

@@ -491,7 +491,7 @@ function sync_dotfiles
     if test -n "$changes"
         git add -A
         
-        # Generate commit message (AI or custom)
+        # Generate commit message
         if test -n "$custom_message"
             set commit_msg $custom_message
         else

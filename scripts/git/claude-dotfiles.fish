@@ -97,11 +97,7 @@ function generate_ai_commit
     set diff_summary (git diff --cached --name-status)
     
     # Create a comprehensive prompt for Claude
-    set prompt "You are helping to generate a git commit message. Please analyze the following changes and produce a detailed commit message with this structure:
-
-1. A single-line header in conventional commit format (e.g. feat(scope): short description)
-
-2. A bullet-point list summarizing the key changes (each line starting with '- ').
+    set prompt "You are helping to generate a git commit message. Please analyze the following changes and create a concise, conventional commit message.
 
 Files changed: $files_changed
 
@@ -111,7 +107,14 @@ $diff_summary
 Diff statistics:
 $diff_stat
 
-Respond with only the commit header and bullet list; do not include any other content."
+Please follow these guidelines:
+- Use conventional commit format: type(scope): description
+- Common types: feat, fix, chore, docs, style, refactor, perf, test
+- Keep the description concise and under 80 characters
+- Focus on what changed and why, not how
+- If multiple types of changes, choose the most significant one
+
+Respond with ONLY the commit message, no explanation or additional text."
 
     # Run Claude Code with the prompt
     set ai_output (echo $prompt | claude -p 2>/dev/null | string trim)

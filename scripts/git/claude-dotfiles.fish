@@ -86,9 +86,8 @@ function generate_ai_commit
     end
     
     if not check_claude_availability
-        warn "Claude Code not available, using fallback" >&2
-        generate_fallback_commit
-        return
+        warn "Claude Code not available -- please ensure 'claude' is installed and in your PATH" >&2
+        # Continue, attempting to invoke Claude anyway
     end
     
     info "🤖 Analyzing changes with Claude Code..." >&2
@@ -98,7 +97,11 @@ function generate_ai_commit
     set diff_summary (git diff --cached --name-status)
     
     # Create a comprehensive prompt for Claude
-    set prompt "You are helping to generate a git commit message. Please analyze the following changes and create a concise, conventional commit message.
+    set prompt "You are helping to generate a git commit message. Please analyze the following changes and produce a detailed commit message with this structure:
+
+1. A single-line header in conventional commit format (e.g. feat(scope): short description)
+
+2. A bullet-point list summarizing the key changes (each line starting with '- ').
 
 Files changed: $files_changed
 
@@ -108,14 +111,7 @@ $diff_summary
 Diff statistics:
 $diff_stat
 
-Please follow these guidelines:
-- Use conventional commit format: type(scope): description
-- Common types: feat, fix, chore, docs, style, refactor, perf, test
-- Keep the description concise and under 80 characters
-- Focus on what changed and why, not how
-- If multiple types of changes, choose the most significant one
-
-Respond with ONLY the commit message, no explanation or additional text."
+Respond with only the commit header and bullet list; do not include any other content."
 
     # Run Claude Code with the prompt
     set ai_output (echo $prompt | claude -p 2>/dev/null | string trim)
@@ -128,21 +124,14 @@ Respond with ONLY the commit message, no explanation or additional text."
     set ai_output (echo $ai_output | sed 's/^["'"'"'`]*//; s/["'"'"'`]*$//' | string trim)
     
     debug "Processed Claude output: '$ai_output'" >&2
-    
-    # Validate the commit message format
+
+    # If we got any AI output, use it directly (preserve newlines)
     if test -n "$ai_output"
-        # Check if it starts with a valid commit format
-        set first_line (echo $ai_output | head -1)
-        if string match -q "feat*:*" $first_line; or string match -q "fix*:*" $first_line; or string match -q "chore*:*" $first_line; or string match -q "docs*:*" $first_line; or string match -q "style*:*" $first_line; or string match -q "refactor*:*" $first_line; or string match -q "perf*:*" $first_line; or string match -q "test*:*" $first_line
-            # Accept reasonable length commits
-            if test (string length "$first_line") -gt 10; and test (string length "$first_line") -lt 120
-                echo $ai_output
-                return
-            end
-        end
+        printf '%s' "$ai_output"
+        return
     end
-    
-    debug "Claude output failed validation: '$ai_output', using fallback" >&2
+
+    debug "No AI output, using fallback" >&2
     generate_fallback_commit
 end
 
@@ -502,26 +491,29 @@ function sync_dotfiles
     if test -n "$changes"
         git add -A
         
-        # Generate commit message
+        # Generate commit message (AI or custom)
         if test -n "$custom_message"
             set commit_msg $custom_message
         else
             set commit_msg (generate_ai_commit)
         end
-        
+
         echo
         info "📝 Commit message:"
-        set_color green; echo "   \"$commit_msg\""; set_color normal
+        set_color green
+        # Indent each line of the commit message for readability
+        printf '%s\n' "$commit_msg" | sed 's/^/   /'
+        set_color normal
         echo
-        
+
         # Confirm with user
         read -P "Use this message? [Y/n]: " -n 1 confirm
         echo
-        
+
         if test "$confirm" = "n" -o "$confirm" = "N"
             read -P "Enter your message: " commit_msg
         end
-        
+
         # Commit changes
         if git commit -m "$commit_msg"
             success "Committed: $commit_msg"

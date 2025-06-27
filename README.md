@@ -210,7 +210,7 @@ ollama pull llama3.2:3b
 ollama pull qwen2.5-coder:7b
 
 # Test AI commit generation
-scripts/git/dotfiles.fish ai-test
+dotai
 
 # Restart theming system
 ~/dotfiles/scripts/theming/restart_theming.sh

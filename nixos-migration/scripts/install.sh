@@ -282,7 +282,7 @@ post_install_instructions() {
     echo "2. Log into Hyprland desktop environment"
     echo "3. Test theming system: matugen image ~/Pictures/wallpaper.jpg"
     echo "4. Configure your personal data and preferences"
-    echo "5. Test AI git automation: cd ~/dotfiles && scripts/git/dotfiles.fish sync"
+    echo "5. Test AI git automation: cd ~/dotfiles && dots sync"
     echo
     log_info "Useful commands:"
     echo "  • System rebuild: sudo nixos-rebuild switch --flake /etc/nixos#nixos-hyprland"

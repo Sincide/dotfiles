@@ -83,10 +83,10 @@ matugen image wallpaper.jpg --dry-run          # Preview color generation
 **Git Automation with AI:**
 ```bash
 # AI-Powered Git Workflow
-scripts/git/dotfiles.fish sync                 # Smart sync with AI commit messages
-scripts/git/dotfiles.fish                      # Interactive git management menu
-scripts/git/dotfiles.fish ai-test             # Test AI commit generation
-scripts/git/dotfiles.fish status              # Enhanced repository status
+scripts/git/claude-dotfiles.fish sync                    # Smart sync with AI commit messages
+scripts/git/claude-dotfiles.fish                         # Interactive git management menu
+scripts/git/claude-dotfiles.fish claude-test             # Test AI commit generation
+scripts/git/claude-dotfiles.fish status                  # Enhanced repository status
 ```
 
 **Package & System Management:**
@@ -140,7 +140,7 @@ chmod +x scripts/theming/new_script.sh          # Make executable
 # Test AI models
 ollama list                                     # Show installed models
 ollama run qwen2.5-coder:latest                # Test coding model
-scripts/git/dotfiles.fish ai-test              # Test commit generation
+scripts/git/claude-dotfiles.fish claude-test   # Test commit generation
 ```
 
 ### Testing & Validation Framework
@@ -173,7 +173,7 @@ ls ~/.config/gtk-3.0/colors.css                # Check GTK theming
 # AI System Testing
 ollama list                                     # Verify model availability
 scripts/ai/ai-health.fish                      # Full system diagnostics
-echo "test change" >> README.md && scripts/git/dotfiles.fish sync  # Test AI commits
+echo "test change" >> README.md && scripts/git/claude-dotfiles.fish sync  # Test AI commits
 ```
 
 **Dashboard Development:**
@@ -405,7 +405,7 @@ vim scripts/theming/gpu_advanced_monitor.sh
 ollama pull your-model:latest
 
 # 2. Add to model detection
-vim scripts/git/dotfiles.fish
+vim scripts/git/claude-dotfiles.fish
 # Add to detect_ollama_model(): else if ollama list | grep -q "your-model"
 #     set OLLAMA_MODEL "your-model:latest"
 
@@ -650,7 +650,7 @@ This system demonstrates **enterprise-level Linux desktop automation** suitable 
 1. **Follow the modular patterns** - each component has a specific purpose
 2. **Use the established logging system** - maintain traceability
 3. **Test with dry-run modes** - validate before applying changes
-4. **Leverage the AI integration** - use `dotfiles.fish sync` for commits
+4. **Leverage the AI integration** - use `claude-dotfiles.fish sync` for commits
 5. **Monitor via dashboard** - use the web interface for system oversight
 6. **Respect the template system** - maintain Material Design 3 consistency
 7. **Document changes** - update comments and documentation

@@ -500,10 +500,7 @@ function sync_dotfiles
 
         echo
         info "📝 Commit message:"
-        set_color green
-        # Indent each line of the commit message for readability
-        printf '%s\n' "$commit_msg" | sed 's/^/   /'
-        set_color normal
+        set_color green; echo "   \"$commit_msg\""; set_color normal
         echo
 
         # Confirm with user

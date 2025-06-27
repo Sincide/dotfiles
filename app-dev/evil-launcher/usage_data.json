@@ -2,14 +2,14 @@
   {
     "app_name": "Visual Studio Code",
     "exec_path": "/usr/bin/code",
-    "last_used": "2025-06-27T00:54:49.519553974+02:00",
-    "usage_count": 1
+    "last_used": "2025-06-27T14:55:01.8203521+02:00",
+    "usage_count": 2
   },
   {
     "app_name": "Brave",
     "exec_path": "brave",
-    "last_used": "2025-06-27T04:54:08.9007443+02:00",
-    "usage_count": 2
+    "last_used": "2025-06-27T05:19:08.553408267+02:00",
+    "usage_count": 3
   },
   {
     "app_name": "Code - OSS",
@@ -20,7 +20,7 @@
   {
     "app_name": "Cursor",
     "exec_path": "/usr/bin/cursor --no-sandbox",
-    "last_used": "2025-06-27T02:43:36.891490425+02:00",
-    "usage_count": 1
+    "last_used": "2025-06-27T17:35:48.744684594+02:00",
+    "usage_count": 3
   }
 ]

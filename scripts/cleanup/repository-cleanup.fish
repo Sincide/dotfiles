@@ -225,7 +225,7 @@ function show_space_savings
     # Show what was preserved
     echo ""
     info "🔒 Preserved integrated components:"
-    echo "  • app-dev/evil-launcher/ - Integrated with Hyprland keybinds and theming"
+    echo "  • Fuzzel launcher - Integrated with Hyprland keybinds and theming"
     echo "  • dashboard/ - Integrated with system monitoring and theming API"
     echo "  • nixos-migration/ - Active migration project"
     echo "  • unified-theming-migration/ - Active migration project"
@@ -244,7 +244,7 @@ function main
     warning "This script will clean up clutter in your dotfiles repository"
     warning "A safety backup will be created before any changes"
     info ""
-    info "🔍 Analysis shows that app-dev/evil-launcher and dashboard/ are deeply"
+    info "🔍 Analysis shows that fuzzel launcher and dashboard/ are deeply"
     info "    integrated with your dotfiles system and should remain in this repo."
     
     if not confirm "Continue with cleanup?"

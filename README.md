@@ -4,7 +4,7 @@
 
 A complete Hyprland + Material Design 3 setup with dynamic theming, real-time GPU monitoring, and AI integration. Everything works out of the box with one simple command.
 
-> **🚧 Migration in Progress:** Currently upgrading to unified dynamic theming system inspired by linkfrg's approach. Phase 1 (critical bug fixes) complete ✅. See `unified-theming-migration/` for details.
+
 
 ![Desktop Preview](assets/screenshots/desktop-preview.png)
 
@@ -63,10 +63,11 @@ What gets installed:
 ### 📊 Professional Status Bars
 
 **Top Bar:**
-- 🚀 App launcher and workspace indicators
+- 🚀 Workspace indicators and system controls
 - 🎵 Media controls with album art
 - 🌐 Network info with speeds
 - 🗓️ Date/time with calendar
+- 🎯 Fuzzel launcher integration (`Super+D`)
 
 **Bottom Bar (AMD GPU Focus):**
 - 🌡️ GPU temperature with color-coded warnings
@@ -108,6 +109,7 @@ dots           # Smart sync with AI-generated commit messages
 ### Key Components
 - **Hyprland** - Wayland compositor
 - **Waybar** - Status bars with monitoring
+- **Fuzzel** - Application launcher
 - **Kitty** - GPU-accelerated terminal
 - **Fish Shell** - Smart command line
 - **Matugen** - Material Design 3 colors
@@ -146,6 +148,13 @@ TEMP_CRITICAL=100   # Critical threshold (°C)
 2. Add your module configuration
 3. Style it in the corresponding CSS file
 4. Restart: `pkill waybar && waybar &`
+
+## 📚 Documentation
+
+- **[System Architecture](docs/ARCHITECTURE.md)** - Complete technical overview and flowchart
+- **[Installation Guide](docs/INSTALLATION.md)** - Detailed setup instructions
+- **[Theme System](docs/THEMING.md)** - Dynamic theming documentation
+- **[AI Integration](docs/AI.md)** - Local AI setup and usage
 
 ## 🔧 Post-Installation Features
 
@@ -187,11 +196,12 @@ All external drives are automatically mounted to `/mnt/[drive-label]` and added 
 ## 💡 Tips and Tricks
 
 ### Keyboard Shortcuts
-- `Super + Return` - Open terminal
-- `Super + D` - Application launcher
-- `Super + E` - File manager
-- `Super + W` - Wallpaper selector
+- `Super + Return` - Open terminal (Kitty)
+- `Super + D` - Application launcher (Fuzzel)
+- `Super + E` - File manager (Nemo)
+- `Super + W` - Wallpaper selector with dynamic theming
 - `Super + L` - Lock screen
+- `Super + Shift + W` - Restart cursor apps
 
 ### Useful Commands
 ```bash

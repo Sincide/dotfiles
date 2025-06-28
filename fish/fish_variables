@@ -51,8 +51,8 @@ SETUVAR fish_color_option:\x1d
 SETUVAR fish_color_param:\x1d
 SETUVAR fish_color_quote:\x1d
 SETUVAR fish_color_redirection:\x1d
-SETUVAR fish_color_search_match:\x2d\x2dbackground\x3d\x232b4678
-SETUVAR fish_color_selection:\x2d\x2dbackground\x3d\x231e1f25
+SETUVAR fish_color_search_match:\x2d\x2dbackground\x3d\x236a3c01
+SETUVAR fish_color_selection:\x2d\x2dbackground\x3d\x23261e18
 SETUVAR fish_color_status:\x1d
 SETUVAR fish_color_user:\x1d
 SETUVAR fish_color_valid_path:\x2d\x2dunderline
@@ -66,7 +66,7 @@ SETUVAR fish_pager_color_secondary_background:\x1d
 SETUVAR fish_pager_color_secondary_completion:\x1d
 SETUVAR fish_pager_color_secondary_description:\x1d
 SETUVAR fish_pager_color_secondary_prefix:\x1d
-SETUVAR fish_pager_color_selected_background:\x2d\x2dbackground\x3d\x23282a2f
+SETUVAR fish_pager_color_selected_background:\x2d\x2dbackground\x3d\x23312822
 SETUVAR fish_pager_color_selected_completion:\x1d
 SETUVAR fish_pager_color_selected_description:\x1d
 SETUVAR fish_pager_color_selected_prefix:\x1d

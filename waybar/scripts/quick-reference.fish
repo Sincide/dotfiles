@@ -120,7 +120,7 @@ echo "  • Setup scripts:  scripts/setup/"
 echo "  • Theming:        scripts/theming/"
 echo "  • TUI apps:       scripts/tui/"
 echo ""
-echo "Evil Launcher:     ~/dotfiles/app-dev/evil-launcher/"
+echo "Application Launcher: fuzzel (Super+D)"
 echo "Dashboard:         ~/dotfiles/dashboard/"
 echo ""
 
